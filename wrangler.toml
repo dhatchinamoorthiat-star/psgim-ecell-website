@@ -1,0 +1,25 @@
+# Cloudflare Pages configuration.
+#
+# `pages_build_output_dir` is all Pages needs: build locally with
+# `node build.mjs`, then `npx wrangler pages deploy` uploads dist/.
+#
+# There is no build command here on purpose — the build has no dependencies,
+# so running it locally and uploading the output is faster and more
+# predictable than having Pages install and run a toolchain in CI.
+#
+# dist/_headers travels with the upload and sets the caching and security
+# headers; it is not configured here.
+
+# IMPORTANT — the production branch of this project is `ECell`, not `main`.
+# Deploying with `--branch main` publishes to main.psgim-ecell.pages.dev,
+# which is a *preview* alias; psgim-ecell.pages.dev would not change and the
+# command would still report success. `npm run deploy` uses the right branch.
+#
+# Every other branch name becomes its own alias:
+#   <branch>.psgim-ecell.pages.dev   (lowercased, non-alphanumerics → "-",
+#                                     truncated to 28 characters)
+# and every single deployment also gets <8-char-id>.psgim-ecell.pages.dev.
+
+name = "psgim-ecell"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-09-22"

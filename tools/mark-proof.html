@@ -1,0 +1,53 @@
+<!doctype html>
+<!-- Proof sheet for the mark: same artwork at four sizes, light and dark. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; box-sizing:border-box }
+  body { width: 900px; background:#f5f8fc; font-family: system-ui; padding: 36px; }
+  .row { display:flex; align-items:flex-end; gap:36px; padding:26px 30px; border-radius:12px; margin-bottom:18px; }
+  .row.dark { background:#0a1b33; }
+  .cell { display:grid; justify-items:center; gap:8px; }
+  .cell span { font-size:10px; color:#6c7e97; letter-spacing:.1em }
+  .dark .cell span { color:#8398b4 }
+  .s200 svg { width:200px; height:200px }
+  .s96  svg { width:96px;  height:96px }
+  .s48  svg { width:48px;  height:48px }
+  .s34  svg { width:34px;  height:34px }
+  .s20  svg { width:20px;  height:20px }
+</style>
+</head>
+<body>
+<div class="row" id="light"></div>
+<div class="row dark" id="dark"></div>
+<script>
+const MARK = `<svg viewBox="0 0 100 100" fill="none">
+  <!-- stem: one slanted stroke, two planes -->
+  <path d="M35 13 L47 13 L25 92 L13 92 Z" fill="#0d3b8e"/>
+  <path d="M35 13 L47 13 L30 60 Z" fill="#1565e0"/>
+
+  <!-- top arm: a long wedge tapering to a point, top right -->
+  <path d="M35 13 L94 4 L58 18 Z" fill="#0077ff"/>
+  <path d="M94 4 L58 18 L30 30 Z" fill="#4fc3f7"/>
+  <path d="M35 13 L58 18 L30 30 Z" fill="#0d3b8e"/>
+
+  <!-- middle arm -->
+  <path d="M26 46 L76 38 L46 50 Z" fill="#00b4ff"/>
+  <path d="M76 38 L68 54 L46 50 Z" fill="#0077ff"/>
+  <path d="M26 46 L46 50 L22 60 Z" fill="#0077ff"/>
+  <path d="M46 50 L68 54 L22 60 Z" fill="#0d3b8e"/>
+
+  <!-- bottom arm -->
+  <path d="M19 70 L88 58 L48 74 Z" fill="#0077ff"/>
+  <path d="M88 58 L78 83 L48 74 Z" fill="#00b4ff"/>
+  <path d="M19 70 L48 74 L13 92 Z" fill="#1565e0"/>
+  <path d="M48 74 L78 83 L13 92 Z" fill="#0d3b8e"/>
+</svg>`;
+for (const id of ['light','dark']) {
+  document.getElementById(id).innerHTML = [200,96,48,34,20]
+    .map(s => `<div class="cell s${s}">${MARK}<span>${s}px</span></div>`).join('');
+}
+</script>
+</body>
+</html>

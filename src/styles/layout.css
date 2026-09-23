@@ -1,0 +1,107 @@
+/* Containers, section rhythm, and the shared grid. */
+
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.block {
+  padding-block: var(--section-y);
+  position: relative;
+}
+
+/* A tinted band — used to separate adjacent sections without a hard rule. */
+.block--tint { background: var(--surface-2); }
+
+/* The inverted band. Text tokens are swapped wholesale so any component
+   dropped inside it is legible without needing its own dark variant. */
+.block--band {
+  background: var(--band);
+  --ink: var(--on-ink);
+  --ink-2: var(--on-ink-2);
+  --ink-3: var(--on-ink-3);
+  /* --ink is light in here, so the colour that reads *on* it must become the
+     band's own ground — otherwise a solid button is light-on-light. */
+  --ink-inverse: var(--band);
+  --rule: var(--on-ink-rule);
+  --rule-strong: rgba(255, 255, 255, 0.24);
+  --surface: rgba(255, 255, 255, 0.045);
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --surface-3: rgba(255, 255, 255, 0.1);
+  --brand-ink: #9cc0f0;
+  --accent-ink: #ff8b66;
+  color: var(--on-ink);
+}
+
+.block--tight { padding-block: calc(var(--section-y) * 0.6); }
+.block--flush-top { padding-top: 0; }
+
+/* Hairline between sections that share a ground. */
+.block--ruled { border-top: 1px solid var(--rule); }
+
+/* ── Section heading ────────────────────────────────────────────────────── */
+
+.section-head {
+  display: grid;
+  gap: var(--s-3);
+  margin-bottom: var(--s-7);
+  max-width: var(--wrap-narrow);
+}
+.section-head__title { font-size: var(--t-h2); }
+.section-head__body {
+  color: var(--ink-2);
+  font-size: var(--t-lede);
+  line-height: 1.55;
+  max-width: 54ch;
+}
+.section-head__note { margin-top: calc(var(--s-1) * -1); }
+.section-head .more { margin-top: var(--s-2); }
+
+.section-head--center {
+  justify-items: center;
+  text-align: center;
+  margin-inline: auto;
+}
+.section-head--center .kicker { justify-content: center; }
+
+/**
+ * A section head that sits beside its content on wide screens instead of
+ * stacking above it — used where the body is a long list and a full-width
+ * heading would waste the fold.
+ */
+.split {
+  display: grid;
+  gap: var(--s-6);
+}
+@media (min-width: 62rem) {
+  .split {
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    gap: var(--s-8);
+    align-items: start;
+  }
+  .split > .section-head {
+    margin-bottom: 0;
+    position: sticky;
+    top: calc(var(--header-h) + var(--s-6));
+  }
+}
+
+/* ── Generic grids ──────────────────────────────────────────────────────── */
+
+.grid { display: grid; gap: var(--s-5); }
+
+.grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
+.grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+
+.stack { display: grid; gap: var(--s-4); }
+.stack--lg { gap: var(--s-6); }
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+}

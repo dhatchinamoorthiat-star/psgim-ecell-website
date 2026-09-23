@@ -1,0 +1,95 @@
+/**
+ * The motion layer.
+ *
+ * Two rules govern everything here:
+ *   1. Only transform and opacity are animated. Nothing in this file can
+ *      trigger layout, so nothing here can cause jank on a mid-range phone.
+ *   2. Every effect has a resting state that is the finished state. If the
+ *      script never runs, the page is simply the page — fully readable, no
+ *      invisible content waiting for an observer that never fires.
+ */
+
+/* Section entrance. `data-reveal` marks the block; the script adds
+   `data-revealed` when it crosses into view.
+   Scoped to `.js` — the class the inline head script sets — so that if
+   scripting is off or the bundle fails to load, these rules never apply and
+   the content is simply visible. */
+.js [data-reveal] > .wrap > * {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+}
+/* Children stagger, but only a little, and it stops after the fifth: a long
+   cascade looks slow rather than considered. */
+.js [data-reveal] > .wrap > *:nth-child(2) { transition-delay: 70ms; }
+.js [data-reveal] > .wrap > *:nth-child(3) { transition-delay: 140ms; }
+.js [data-reveal] > .wrap > *:nth-child(4) { transition-delay: 210ms; }
+.js [data-reveal] > .wrap > *:nth-child(n + 5) { transition-delay: 260ms; }
+
+.js [data-revealed] > .wrap > * { opacity: 1; transform: none; }
+
+/* Hero entrance — one deliberate, slightly slower sequence, because it is the
+   only thing on screen. */
+.hero__inner > * {
+  opacity: 0;
+  transform: translateY(18px);
+  animation: rise var(--dur-reveal) var(--ease-out) forwards;
+}
+.hero__inner > *:nth-child(1) { animation-delay: 60ms; }
+.hero__inner > *:nth-child(2) { animation-delay: 150ms; }
+.hero__inner > *:nth-child(3) { animation-delay: 240ms; }
+.hero__inner > *:nth-child(4) { animation-delay: 330ms; }
+.hero__strip { opacity: 0; transform: translateY(18px); animation: rise var(--dur-reveal) var(--ease-out) 460ms forwards; }
+
+@keyframes rise { to { opacity: 1; transform: none; } }
+
+/* The scroll cue at the foot of the hero. */
+.scroll-cue {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 2.25rem;
+  color: var(--ink-3);
+  animation: nudge 2.6s var(--ease-in-out) infinite;
+}
+@keyframes nudge {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────
+   Not a blanket "kill all animation": that would leave reveal-on-scroll
+   content stuck at opacity 0 if the observer were ever slow. Content is
+   forced visible first, then the decorative movement is switched off. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .js [data-reveal] > .wrap > *,
+  .hero__inner > *,
+  .hero__strip {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .hero__title em::after { animation: none; transform: scaleX(1); }
+  .scroll-cue { animation: none; }
+  .hero__strip-label::before { animation: none; }
+  .arc__line::after { transition: none; }
+  .figure__bar span { transition: none; }
+
+  /* Parallax and the travelling rules are decoration; drop them entirely. */
+  .init-row__rule { display: none; }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

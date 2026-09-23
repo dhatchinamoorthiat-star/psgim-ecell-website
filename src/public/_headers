@@ -1,0 +1,21 @@
+# Cloudflare Pages headers.
+#
+# HTML is revalidated every time so a content edit is live immediately.
+# The two assets are content-addressed only by name, so they get a short
+# max-age with revalidation rather than a year — the build does not
+# fingerprint filenames.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), interest-cohort=()
+
+/assets/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/og.png
+  Cache-Control: public, max-age=86400

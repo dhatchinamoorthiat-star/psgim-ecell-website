@@ -1,0 +1,90 @@
+<!doctype html>
+<!--
+  Source for the Open Graph card. Rendered to src/public/og.png by
+  `node tools/make-og.mjs`. Edit here, re-run that, commit the PNG.
+  Kept as HTML rather than hand-drawn so the card always matches the site's
+  own type and colour.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;700;800&display=swap">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    width: 1200px; height: 630px;
+    background: #0a1b33;
+    color: #f2f7fd;
+    font-family: Montserrat, sans-serif;
+    padding: 68px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
+    background-size: 80px 80px;
+    -webkit-mask-image: radial-gradient(120% 90% at 84% 4%, #000, transparent 68%);
+  }
+  .lockup { display: flex; align-items: center; gap: 16px; position: relative; }
+  .mark { height: 72px; width: auto; }
+  .bar { width: 1px; align-self: stretch; background: rgba(255,255,255,.22); }
+  .word { display: flex; flex-direction: column; gap: 5px; line-height: 1; }
+  .word .row { display: flex; align-items: baseline; gap: .34em; font-size: 31px; font-weight: 800; }
+  .word .row i { font-style: normal; font-weight: 300; color: rgba(255,255,255,.35); }
+  .word .row em { font-style: normal; font-weight: 700; color: #4fc3f7; }
+  .word small { font-size: 11px; font-weight: 500; letter-spacing: .17em; text-transform: uppercase; color: #8398b4; }
+
+  h1 {
+    position: relative;
+    font-size: 84px;
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -.025em;
+    max-width: 15ch;
+  }
+  h1 em { font-style: normal; color: #4fc3f7; position: relative; }
+  h1 em::after {
+    content: ""; position: absolute; left: .03em; right: .03em; bottom: .01em;
+    height: .055em; background: #0077ff; border-radius: 99px;
+  }
+  .foot {
+    position: relative;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 32px;
+    border-top: 1px solid rgba(255,255,255,.15);
+    padding-top: 24px;
+  }
+  .foot p { font-size: 19px; font-weight: 400; color: #b3c5db; max-width: 48ch; line-height: 1.45; }
+  .foot .kick {
+    font-size: 12px; font-weight: 300; letter-spacing: .32em; text-transform: uppercase;
+    color: #8398b4; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="grid"></div>
+
+<div class="lockup">
+  <img class="mark" src="../src/public/logo@2x.png" alt="">
+  <span class="bar"></span>
+  <span class="word">
+    <span class="row"><b>E&#8209;CELL</b><i>|</i><em>PSGIM</em></span>
+    <small>PSG Institute of Management</small>
+  </span>
+</div>
+
+<h1>Creating <em>founders</em> on campus</h1>
+
+<div class="foot">
+  <p>The student-run Entrepreneurship Cell of PSG Institute of Management, Coimbatore.</p>
+  <span class="kick">Ideas today. Impact tomorrow.</span>
+</div>
+</body>
+</html>
