@@ -4,7 +4,7 @@
   overflow: hidden;
   padding-block: clamp(4rem, 3rem + 6vw, 8rem) var(--section-y);
 }
-.hero .kicker { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--accent); margin-bottom: var(--s-4); }
+.hero .kicker { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--accent-ink); margin-bottom: var(--s-4); }
 .hero h1 { font-size: var(--t-display); max-width: 20ch; }
 .hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 42ch; margin-top: var(--s-5); }
 .hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
@@ -52,7 +52,7 @@
 @media (max-width: 62rem) { .initiative-card, .initiative-card:nth-child(3n+1), .initiative-card:nth-child(3n+2) { grid-column: span 1; } }
 .initiative-card .index { font-size: var(--t-xs); color: var(--ink-3); font-weight: 700; }
 .initiative-card h3 { font-size: var(--t-h3); }
-.initiative-card .tag { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--accent); }
+.initiative-card .tag { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--accent-ink); }
 .initiative-card .meta { font-size: var(--t-xs); color: var(--ink-3); display: flex; gap: var(--s-3); flex-wrap: wrap; }
 
 /* Events */
@@ -91,7 +91,7 @@ dialog.lightbox::backdrop { background: rgba(5,10,20,.85); }
 /* Timeline */
 .timeline-list { display: flex; flex-direction: column; gap: var(--s-4); }
 .timeline-row { display: grid; grid-template-columns: 5rem 1fr; gap: var(--s-5); }
-.timeline-row .year { font-weight: 800; color: var(--accent); }
+.timeline-row .year { font-weight: 800; color: var(--accent-ink); }
 
 /* FAQ */
 .faq-item { border-top: 1px solid var(--rule); padding: var(--s-5) 0; }

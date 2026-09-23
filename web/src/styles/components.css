@@ -8,9 +8,11 @@
   white-space: nowrap;
 }
 .btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sm); }
-.btn-primary:hover { background: var(--accent-ink); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+/* The reference page's own touch: a soft blue glow on hover, not just a
+   depth shadow. --glow is the exact shadow value lifted from its CSS. */
+.btn-primary:hover { background: var(--accent-ink); transform: translateY(-1px); box-shadow: var(--shadow-md), var(--glow); }
 .btn-ghost { border: 1px solid var(--rule-strong); color: var(--ink); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent-ink); }
 .btn-inverse { background: var(--on-ink); color: var(--band); }
 .btn-inverse:hover { background: var(--accent); color: var(--on-accent); }
 
@@ -51,7 +53,7 @@
 /* Section heading */
 .section-heading .kicker {
   display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker);
-  text-transform: uppercase; color: var(--accent); margin-bottom: var(--s-3);
+  text-transform: uppercase; color: var(--accent-ink); margin-bottom: var(--s-3);
 }
 .section-heading h2 { font-size: var(--t-h2); }
 
@@ -85,8 +87,8 @@
 .navbar-logo span { white-space: nowrap; }
 .navbar-links { display: flex; align-items: center; gap: var(--s-6); }
 .navbar-links a { font-size: var(--t-sm); font-weight: 600; color: var(--ink-2); }
-.navbar-links a:hover, .navbar-links a.active { color: var(--accent); }
-.navbar-links a.highlight { color: var(--accent); }
+.navbar-links a:hover, .navbar-links a.active { color: var(--accent-ink); }
+.navbar-links a.highlight { color: var(--accent-ink); }
 .navbar-actions { display: flex; align-items: center; gap: var(--s-3); flex-shrink: 0; }
 .nav-toggle { display: none; }
 @media (max-width: 62rem) {

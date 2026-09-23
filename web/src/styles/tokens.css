@@ -1,14 +1,43 @@
+/**
+ * Colour palette.
+ *
+ * Brand family — sampled directly from the pixels of the current logo
+ * (web/public/logo@2x.png), by drawing it to a canvas and histogramming
+ * every opaque pixel, not eyeballed or reconstructed by hand:
+ *
+ *   navy (the mark's spine):  #002050  — dominant, ~120k px
+ *   turquoise (the wings):    #00b098  — dominant bright teal, ~46k px
+ *                              #00b8a0  — the lighter variant, ~38k px
+ *                              #008080  — the deeper variant, ~17k px
+ *
+ * That's the whole app's accent identity now: turquoise as the primary
+ * interactive colour (buttons, links, active nav, focus), navy as the
+ * secondary structural tone — both literally the two colours in the mark,
+ * not an invented pairing.
+ *
+ * The neutral/ground system (--paper, --surface, --ink, --band) is a
+ * separate decision made earlier (a near-black cinematic dark mode) and is
+ * untouched by this pass — this is specifically the brand-colour swap.
+ */
+
 :root {
   --paper: #f5f8fc; --surface: #ffffff; --surface-2: #e6f4ff; --surface-3: #d4e8fa;
   --ink: #0a1b33; --ink-2: #41546f; --ink-3: #6c7e97; --ink-inverse: #ffffff;
   --rule: #d9e4f1; --rule-strong: #b7cae0;
-  --navy: #0d3b8e; --accent: #0077ff; --accent-ink: #0060d1; --accent-soft: #e6f4ff; --on-accent: #ffffff;
-  --ocean: #00b4ff; --sky: #4fc3f7;
+  /* --accent-ink uses the deeper extracted teal (#008080) rather than the
+     primary #00b098 — better AA text contrast on white paper. */
+  /* --on-accent is dark, not white: white-on-#00b098 measures 2.74:1, under
+     even the 3:1 floor for large/UI text; near-black measures 7.66:1.
+     --accent-ink is darkened one step past the extracted #008080 (same hue)
+     to clear 4.5:1 on paper with real margin, not sit right at the edge. */
+  --navy: #002050; --accent: #00b098; --accent-ink: #007070; --accent-soft: #e1f7f2; --on-accent: #00120e;
+  --ocean: #00b8a0; --sky: #4dd9c4;
   --ok: #0f7a5a; --ok-soft: #e0f2ec;
   --on-ink: #f2f7fd; --on-ink-2: #b3c5db; --on-ink-3: #8398b4; --on-ink-rule: rgba(255,255,255,.15);
   --shadow-sm: 0 1px 2px rgba(10,27,51,.06);
   --shadow-md: 0 2px 4px rgba(10,27,51,.04), 0 12px 28px -18px rgba(10,27,51,.32);
   --shadow-lg: 0 2px 6px rgba(10,27,51,.05), 0 28px 60px -30px rgba(10,27,51,.4);
+  --glow: 0 0 60px -12px rgba(0,176,152,.5);
   color-scheme: light;
   --font-display: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: var(--font-display); --font-meta: var(--font-display); --font-mono: var(--font-display);
@@ -32,26 +61,32 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper:#05101f; --surface:#0b1a2e; --surface-2:#11263f; --surface-3:#1a3452;
-    --ink:#eaf2fb; --ink-2:#a9bdd6; --ink-3:#7b91ae; --ink-inverse:#05101f;
-    --rule:#1c3453; --rule-strong:#2c4a70;
-    --navy:#4b8ae8; --accent:#3d9bff; --accent-ink:#79baff; --accent-soft:#0c2340; --on-accent:#041428;
-    --ocean:#33c4ff; --sky:#7fd4fa; --ok:#3cb392; --ok-soft:#0b2a23;
+    --paper:#05060a; --surface:#0a101e; --surface-2:#0e1729; --surface-3:#16233f;
+    --ink:#ffffff; --ink-2:#b8b8b8; --ink-3:#7a7a7a; --ink-inverse:#000000;
+    --rule: rgba(255,255,255,.12); --rule-strong: rgba(255,255,255,.24);
+    /* Dark-mode navy is a lightened stand-in, not sampled — the logo's own
+       navy is a light-ground colour and would nearly vanish on near-black.
+       accent-ink is the lighter extracted teal (#00b8a0), the same
+       brighter-on-dark pattern the previous blue tokens used. */
+    --navy:#3567a8; --accent:#00b098; --accent-ink:#00b8a0; --accent-soft:#063a32; --on-accent:#00120e;
+    --ocean:#00b8a0; --sky:#4dd9c4; --ok:#3cb392; --ok-soft:#0b2a23;
     --shadow-sm:0 1px 2px rgba(0,0,0,.5); --shadow-md:0 2px 4px rgba(0,0,0,.4),0 12px 28px -18px rgba(0,0,0,.8);
     --shadow-lg:0 2px 6px rgba(0,0,0,.45),0 28px 60px -30px rgba(0,0,0,.9);
-    color-scheme: dark; --band:#030b16;
+    --glow: 0 0 60px -12px rgba(0,176,152,.5);
+    color-scheme: dark; --band:#000000;
   }
 }
 
 :root[data-theme="dark"] {
-  --paper:#05101f; --surface:#0b1a2e; --surface-2:#11263f; --surface-3:#1a3452;
-  --ink:#eaf2fb; --ink-2:#a9bdd6; --ink-3:#7b91ae; --ink-inverse:#05101f;
-  --rule:#1c3453; --rule-strong:#2c4a70;
-  --navy:#4b8ae8; --accent:#3d9bff; --accent-ink:#79baff; --accent-soft:#0c2340; --on-accent:#041428;
-  --ocean:#33c4ff; --sky:#7fd4fa; --ok:#3cb392; --ok-soft:#0b2a23;
+  --paper:#05060a; --surface:#0a101e; --surface-2:#0e1729; --surface-3:#16233f;
+  --ink:#ffffff; --ink-2:#b8b8b8; --ink-3:#7a7a7a; --ink-inverse:#000000;
+  --rule: rgba(255,255,255,.12); --rule-strong: rgba(255,255,255,.24);
+  --navy:#3567a8; --accent:#00b098; --accent-ink:#00b8a0; --accent-soft:#063a32; --on-accent:#00120e;
+  --ocean:#00b8a0; --sky:#4dd9c4; --ok:#3cb392; --ok-soft:#0b2a23;
   --shadow-sm:0 1px 2px rgba(0,0,0,.5); --shadow-md:0 2px 4px rgba(0,0,0,.4),0 12px 28px -18px rgba(0,0,0,.8);
   --shadow-lg:0 2px 6px rgba(0,0,0,.45),0 28px 60px -30px rgba(0,0,0,.9);
-  color-scheme: dark; --band:#030b16;
+  --glow: 0 0 60px -12px rgba(0,176,152,.5);
+  color-scheme: dark; --band:#000000;
 }
 
 :root[data-theme="light"] { --band: #0a1b33; }
