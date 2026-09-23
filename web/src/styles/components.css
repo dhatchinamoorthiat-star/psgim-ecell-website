@@ -55,7 +55,23 @@
   display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker);
   text-transform: uppercase; color: var(--accent-ink); margin-bottom: var(--s-3);
 }
-.section-heading h2 { font-size: var(--t-h2); }
+/* The white→accent gradient text from the old NEC reference page's
+   .nec-lead (main.psgim-ecell.pages.dev/assets/nec.css), rebuilt to fit
+   this system: built from --ink/--accent-ink instead of hard-coded white/
+   blue, so it adapts per theme automatically rather than needing separate
+   light/dark rules — in dark mode --ink is white (matching the source
+   exactly), in light mode it's navy, fading into the same teal either way.
+   Falls back to solid --ink wherever background-clip: text isn't supported
+   (older WebKit/Firefox) — the @supports guard, not the property itself,
+   carries that fallback. */
+.section-heading h2 { font-size: var(--t-h2); color: var(--ink); }
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .section-heading h2 {
+    color: transparent;
+    background: linear-gradient(120deg, var(--ink) 30%, var(--accent-ink));
+    -webkit-background-clip: text; background-clip: text;
+  }
+}
 
 /* Stat tile */
 .stat-tile { display: flex; flex-direction: column; gap: var(--s-1); }
