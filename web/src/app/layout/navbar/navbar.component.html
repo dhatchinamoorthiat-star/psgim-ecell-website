@@ -1,0 +1,48 @@
+<header class="navbar" [class.is-stuck]="isStuck()">
+  <div class="wrap navbar-inner">
+    <a routerLink="/" class="navbar-logo">
+      <img src="/logo.png" alt="" width="32" height="32" />
+      <span>{{ site.name }}</span>
+    </a>
+
+    <nav class="navbar-links" aria-label="Primary">
+      @for (item of nav; track item.href) {
+        <a [routerLink]="item.href" routerLinkActive="active" [class.highlight]="item.highlight">{{ item.label }}</a>
+      }
+    </nav>
+
+    <div class="navbar-actions">
+      <button type="button" class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()">
+        <span aria-hidden="true">{{ themeMode === 'dark' || (themeMode === 'system') ? '🌓' : '🌓' }}</span>
+      </button>
+      <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
+      <button
+        type="button"
+        class="nav-toggle btn btn-ghost"
+        (click)="openMobile()"
+        aria-label="Open menu"
+        aria-controls="mobile-nav"
+        [attr.aria-expanded]="mobileOpen()"
+      >
+        Menu
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobile-nav" [class.is-open]="mobileOpen()" [attr.aria-hidden]="!mobileOpen()">
+  <div class="wrap" style="display:flex; justify-content: space-between; align-items:center;">
+    <span class="navbar-logo">{{ site.name }}</span>
+    <button type="button" class="mobile-nav-close btn btn-ghost" (click)="closeMobile()" aria-label="Close menu">
+      Close
+    </button>
+  </div>
+  <nav class="mobile-nav-links wrap" aria-label="Mobile">
+    @for (item of nav; track item.href) {
+      <a [routerLink]="item.href" (click)="closeMobile()">{{ item.label }}</a>
+    }
+    <a [routerLink]="primaryCta.href" class="btn btn-primary" (click)="closeMobile()" style="width:fit-content">{{
+      primaryCta.label
+    }}</a>
+  </nav>
+</div>

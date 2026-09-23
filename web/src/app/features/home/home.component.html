@@ -1,0 +1,127 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">{{ hero.kicker }}</span>
+  <h1>{{ hero.headline }}</h1>
+  <p class="lede">{{ hero.lede }}</p>
+  <div class="hero-actions">
+    <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
+    <a routerLink="/initiatives/" class="btn btn-ghost">See what we run</a>
+  </div>
+</section>
+
+<section class="section section-band">
+  <div class="wrap stats-band">
+    @for (s of stats; track s.label) {
+      <ui-stat-tile [value]="s.value" [label]="s.label" [count]="s.count" [suffix]="s.suffix ?? ''"></ui-stat-tile>
+    }
+  </div>
+</section>
+
+<section class="section wrap" #journeySection revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">The journey</span>
+    <h2>From a half-formed idea to a national stage</h2>
+  </div>
+  <div class="journey-rail" style="margin-top: var(--s-7)">
+    <div class="fill" [style.width.%]="arcProgress() * 100"></div>
+  </div>
+  <div class="journey">
+    @for (stage of stages; track stage.id; let i = $index) {
+      <div class="journey-stage" [class.is-lit]="i < litCount()">
+        <span class="index">{{ stage.index }}</span>
+        <h3>{{ stage.label }}</h3>
+        <p>{{ stage.note }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">What we run</span>
+    <h2>Six ways in</h2>
+  </div>
+  <div class="initiatives-grid" style="margin-top: var(--s-7)">
+    @for (item of initiatives; track item.id) {
+      <a [routerLink]="item.href ?? '/initiatives/'" class="initiative-card">
+        <span class="index">{{ item.index }}</span>
+        <span class="tag">{{ item.tag }}</span>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.summary }}</p>
+      </a>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">Coming up</span>
+    <h2>Upcoming events</h2>
+  </div>
+  <div class="events-list" style="margin-top: var(--s-7)">
+    @for (ev of upcoming; track ev.id) {
+      <div class="event-row">
+        <span class="date">{{ ev.date | date: 'MMM d' }}</span>
+        <div>
+          <h3>{{ ev.title }}</h3>
+          <p>{{ ev.summary }}</p>
+          <div class="meta">
+            @if (ev.venue) { <span>{{ ev.venue }}</span> }
+            @if (ev.pending) { <ui-pending-flag label="Illustrative"></ui-pending-flag> }
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p>No upcoming events listed yet.</p>
+    }
+  </div>
+  <div class="hero-actions" style="margin-top: var(--s-6)">
+    <a routerLink="/events/" class="btn btn-ghost">All events</a>
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">Gallery</span>
+    <h2>From the field</h2>
+  </div>
+  <div class="gallery-grid" style="margin-top: var(--s-7)">
+    @for (tile of gallery; track tile.file) {
+      <div class="gallery-tile ratio-{{ tile.ratio }}">
+        <span class="caption">{{ tile.caption }}</span>
+      </div>
+    }
+  </div>
+  <div class="hero-actions" style="margin-top: var(--s-6)">
+    <a routerLink="/gallery/" class="btn btn-ghost">Open gallery</a>
+  </div>
+</section>
+
+<section class="section section-band" revealOnScroll>
+  <div class="wrap">
+    <div class="section-heading">
+      <span class="kicker" style="color: var(--ocean)">NEC 2026 drive</span>
+      <h2 style="color: var(--on-ink)">Building our public track record</h2>
+    </div>
+    @if (drive.pending) {
+      <ui-pending-flag label="Self-reported" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
+    }
+    <div class="grid grid-3" style="margin-top: var(--s-7)">
+      @for (t of drive.targets; track t.label) {
+        <div class="drive-target">
+          <div class="row"><span style="color: var(--on-ink)">{{ t.label }}</span><span style="color: var(--on-ink-2)">{{ t.now }} / {{ t.target }}</span></div>
+          <ui-progress-bar [now]="t.now" [target]="t.target"></ui-progress-bar>
+          <p style="color: var(--on-ink-3); font-size: var(--t-xs)">{{ t.detail }}</p>
+        </div>
+      }
+    </div>
+    <p style="color: var(--on-ink-3); font-size: var(--t-xs); margin-top: var(--s-6)">{{ drive.note }}</p>
+  </div>
+</section>
+
+<section class="section wrap" style="text-align:center" revealOnScroll>
+  <h2 style="font-size: var(--t-h1)">{{ site.tagline }}</h2>
+  <div class="hero-actions" style="justify-content:center; margin-top: var(--s-6)">
+    <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
+    <a routerLink="/nec/" class="btn btn-ghost">See NEC 2026</a>
+  </div>
+</section>

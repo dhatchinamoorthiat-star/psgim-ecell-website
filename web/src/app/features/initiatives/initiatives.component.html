@@ -1,0 +1,37 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">What we run</span>
+  <h1>Six ways to move an idea forward</h1>
+  <p class="lede">Every programme maps to a stage of the journey — spark, test, build, back.</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="journey">
+    @for (stage of stages; track stage.id) {
+      <div class="journey-stage is-lit">
+        <span class="index">{{ stage.index }}</span>
+        <h3>{{ stage.label }}</h3>
+        <p>{{ stage.note }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="initiatives-grid">
+    @for (item of initiatives; track item.id) {
+      <article class="initiative-card">
+        <span class="index">{{ item.index }}</span>
+        <span class="tag">{{ item.tag }} · {{ stageFor(item.stage)?.label }}</span>
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.body }}</p>
+        <div class="meta">
+          <span>{{ item.cadence }}</span>
+          @if (item.venue) { <span>{{ item.venue }}</span> }
+        </div>
+        @if (item.href) {
+          <a [routerLink]="item.href" class="btn btn-ghost" style="width:fit-content">Learn more</a>
+        }
+      </article>
+    }
+  </div>
+</section>

@@ -1,0 +1,44 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">Get in touch</span>
+  <h1>Contact</h1>
+  <p class="lede">Reach the Cell, or find out where the join-the-team form landed.</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Interest form</span><h2>Join the Cell</h2></div>
+  <div style="margin-top: var(--s-6); max-width: var(--wrap-narrow)">
+    <ui-awaiting-panel
+      heading="Not live yet"
+      message="The interest form isn't wired up yet — we won't fake a working submission. Check what's coming, or reach us directly below."
+    >
+      <a routerLink="/soon/" class="btn btn-ghost" style="margin-top: var(--s-4)">See what's coming</a>
+    </ui-awaiting-panel>
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Direct</span><h2>Reach us</h2></div>
+  <div class="grid grid-2" style="margin-top: var(--s-6)">
+    <div class="card">
+      <h3 style="font-size: var(--t-body)">Email</h3>
+      <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ site.contact.email.value }} (to be confirmed)</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size: var(--t-body)">Social</h3>
+      @for (s of site.social; track s.name) {
+        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ s.name }} — {{ s.handle }} (to be confirmed)</p>
+      }
+    </div>
+    <div class="card">
+      <h3 style="font-size: var(--t-body)">Address</h3>
+      @for (line of site.address.lines; track line) {
+        <p style="color: var(--ink-2)">{{ line }}</p>
+      }
+    </div>
+    <div class="card">
+      <h3 style="font-size: var(--t-body)">NEC 2026</h3>
+      <p style="color: var(--ink-2); margin-top: var(--s-2)">Curious about the campaign?</p>
+      <a routerLink="/nec/" class="btn btn-ghost" style="margin-top: var(--s-3)">Read the NEC page</a>
+    </div>
+  </div>
+</section>

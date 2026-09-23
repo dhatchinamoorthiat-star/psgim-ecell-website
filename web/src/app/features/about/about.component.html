@@ -1,0 +1,83 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">{{ hero.kicker }}</span>
+  <h1>{{ hero.headline }}</h1>
+  <p class="lede">{{ hero.lede }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ intro.kicker }}</span>
+    <h2>{{ intro.headline }}</h2>
+  </div>
+  <div class="grid grid-2" style="margin-top: var(--s-6)">
+    @for (p of intro.body; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ story.kicker }}</span><h2>The story</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-5)">
+    @for (p of story.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ vision.kicker }}</span>
+    <h2>{{ vision.heading }}</h2>
+  </div>
+  <ui-pending-flag *ngIf="vision.pending" [label]="vision.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
+  <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ vision.statement }}</p>
+  <ul class="grid grid-2" style="margin-top: var(--s-6)">
+    @for (m of vision.mission; track m) {
+      <li class="card">{{ m }}</li>
+    }
+  </ul>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ timeline.kicker }}</span>
+    <h2>{{ timeline.heading }}</h2>
+  </div>
+  <ui-pending-flag *ngIf="timeline.pending" [label]="timeline.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
+  <div class="timeline-list" style="margin-top: var(--s-6)">
+    @for (e of timeline.entries; track e.year) {
+      <div class="timeline-row">
+        <span class="year">{{ e.year }}</span>
+        <p style="color: var(--ink-2)">{{ e.what }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Mentors</span><h2>Who guides us</h2></div>
+  <div style="margin-top: var(--s-6)">
+    @if (mentors.length === 0) {
+      <ui-awaiting-panel heading="Mentor panel — awaiting confirmation" message="Named mentors will appear here once the panel is signed off with the faculty coordinators."></ui-awaiting-panel>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Testimonials</span><h2>What people say</h2></div>
+  <div style="margin-top: var(--s-6)">
+    @if (testimonials.length === 0) {
+      <ui-awaiting-panel heading="Testimonials — awaiting collection" message="We don't have quotes we can stand behind yet — nothing here is invented."></ui-awaiting-panel>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ colophon.kicker }}</span><h2>{{ colophon.heading }}</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    @for (p of colophon.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>

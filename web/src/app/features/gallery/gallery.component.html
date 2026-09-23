@@ -1,0 +1,37 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">In the field</span>
+  <h1>Gallery</h1>
+  <p class="lede">{{ galleryNote }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="gallery-filters">
+    @for (a of albums; track a.id) {
+      <button type="button" class="chip" [class.is-active]="activeAlbum() === a.id" (click)="setAlbum(a.id)">
+        {{ a.label }}
+      </button>
+    }
+  </div>
+
+  <div class="gallery-grid">
+    @for (tile of filtered(); track tile.file; let i = $index) {
+      <div class="gallery-tile ratio-{{ tile.ratio }}" (click)="open(i)" role="button" tabindex="0" (keydown.enter)="open(i)">
+        <span class="caption">{{ tile.caption }}</span>
+      </div>
+    }
+  </div>
+</section>
+
+<dialog #lightbox class="lightbox" (click)="close()" (cancel)="close()">
+  <div class="lightbox-inner" (click)="$event.stopPropagation()" *ngIf="current() as tile">
+    <div class="gallery-tile ratio-{{ tile.ratio }}" style="margin: 0 auto var(--s-4); max-width: 24rem">
+      <span class="caption">{{ tile.caption }}</span>
+    </div>
+    <p style="color: var(--ink-3); font-size: var(--t-xs)">{{ (lightboxIndex() ?? 0) + 1 }} / {{ total() }}</p>
+    <div class="hero-actions" style="justify-content:center; margin-top: var(--s-4)">
+      <button type="button" class="btn btn-ghost" (click)="prev()">Previous</button>
+      <button type="button" class="btn btn-ghost" (click)="next()">Next</button>
+      <button type="button" class="btn btn-primary" (click)="close()">Close</button>
+    </div>
+  </div>
+</dialog>

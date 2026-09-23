@@ -5,12 +5,10 @@
   "type": "module",
   "description": "Website of the Entrepreneurship Cell, PSG Institute of Management, Coimbatore.",
   "scripts": {
-    "build": "node build.mjs",
-    "dev": "node build.mjs --watch",
-    "serve": "node build.mjs && node --watch-path=src build.mjs --serve",
-    "assets": "node tools/make-og.mjs",
-    "deploy": "node build.mjs && wrangler pages deploy --branch ECell",
-    "deploy:preview": "node build.mjs && wrangler pages deploy --branch preview"
+    "build": "npm --prefix web run build",
+    "dev": "npm --prefix web start",
+    "deploy": "npm --prefix web run build && wrangler pages deploy --branch ECell",
+    "deploy:preview": "npm --prefix web run build && wrangler pages deploy --branch preview"
   },
   "engines": { "node": ">=20" }
 }

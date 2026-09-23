@@ -1,0 +1,51 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">Calendar</span>
+  <h1>Events</h1>
+  <p class="lede">{{ eventsNote }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Upcoming</span><h2>What's next</h2></div>
+  <div class="events-list" style="margin-top: var(--s-6)">
+    @for (ev of split.upcoming; track ev.id) {
+      <div class="event-row">
+        <span class="date">{{ ev.date | date: 'MMM d, y' }}<ng-container *ngIf="ev.endDate"> – {{ ev.endDate | date: 'MMM d' }}</ng-container></span>
+        <div>
+          <h3>{{ ev.title }}</h3>
+          <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ ev.summary }}</p>
+          <div class="meta">
+            @if (ev.time) { <span>{{ ev.time }}</span> }
+            @if (ev.venue) { <span>{{ ev.venue }}</span> }
+            @if (ev.audience) { <span>{{ ev.audience }}</span> }
+            @if (ev.registration) { <span>Registration: {{ ev.registration }}</span> }
+            @if (ev.pending) { <ui-pending-flag label="Illustrative"></ui-pending-flag> }
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p>No upcoming events right now.</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Past</span><h2>What happened</h2></div>
+  <div class="events-list" style="margin-top: var(--s-6)">
+    @for (ev of split.past; track ev.id) {
+      <div class="event-row">
+        <span class="date">{{ ev.date | date: 'MMM d, y' }}</span>
+        <div>
+          <h3>{{ ev.title }}</h3>
+          <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ ev.summary }}</p>
+          <div class="meta">
+            @if (ev.turnout) { <span>{{ ev.turnout }}</span> }
+            @if (ev.venue) { <span>{{ ev.venue }}</span> }
+            @if (ev.pending) { <ui-pending-flag label="Illustrative"></ui-pending-flag> }
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p>No past events recorded yet.</p>
+    }
+  </div>
+</section>

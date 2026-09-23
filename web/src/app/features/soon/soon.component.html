@@ -1,0 +1,17 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">Honest roadmap</span>
+  <h1>What's coming</h1>
+  <p class="lede">{{ roadmapNote }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="grid grid-2">
+    @for (item of roadmap; track item.id) {
+      <div class="card">
+        <span class="pending-flag">{{ item.status === 'building' ? 'Building' : 'Planned' }}</span>
+        <h3 style="margin-top: var(--s-3)">{{ item.title }}</h3>
+        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ item.summary }}</p>
+      </div>
+    }
+  </div>
+</section>

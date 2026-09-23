@@ -1,11 +1,5 @@
-# Build output — regenerate with `node build.mjs`. Never commit it: it is
-# derived from src/, and committing it means every content edit shows up as a
-# diff across nine HTML files.
-dist/
-
-# Nothing here needs npm, but keep these out if a tool ever adds them.
-node_modules/
-package-lock.json
+# The Angular app lives in web/ and has its own .gitignore (build output,
+# node_modules, .angular cache, etc.). Nothing below applies to it.
 
 .DS_Store
 *.log
@@ -18,15 +12,13 @@ package-lock.json
 #   ecell/     — a clone of the dhatchinamoorthiat-star/E-Cell repo (the
 #                Supabase "Control Room" platform), cloned only to check
 #                whether it held this site's source. It does not.
-#   site-live/ — a mirror of the OLD live site, kept as the content reference
-#                while rebuilding. Every fact in it now lives in src/data/.
+#   site-live/ — a mirror of the OLD live site (the pre-Angular static
+#                build), kept as the content reference while rebuilding.
+#                Every fact in it now lives in web/src/app/core/data/.
 # Both are safe to delete once you are happy with the rebuild.
 ecell/
 site-live/
 
-# NOT ignored, on purpose:
-#   src/public/og.png, icon-*.png, logo*.png  — generated, but committed so a
-#     normal build never needs Chrome (see tools/make-og.mjs, make-logo.mjs)
-#   src/logo.jpeg, src/logo-ref.jpeg          — the supplied brand artwork,
-#     the source the PNGs are derived from
-#   src/public/vendor/                        — the vendored QR encoder
+# Old build output from the retired build.mjs generator, if it ever
+# reappears locally.
+dist/

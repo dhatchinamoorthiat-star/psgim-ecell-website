@@ -1,14 +1,17 @@
 # Cloudflare Pages configuration.
 #
-# `pages_build_output_dir` is all Pages needs: build locally with
-# `node build.mjs`, then `npx wrangler pages deploy` uploads dist/.
+# `pages_build_output_dir` is all Pages needs: build the Angular app with
+# `npm run build` (from web/, or via the root `npm run build` below), then
+# `npx wrangler pages deploy` uploads web/dist/web/browser.
 #
-# There is no build command here on purpose — the build has no dependencies,
-# so running it locally and uploading the output is faster and more
-# predictable than having Pages install and run a toolchain in CI.
+# Angular's build now requires `npm install` — the site is no longer
+# dependency-free the way the old hand-rolled build.mjs generator was. That's
+# an intentional tradeoff of the Angular migration, not an oversight.
 #
-# dist/_headers travels with the upload and sets the caching and security
-# headers; it is not configured here.
+# web/tools/postbuild.mjs runs after `ng build` (wired into `web`'s own
+# `npm run build`) to (re)generate sitemap.xml and robots.txt into the
+# prerendered output; _headers ships from web/public/_headers and is copied
+# through by the Angular build as a static asset.
 
 # IMPORTANT — the production branch of this project is `ECell`, not `main`.
 # Deploying with `--branch main` publishes to main.psgim-ecell.pages.dev,
@@ -21,5 +24,5 @@
 # and every single deployment also gets <8-char-id>.psgim-ecell.pages.dev.
 
 name = "psgim-ecell"
-pages_build_output_dir = "dist"
+pages_build_output_dir = "web/dist/web/browser"
 compatibility_date = "2026-09-22"
