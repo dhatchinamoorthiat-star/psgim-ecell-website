@@ -1,9 +1,31 @@
 /* Hero */
-.hero { padding-block: clamp(4rem, 3rem + 6vw, 8rem) var(--section-y); }
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding-block: clamp(4rem, 3rem + 6vw, 8rem) var(--section-y);
+}
 .hero .kicker { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--accent); margin-bottom: var(--s-4); }
 .hero h1 { font-size: var(--t-display); max-width: 20ch; }
 .hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 42ch; margin-top: var(--s-5); }
 .hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
+
+/* The measured grid behind the hero — a drafting-table reference, very low
+   contrast, masked so it fades out before it reaches the text. Dropped
+   during the Angular rewrite (markup + rule both went missing); restored
+   from the static site's original sections.css. */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
+  background-size: clamp(48px, 7vw, 88px) clamp(48px, 7vw, 88px);
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+}
 
 /* Stats band */
 .stats-band { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-6); }
