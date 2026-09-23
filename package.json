@@ -7,8 +7,8 @@
   "scripts": {
     "build": "npm --prefix web run build",
     "dev": "npm --prefix web start",
-    "deploy": "npm --prefix web run build && wrangler pages deploy --branch ECell",
-    "deploy:preview": "npm --prefix web run build && wrangler pages deploy --branch preview"
+    "deploy": "npm --prefix web run build && npx wrangler pages deploy web/dist/web/browser --branch ECell --project-name psgim-ecell",
+    "deploy:preview": "npm --prefix web run build && npx wrangler pages deploy web/dist/web/browser --branch preview --project-name psgim-ecell"
   },
   "engines": { "node": ">=20" }
 }
