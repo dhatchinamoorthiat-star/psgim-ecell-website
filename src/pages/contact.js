@@ -49,13 +49,14 @@ export default {
              there is somewhere to put them. */
           `<div class="awaiting">
       <p class="awaiting__head">Interest form</p>
-      <p class="awaiting__body">The sign-up form is being set up. Until it is live, email the team directly — the address below reaches the whole core team, and you will get the same reply.</p>
+      <p class="awaiting__body">The sign-up form is moving online, along with registration, certificates and feedback — see what's coming. Until then, email the team directly and you'll get the same reply.</p>
     </div>
     <div class="row" style="margin-top:var(--s-5)">
+      ${button({ label: "What's coming", href: "/soon/", variant: "accent", size: "lg" })}
       ${
         email.pending
           ? button({ label: "Find us on campus", href: "#find", variant: "secondary", size: "lg" })
-          : button({ label: "Email the team", href: `mailto:${email.value}`, variant: "accent", size: "lg" })
+          : button({ label: "Email the team", href: `mailto:${email.value}`, variant: "secondary", size: "lg" })
       }
     </div>`
     }

@@ -15,5 +15,6 @@ import gallery from "./gallery.js";
 import nec from "./nec.js";
 import contact from "./contact.js";
 import control from "./control.js";
+import soon from "./soon.js";
 
-export const pages = [home, about, initiatives, events, team, gallery, nec, contact, control];
+export const pages = [home, about, initiatives, events, team, gallery, nec, contact, control, soon];
