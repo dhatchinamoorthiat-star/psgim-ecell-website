@@ -1,9 +1,9 @@
 /**
- * Builds the transparent logo PNGs from src/logo.jpeg.
+ * Builds the transparent logo PNGs from tools/source/logo-new.png.
  *
  *   node tools/make-logo.mjs
  *
- * Writes src/public/logo.png (512px) and src/public/logo@2x.png (1024px),
+ * Writes web/public/logo.png (512px) and web/public/logo@2x.png (1024px),
  * both tightly cropped with a real alpha channel. Re-run only if the source
  * artwork changes; the PNGs are committed, so a normal build never needs
  * Chrome.
@@ -60,7 +60,7 @@ const { stdout } = await run(chrome, [...base, "--dump-dom", `${page}?probe=1`],
   maxBuffer: 64 * 1024 * 1024,
 });
 const bbox = /data-bbox="([\d,]+)"/.exec(stdout);
-if (!bbox) throw new Error("could not measure the artwork — is src/logo.jpeg present?");
+if (!bbox) throw new Error("could not measure the artwork — is tools/source/logo-new.png present?");
 const [, , bw, bh] = bbox[1].split(",").map(Number);
 console.log(`artwork bounding box: ${bw}×${bh}`);
 
@@ -70,6 +70,6 @@ for (const [size, name] of [[512, "logo.png"], [1024, "logo@2x.png"]]) {
   const w = Math.round(bw * scale), h = Math.round(bh * scale);
   const shot = join(tmp, name);
   await run(chrome, [...base, `--window-size=${w},${h}`, `--screenshot=${shot}`, `${page}?size=${size}`]);
-  await rename(shot, join(ROOT, "src", "public", name));
-  console.log(`wrote src/public/${name} (${w}×${h}, transparent)`);
+  await rename(shot, join(ROOT, "web", "public", name));
+  console.log(`wrote web/public/${name} (${w}×${h}, transparent)`);
 }

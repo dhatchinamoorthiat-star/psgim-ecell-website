@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Precise pixel-rect crop via canvas drawImage, driven by query params:
+     ?x=&y=&w=&h= are the source rectangle in the original image's own pixels. -->
+<html><head><style>body{margin:0}</style></head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const p = new URLSearchParams(location.search);
+const x = +p.get('x'), y = +p.get('y'), w = +p.get('w'), h = +p.get('h');
+const img = new Image();
+img.onload = () => {
+  const c = document.getElementById('c');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+  document.title = 'ready';
+};
+img.src = 'logo-sheet.png';
+</script>
+</body></html>

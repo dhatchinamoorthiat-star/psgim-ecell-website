@@ -20,14 +20,28 @@ export interface QrRenderResult {
 export class QrService {
   private logo: HTMLImageElement | null = null;
   private logoReady = false;
+  /** Fired once, when the mark image finishes loading. render() draws
+   *  synchronously against whatever logoReady is *at that instant* — on a
+   *  cold load the first call can land before the image arrives, and
+   *  without this nothing ever asks for a second render, so the QR is
+   *  stuck without its mark for the rest of the session. Callers should
+   *  re-render once this fires. */
+  private onLogoReady: (() => void) | null = null;
 
   private ensureLogo(): void {
     if (this.logo) return;
     this.logo = new Image();
     this.logo.onload = () => {
       this.logoReady = true;
+      this.onLogoReady?.();
     };
     this.logo.src = '/logo@2x.png';
+  }
+
+  /** Registers the one callback to run when the mark becomes available.
+   *  Idempotent against repeat calls from the same component instance. */
+  whenLogoReady(cb: () => void): void {
+    this.onLogoReady = cb;
   }
 
   supportsCopy(): boolean {

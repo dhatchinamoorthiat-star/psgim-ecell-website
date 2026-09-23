@@ -68,6 +68,12 @@ export class QrGeneratorComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     this.canCopy = this.qr.supportsCopy();
+    // The mark image loads async; if a code was already drawn before it
+    // arrived (a fast typer, or a slow first fetch), redraw once so the
+    // mark actually appears instead of being silently missing forever.
+    this.qr.whenLogoReady(() => {
+      if (this.value()) this.renderNow();
+    });
     if (this.prefill) {
       this.setValue(this.prefill);
     }

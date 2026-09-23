@@ -1,5 +1,5 @@
 /**
- * Renders tools/og-card.html to src/public/og.png (1200×630) and the
+ * Renders tools/og-card.html to web/public/og.png (1200×630) and the
  * apple-touch icon, using the headless Chrome that is already on this machine.
  *
  *   node tools/make-og.mjs
@@ -56,8 +56,8 @@ async function shoot(source, out, w, h) {
     "--virtual-time-budget=6000",
     pathToFileURL(join(ROOT, "tools", source)).href,
   ]);
-  await rename(shot, join(ROOT, "src", "public", out));
-  console.log(`wrote src/public/${out} (${w}×${h})`);
+  await rename(shot, join(ROOT, "web", "public", out));
+  console.log(`wrote web/public/${out} (${w}×${h})`);
 }
 
 await shoot("og-card.html", "og.png", 1200, 630);
