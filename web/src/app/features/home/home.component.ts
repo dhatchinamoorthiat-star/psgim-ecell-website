@@ -75,8 +75,25 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.litCount.set(this.stages.length);
       } else {
         this.onScroll();
+        this.playHeroVideo();
       }
     }
+  }
+
+  /**
+   * Hydration reuses the server-rendered <video>, and some browsers don't
+   * honour the `autoplay` attribute on a node that's handed to them already
+   * attached rather than parsed fresh — so kick playback explicitly once the
+   * view is ready, same as ecellmit.in's hero does.
+   */
+  private playHeroVideo(): void {
+    const video = this.heroVideo?.nativeElement;
+    if (!video) return;
+    video.muted = true;
+    video.play().catch(() => {
+      // Autoplay was blocked (e.g. low-power mode) — the poster frame and
+      // sound toggle still let a visitor start it by hand.
+    });
   }
 
   @HostListener('window:scroll')
