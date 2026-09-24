@@ -20,11 +20,13 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private resizeHandler = () => this.onResize();
 
+  readonly scrollProgress = signal(0);
   readonly isStuck = signal(false);
   readonly mobileOpen = signal(false);
   readonly openDropdown = signal<string | null>(null);
   readonly openMobileGroup = signal<string | null>(null);
   private ticking = false;
+  private static readonly SHRINK_DISTANCE = 160;
 
   toggleDropdown(label: string): void {
     this.openDropdown.set(this.openDropdown() === label ? null : label);
@@ -76,7 +78,9 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
     if (this.ticking) return;
     this.ticking = true;
     requestAnimationFrame(() => {
-      this.isStuck.set(window.scrollY > 8);
+      const progress = Math.min(1, Math.max(0, window.scrollY / NavbarComponent.SHRINK_DISTANCE));
+      this.scrollProgress.set(progress);
+      this.isStuck.set(progress > 0);
       this.ticking = false;
     });
   }

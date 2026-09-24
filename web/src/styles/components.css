@@ -82,50 +82,36 @@
 .progress-bar { width: 100%; height: 8px; border-radius: var(--r-pill); background: var(--on-ink-rule); overflow: hidden; }
 .progress-bar .fill { height: 100%; border-radius: var(--r-pill); background: var(--ocean); transition: width 900ms var(--ease-out); }
 
-/* Navbar — edge-to-edge and transparent at rest; on scroll it fills in and
-   draws itself up into a floating pill capsule. `.is-stuck` (added once
-   `window.scrollY > 8`, see navbar.component.ts) is the only thing that
-   switches the two states, so this is a plain CSS transition, not a
-   scroll-driven JS animation. */
+/* Navbar — edge-to-edge and transparent at rest; as you scroll it
+   continuously closes in into a floating pill capsule. `--scroll-progress`
+   (0 to 1 over the first 160px of scroll, set on the host element from
+   navbar.component.ts) drives every dimension below via calc(), so the
+   header tracks scroll position frame-by-frame instead of snapping at a
+   threshold. `.is-stuck` only toggles the box-shadow transition. */
 .navbar {
+  --p: var(--scroll-progress, 0);
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: flex-start; justify-content: center;
-  padding: 0 0;
+  padding: calc(var(--s-4) * var(--p)) calc(var(--gutter) * var(--p)) 0;
   background: transparent;
   pointer-events: none;
-  transition: padding var(--dur-normal) var(--ease-out);
-}
-.navbar.is-stuck {
-  padding: var(--s-4) var(--gutter) 0;
 }
 .navbar-inner {
   pointer-events: auto;
   display: flex; align-items: center; justify-content: space-between; gap: var(--s-4);
-  width: 100%; max-width: 100%;
+  width: 100%;
+  max-width: calc(100% - (100% - 74rem) * var(--p));
   height: var(--header-h);
-  padding-inline: var(--gutter);
-  border-radius: 0;
-  background: transparent;
-  border: 1px solid transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  transition:
-    max-width var(--dur-normal) var(--ease-out),
-    padding-inline var(--dur-normal) var(--ease-out),
-    border-radius var(--dur-normal) var(--ease-out),
-    background var(--dur-normal) var(--ease-out),
-    border-color var(--dur-normal) var(--ease-out),
-    box-shadow var(--dur-normal) var(--ease-out),
-    backdrop-filter var(--dur-normal) var(--ease-out);
+  padding-inline: calc(var(--gutter) - (var(--gutter) - var(--s-3)) * var(--p)) calc(var(--gutter) - (var(--gutter) - var(--s-2)) * var(--p));
+  border-radius: calc(var(--r-pill) * var(--p));
+  background: color-mix(in srgb, var(--surface) calc(92% * var(--p)), transparent);
+  border: 1px solid color-mix(in srgb, var(--rule-strong) calc(70% * var(--p)), transparent);
+  box-shadow: 0 0 0 0 transparent;
+  backdrop-filter: blur(calc(16px * var(--p))) saturate(calc(100% + 40% * var(--p)));
+  transition: box-shadow var(--dur-normal) var(--ease-out);
 }
 .navbar.is-stuck .navbar-inner {
-  max-width: 74rem;
-  padding-inline: var(--s-3) var(--s-2);
-  border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  border-color: color-mix(in srgb, var(--rule-strong) 70%, transparent);
   box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(16px) saturate(140%);
 }
 .navbar-logo { display: flex; align-items: center; gap: var(--s-2); font-weight: 800; font-family: var(--font-display); flex-shrink: 0; min-width: 0; padding-inline-start: var(--s-2); }
 .navbar-logo img { height: 28px; width: auto; flex-shrink: 0; border-radius: 50%; }
