@@ -7,8 +7,8 @@ its blocking decisions are recorded in `ARCHITECTURE_DECISION_RECORD.md` / `PHAS
 | Phase | Deliverables | Blocked by |
 |---|---|---|
 | **0 — Audit & docs** ✅ | `docs/00–19`, baseline tag, decision package (ADR record, ADR-008/009, org structure, Phase 1 authorization) | — |
-| **1a — Backend foundation** | `backend/` Django 5 + DRF, Docker Postgres, custom User, session auth + CSRF, forgot/reset, RBAC tables + policy engine + seeded roles/permissions, Vertical, AcademicYear, Membership, AuditLog, escalation test suite, `.env.example`, OpenAPI | — (resolved 2026-09-25) |
-| **1b — Platform shell** | `/platform` lazy route tree, login/logout/reset screens, `/auth/me`, permission-aware nav, Admin: users, verticals, roles, assignments. Pages Function `/api` proxy on a preview branch | 1a |
+| **1a — Backend foundation** ✅ (branch `platform/phase-1`, see `PHASE_1_IMPLEMENTATION_NOTES.md`) | `backend/` Django 5 + DRF, Docker Postgres, custom User, session auth + CSRF, forgot/reset, RBAC tables + policy engine + seeded roles/permissions, Vertical, AcademicYear, Membership, AuditLog, escalation test suite, `.env.example`, OpenAPI | — (resolved 2026-09-25) |
+| **1b — Platform shell** ✅ (same branch; second factor/PIN port still open) | `/platform` lazy route tree, login/logout/reset screens, `/auth/me`, permission-aware nav, Admin: users, verticals, roles, assignments. Pages Function `/api` proxy on a preview branch | 1a |
 | **2a — CMS core** | ContentItem/Version, block registry, workflow, approvals, preview, tick endpoint + Cron Worker, deploy hook, legacy content importer | 1b |
 | **2b — Public site on CMS** | `ContentStore` + snapshot prerender; parity diff vs baseline; dynamic sitemap; single `_headers` | 2a |
 | **2c — Structured content** | Events (+detail pages), Speakers, Blogs, Initiatives, Gallery, Media library (Cloudinary signed uploads), SEO fields | 2a |

@@ -9,6 +9,8 @@ Start with **[ARCHITECTURE_DECISION_RECORD](ARCHITECTURE_DECISION_RECORD.md)** (
 | [ADR-009 Cloudflare deployment](ADR-009-CLOUDFLARE-DEPLOYMENT.md) | what the `ECell` branch means; target CI |
 | [ORGANIZATIONAL_STRUCTURE](ORGANIZATIONAL_STRUCTURE.md) | vertical evidence (unconfirmed) |
 | [PHASE_1_AUTHORIZATION](PHASE_1_AUTHORIZATION.md) | blockers classification |
+| [PHASE_1_IMPLEMENTATION_NOTES](PHASE_1_IMPLEMENTATION_NOTES.md) | what Phase 1 built, how to run and test it, limitations |
+| [ADR-010 Governance grant exemption](ADR-010-GOVERNANCE-GRANT-EXEMPTION.md) | contradiction found in Phase 1 and its resolution |
 
 | # | Doc | Also referred to as |
 |---|---|---|

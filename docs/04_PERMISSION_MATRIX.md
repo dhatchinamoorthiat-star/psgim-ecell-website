@@ -50,3 +50,36 @@ anyone holds it is an organizational decision.
 
 Technical deliberately has **no** default content-edit permissions for other
 verticals (brief §06).
+
+---
+
+## Phase 1 addendum (2026-09-25) — what the implementation actually seeds
+
+The source of truth for seeded roles is now `backend/apps/rbac/catalogue.py`
+(written to the database by `python manage.py seed_rbac`). It follows the
+matrix above with these recorded additions and interpretations:
+
+**Permissions added.** The admin screens needed read and membership permissions
+the matrix did not list:
+
+| Permission | SUPER_ADMIN | ADMIN_HEAD | TECH_HEAD | PLATFORM_ADMIN | VERTICAL_HEAD | MEMBER |
+|---|---|---|---|---|---|---|
+| user.view | G | G | G | — | V (members of own vertical, current year) | — |
+| role.view | G | G | — | — | V | — |
+| vertical.view | G | G | G | G | V | V |
+| membership.view | G | G | — | — | V | — |
+| membership.manage | G | G | — | — | V | — |
+| event.view / content.view | G | G | — | — | V | — |
+
+`membership.manage` for Vertical Heads implements brief §54 (a head manages
+their vertical's members) and success criterion 13 (members added without a
+developer).
+
+**Interpretations.**
+- G/V/C/E columns do not live on the role; the *assignment's* scope decides where a permission applies. A Vertical Head is `VERTICAL_HEAD` assigned with `scope=VERTICAL:<id>`.
+- "O" means `RolePermission.own_only = true`: the permission only covers objects whose `rbac_owner_id()` is the user.
+- "E" in the MEMBER column (event.edit, event_media.manage) is **not** in the MEMBER role. It will be granted by EVENT-scoped assignments in Phase 3.
+- `kb.view` is in MEMBER, but a member's assignment is vertical-scoped, so organisation-wide KB reading needs revisiting when the KB lands (Phase 4).
+- Technical Head's `audit.view` is currently the whole log. The matrix says "technical events"; filtering is deferred (see implementation notes).
+- `role.manage` holders are exempt from the grant-subset rule (**ADR-010**).
+- Assigning `VERTICAL_HEAD` requires `vertical_head.assign`. Every other role requires `role.assign` (stored as `Role.assign_permission`).
