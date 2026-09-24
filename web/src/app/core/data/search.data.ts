@@ -14,7 +14,6 @@ export const searchIndex: SearchEntry[] = [
   { label: 'Gallery', href: '/gallery/', section: 'Initiatives', keywords: ['gallery', 'photos', 'pictures'] },
   { label: 'Events', href: '/events/', section: 'Site', keywords: ['events', 'calendar'] },
   { label: 'Team', href: '/team/', section: 'Site', keywords: ['team', 'faculty', 'members', 'meet our team'] },
-  { label: 'Inauguration', href: '/inauguration/', section: 'Site', keywords: ['inauguration', 'grand inauguration', 'launch', 'core committee'] },
   { label: 'NEC 2026', href: '/nec/', section: 'Site', keywords: ['nec', 'national entrepreneurship challenge'] },
   { label: 'Contact', href: '/contact/', section: 'Site', keywords: ['contact', 'reach us', 'get in touch'] },
 ];

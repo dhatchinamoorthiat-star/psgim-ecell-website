@@ -27,10 +27,6 @@ export const routes: Routes = [
   { path: 'team', loadComponent: () => import('./features/team/team.component').then((m) => m.TeamComponent) },
   { path: 'gallery', loadComponent: () => import('./features/gallery/gallery.component').then((m) => m.GalleryComponent) },
   { path: 'nec', loadComponent: () => import('./features/nec/nec.component').then((m) => m.NecComponent) },
-  {
-    path: 'inauguration',
-    loadComponent: () => import('./features/inauguration/inauguration.component').then((m) => m.InaugurationComponent),
-  },
   { path: 'contact', loadComponent: () => import('./features/contact/contact.component').then((m) => m.ContactComponent) },
   { path: 'soon', loadComponent: () => import('./features/soon/soon.component').then((m) => m.SoonComponent) },
   { path: 'control', loadComponent: () => import('./features/control/control.component').then((m) => m.ControlComponent) },

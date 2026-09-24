@@ -50,7 +50,6 @@ export const nav: NavItem[] = [
   },
   { label: 'Events', href: '/events/' },
   { label: 'Team', href: '/team/' },
-  { label: 'Inauguration', href: '/inauguration/' },
   { label: 'NEC 2026', href: '/nec/', highlight: true },
 ];
 

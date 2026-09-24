@@ -170,25 +170,6 @@ export interface JoinContent {
   lede: string;
 }
 
-export interface InaugurationVideo {
-  title: string;
-  speaker: string;
-  pending: boolean;
-}
-
-export interface InaugurationChecklistItem {
-  label: string;
-  done: boolean;
-}
-
-export interface InaugurationData {
-  hero: { kicker: string; title: string; lede: string };
-  videos: { heading: string; note: string; items: InaugurationVideo[] };
-  launch: { heading: string; note: string; items: InaugurationChecklistItem[] };
-  avVideo: { heading: string; note: string };
-  coreCommittee: { heading: string; note: string };
-}
-
 export interface ColophonContent {
   kicker: string;
   heading: string;
