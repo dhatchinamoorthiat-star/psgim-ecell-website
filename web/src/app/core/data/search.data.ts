@@ -13,6 +13,7 @@ export const searchIndex: SearchEntry[] = [
   { label: 'Website AV', href: '/website-av/', section: 'Initiatives', keywords: ['website av', 'video', 'av'] },
   { label: 'Gallery', href: '/gallery/', section: 'Initiatives', keywords: ['gallery', 'photos', 'pictures'] },
   { label: 'Events', href: '/events/', section: 'Site', keywords: ['events', 'calendar'] },
+  { label: 'Blogs', href: '/blogs/', section: 'Site', keywords: ['blogs', 'writing', 'articles', 'posts'] },
   { label: 'Team', href: '/team/', section: 'Site', keywords: ['team', 'faculty', 'members', 'meet our team'] },
   { label: 'NEC 2026', href: '/nec/', section: 'Site', keywords: ['nec', 'national entrepreneurship challenge'] },
   { label: 'Contact', href: '/contact/', section: 'Site', keywords: ['contact', 'reach us', 'get in touch'] },

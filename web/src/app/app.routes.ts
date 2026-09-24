@@ -24,6 +24,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/website-av/website-av.component').then((m) => m.WebsiteAvComponent),
   },
   { path: 'events', loadComponent: () => import('./features/events/events.component').then((m) => m.EventsComponent) },
+  { path: 'blogs', loadComponent: () => import('./features/blogs/blogs.component').then((m) => m.BlogsComponent) },
   { path: 'team', loadComponent: () => import('./features/team/team.component').then((m) => m.TeamComponent) },
   { path: 'gallery', loadComponent: () => import('./features/gallery/gallery.component').then((m) => m.GalleryComponent) },
   { path: 'nec', loadComponent: () => import('./features/nec/nec.component').then((m) => m.NecComponent) },

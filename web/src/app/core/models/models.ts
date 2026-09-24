@@ -339,6 +339,16 @@ export interface SearchEntry {
   keywords: string[];
 }
 
+export interface BlogPost {
+  id: string;
+  title: string;
+  author: string;
+  date: string;
+  url: string | null;
+  summary: string;
+  pending: boolean;
+}
+
 export interface RoadmapItem {
   id: string;
   title: string;

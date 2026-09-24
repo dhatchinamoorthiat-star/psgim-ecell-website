@@ -1,0 +1,32 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">Writing</span>
+  <h1>Blogs</h1>
+  <p class="lede">{{ blogsNote }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Archive</span><h2>Latest posts</h2></div>
+  <div class="events-list" style="margin-top: var(--s-6)">
+    @for (post of posts; track post.id) {
+      <div class="event-row">
+        <span class="date">{{ post.date | date: 'MMM d, y' }}</span>
+        <div>
+          <h3>
+            @if (post.url) {
+              <a [href]="post.url" target="_blank" rel="noopener">{{ post.title }}</a>
+            } @else {
+              {{ post.title }}
+            }
+          </h3>
+          <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ post.summary }}</p>
+          <div class="meta">
+            <span>{{ post.author }}</span>
+            @if (post.pending) { <ui-pending-flag label="Illustrative"></ui-pending-flag> }
+          </div>
+        </div>
+      </div>
+    } @empty {
+      <p>No blog posts yet.</p>
+    }
+  </div>
+</section>
