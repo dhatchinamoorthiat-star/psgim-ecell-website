@@ -28,11 +28,29 @@ export const site: SiteConfig = {
 };
 
 export const nav: NavItem[] = [
-  { label: 'About', href: '/about/' },
-  { label: 'Initiatives', href: '/initiatives/' },
+  {
+    label: 'About',
+    href: '/about/',
+    children: [
+      { label: 'Origin', href: '/origin/' },
+      { label: 'Vision & Mission', href: '/vision-mission/' },
+      { label: 'Reach', href: '/reach/' },
+      { label: 'Spotlight', href: '/spotlight/' },
+      { label: 'History', href: '/history/' },
+    ],
+  },
+  {
+    label: 'Initiatives',
+    href: '/initiatives/',
+    children: [
+      { label: 'Podcast', href: '/podcast/' },
+      { label: 'Website AV', href: '/website-av/' },
+      { label: 'Gallery', href: '/gallery/' },
+    ],
+  },
   { label: 'Events', href: '/events/' },
   { label: 'Team', href: '/team/' },
-  { label: 'Gallery', href: '/gallery/' },
+  { label: 'Inauguration', href: '/inauguration/' },
   { label: 'NEC 2026', href: '/nec/', highlight: true },
 ];
 

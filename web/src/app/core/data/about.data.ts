@@ -4,9 +4,19 @@ import {
   StoryContent,
   VisionContent,
   TimelineContent,
+  ReachContent,
+  SpotlightContent,
+  EcosystemContent,
+  IdentityContent,
+  DreamEcellContent,
+  AlumniContent,
+  ClosingContent,
+  JoinContent,
   ColophonContent,
   Mentor,
   Testimonial,
+  PodcastContent,
+  WebsiteAvContent,
 } from '../models/models';
 
 export const intro: IntroContent = {
@@ -62,6 +72,72 @@ export const timeline: TimelineContent = {
   ],
 };
 
+export const reach: ReachContent = {
+  kicker: 'Reach',
+  heading: 'Think beyond the campus',
+  lede: 'Great ideas rarely stay in one room. We’re building connections across every layer of the entrepreneurial ecosystem — PSG students and initiatives, colleges across Coimbatore, Indian business and MBA communities, and universities and associations beyond.',
+  layers: ['PSG', 'Coimbatore', 'India', 'The world'],
+};
+
+export const spotlight: SpotlightContent = {
+  kicker: 'Spotlight',
+  heading: 'Who we’re highlighting',
+  note: 'Founders, alumni and student ventures we want to feature here — nothing confirmed yet, so nothing is invented.',
+};
+
+export const ecosystem: EcosystemContent = {
+  kicker: 'The ecosystem',
+  heading: 'Seven verticals. One bigger picture.',
+  paragraphs: [
+    'Every vertical has a role. But no vertical exists in isolation. From creating experiences and building communities to managing collaborations and telling stories, our seven verticals work together to move the Cell forward.',
+    'Different roles. Different strengths. One ecosystem. And sometimes, the best place to learn isn’t the vertical you’re assigned to.',
+    'Your role is a starting point, not a boundary. Members are encouraged to explore beyond their assigned vertical — step into how an event comes together, collaborate on content, connect on partnerships, or learn something completely outside your role. Entrepreneurship is cross-functional by nature. So is learning.',
+  ],
+};
+
+export const identity: IdentityContent = {
+  kicker: 'Our identity',
+  heading: 'Not built by one. Built by everyone.',
+  paragraphs: [
+    'E-Cell PSGIM is being reimagined with a fresh identity, a new direction and an open invitation to contribute — because an ecosystem cannot be built from a single perspective.',
+    'Every member brings something different — an idea, a skill, a question, a connection or simply the willingness to try. That is what makes our E-Cell ours.',
+  ],
+};
+
+export const dreamEcell: DreamEcellContent = {
+  kicker: 'Dream E-Cell',
+  heading: 'What does your E-Cell look like?',
+  paragraphs: [
+    'We asked our members to imagine it — not the E-Cell someone else designed, their E-Cell. Dream E-Cell is a collective initiative where every member gets the opportunity to share what they believe the E-Cell could become.',
+    'Ideas are documented. Perspectives are discussed. Possibilities are explored. Practical ideas are put into motion. Because the future of E-Cell shouldn’t be decided by one voice — it should be built by many.',
+  ],
+};
+
+export const alumni: AlumniContent = {
+  kicker: 'Alumni community',
+  heading: 'The classroom ends. The connection doesn’t.',
+  paragraphs: [
+    'Our alumni have walked through the classrooms we sit in today. They have made decisions, faced uncertainty, built careers, changed directions and learned things that cannot always be found in a textbook.',
+    'The E-Cell Alumni Community aims to bring those experiences back into the conversation through interaction, insights, guidance and collaboration — past experiences, present conversations, future possibilities.',
+  ],
+};
+
+export const closing: ClosingContent = {
+  kicker: 'Building for tomorrow',
+  heading: 'An E-Cell that can sustain its own ideas',
+  paragraphs: [
+    'We don’t just want to create initiatives. We want to create an ecosystem capable of supporting them. Through conclaves, collaborations and other initiatives, E-Cell PSGIM aims to explore sustainable ways of generating and reinvesting resources into the continued development of the club. Create value. Build sustainably. Keep moving.',
+    'Ideas need consistency to become action. Every week brings a new question, every month a new milestone. Our seven verticals work towards clear goals, timelines and deliverables while regularly reviewing progress, challenges and opportunities — because an idea without execution remains an idea.',
+    'We may not know exactly what E-Cell PSGIM will look like a year from now, and that’s okay — because we are not trying to build something fixed. We are building something that can learn, adapt and grow: a space where students can experiment, where different perspectives can meet, where collaboration is encouraged, where failure becomes a lesson, and where an idea can start small and still matter. This is our E-Cell. And we’re only getting started.',
+  ],
+};
+
+export const join: JoinContent = {
+  kicker: 'Join the ecosystem',
+  heading: 'Have an idea? Don’t leave it in your notes app.',
+  lede: 'Bring it to the conversation. Whether you want to create, collaborate, learn, experiment or simply explore what’s possible — there’s a place for you here.',
+};
+
 export const colophon: ColophonContent = {
   kicker: 'Colophon',
   heading: 'About this site',
@@ -69,6 +145,18 @@ export const colophon: ColophonContent = {
     'Designed and built in-house by the PSGIM E-Cell technical team.',
     'Static pages — no backend, no tracking, edge-served for instant loads. All content lives in plain data files any team member can edit without touching the design.',
   ],
+};
+
+export const podcast: PodcastContent = {
+  kicker: 'Our initiatives',
+  heading: 'The E-Cell Podcast',
+  note: 'Conversations with founders, mentors and alumni — episodes to be recorded and published once the format and guest line-up are locked in. Nothing is invented here yet.',
+};
+
+export const websiteAv: WebsiteAvContent = {
+  kicker: 'Our initiatives',
+  heading: 'Website AV',
+  note: 'A short audio-visual piece introducing the Cell on this site — script and footage still in progress, so nothing is embedded here yet.',
 };
 
 export const mentors: Mentor[] = []; // deliberately empty — do not invent people

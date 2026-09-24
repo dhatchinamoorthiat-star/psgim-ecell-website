@@ -1,0 +1,12 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">{{ story.kicker }}</span>
+  <h1>Origin</h1>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div style="max-width: var(--wrap-narrow); display:flex; flex-direction:column; gap: var(--s-5)">
+    @for (p of story.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>

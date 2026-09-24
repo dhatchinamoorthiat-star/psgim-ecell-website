@@ -1,0 +1,8 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">{{ podcast.kicker }}</span>
+  <h1>{{ podcast.heading }}</h1>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <ui-awaiting-panel heading="Podcast — awaiting first episode" [message]="podcast.note"></ui-awaiting-panel>
+</section>

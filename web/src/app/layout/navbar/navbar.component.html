@@ -7,11 +7,37 @@
 
     <nav class="navbar-links" aria-label="Primary">
       @for (item of nav; track item.href) {
-        <a [routerLink]="item.href" routerLinkActive="active" [class.highlight]="item.highlight">{{ item.label }}</a>
+        @if (item.children?.length) {
+          <div class="navbar-nav-item" [class.is-open]="openDropdown() === item.label">
+            <button
+              type="button"
+              class="navbar-nav-trigger"
+              [class.highlight]="item.highlight"
+              (click)="toggleDropdown(item.label)"
+              [attr.aria-expanded]="openDropdown() === item.label"
+            >
+              {{ item.label }}
+              <span class="navbar-nav-caret" aria-hidden="true">▾</span>
+            </button>
+            <div class="navbar-dropdown" [attr.aria-hidden]="openDropdown() !== item.label">
+              <a [routerLink]="item.href" routerLinkActive="active" (click)="closeDropdown()" class="navbar-dropdown-item navbar-dropdown-overview">
+                {{ item.label }} overview
+              </a>
+              @for (child of item.children; track child.href) {
+                <a [routerLink]="child.href" routerLinkActive="active" (click)="closeDropdown()" class="navbar-dropdown-item">
+                  {{ child.label }}
+                </a>
+              }
+            </div>
+          </div>
+        } @else {
+          <a [routerLink]="item.href" routerLinkActive="active" [class.highlight]="item.highlight">{{ item.label }}</a>
+        }
       }
     </nav>
 
     <div class="navbar-actions">
+      <app-search-bar></app-search-bar>
       <button type="button" class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()">
         <span aria-hidden="true">{{ themeMode === 'dark' || (themeMode === 'system') ? '🌓' : '🌓' }}</span>
       </button>
@@ -37,9 +63,36 @@
       Close
     </button>
   </div>
+  <div class="wrap" style="margin-top: var(--s-6); --search-bar-max-width: none">
+    <app-search-bar></app-search-bar>
+  </div>
   <nav class="mobile-nav-links wrap" aria-label="Mobile">
     @for (item of nav; track item.href) {
-      <a [routerLink]="item.href" (click)="closeMobile()">{{ item.label }}</a>
+      @if (item.children?.length) {
+        <div class="mobile-nav-group">
+          <div class="mobile-nav-group-head">
+            <a [routerLink]="item.href" (click)="closeMobile()">{{ item.label }}</a>
+            <button
+              type="button"
+              class="mobile-nav-group-toggle"
+              (click)="toggleMobileGroup(item.label)"
+              [attr.aria-expanded]="openMobileGroup() === item.label"
+              [attr.aria-label]="'Toggle ' + item.label + ' pages'"
+            >
+              <span [class.is-open]="openMobileGroup() === item.label">▾</span>
+            </button>
+          </div>
+          @if (openMobileGroup() === item.label) {
+            <div class="mobile-nav-subgroup">
+              @for (child of item.children; track child.href) {
+                <a [routerLink]="child.href" (click)="closeMobile()">{{ child.label }}</a>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <a [routerLink]="item.href" (click)="closeMobile()">{{ item.label }}</a>
+      }
     }
     <a [routerLink]="primaryCta.href" class="btn btn-primary" (click)="closeMobile()" style="width:fit-content">{{
       primaryCta.label

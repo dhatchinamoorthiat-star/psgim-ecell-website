@@ -3,11 +3,12 @@ import { AfterViewInit, Component, HostListener, OnDestroy, PLATFORM_ID, inject,
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { nav, primaryCta, site } from '../../core/data/site.data';
 import { ThemeService } from '../../core/services/theme.service';
+import { SearchBarComponent } from '../search-bar/search-bar.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, SearchBarComponent],
   templateUrl: './navbar.component.html',
 })
 export class NavbarComponent implements AfterViewInit, OnDestroy {
@@ -21,7 +22,30 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
 
   readonly isStuck = signal(false);
   readonly mobileOpen = signal(false);
+  readonly openDropdown = signal<string | null>(null);
+  readonly openMobileGroup = signal<string | null>(null);
   private ticking = false;
+
+  toggleDropdown(label: string): void {
+    this.openDropdown.set(this.openDropdown() === label ? null : label);
+  }
+
+  closeDropdown(): void {
+    this.openDropdown.set(null);
+  }
+
+  toggleMobileGroup(label: string): void {
+    this.openMobileGroup.set(this.openMobileGroup() === label ? null : label);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.openDropdown()) return;
+    const target = event.target as HTMLElement;
+    if (!target.closest('.navbar-nav-item')) {
+      this.closeDropdown();
+    }
+  }
 
   get themeMode() {
     return this.theme.mode();
@@ -69,10 +93,12 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
 
   closeMobile(): void {
     this.mobileOpen.set(false);
+    this.openMobileGroup.set(null);
   }
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.mobileOpen()) this.closeMobile();
+    if (this.openDropdown()) this.closeDropdown();
   }
 }

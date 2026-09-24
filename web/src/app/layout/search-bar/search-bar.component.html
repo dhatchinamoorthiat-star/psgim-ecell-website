@@ -1,0 +1,41 @@
+<div class="search-bar" #root>
+  <svg class="search-bar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+    <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+  </svg>
+  <input
+    #input
+    type="search"
+    class="search-bar-input"
+    placeholder="Search pages…"
+    role="combobox"
+    [attr.aria-expanded]="isOpen()"
+    aria-controls="search-bar-results"
+    autocomplete="off"
+    [value]="query()"
+    (input)="onInput($any($event.target).value)"
+    (focus)="onFocus()"
+    (keydown)="onKeydown($event)"
+  />
+
+  @if (isOpen() && results().length > 0) {
+    <ul class="search-bar-results" id="search-bar-results" role="listbox">
+      @for (r of results(); track r.href; let i = $index) {
+        <li role="option" [attr.aria-selected]="i === activeIndex()">
+          <button
+            type="button"
+            class="search-bar-result"
+            [class.is-active]="i === activeIndex()"
+            (mouseenter)="activeIndex.set(i)"
+            (click)="select(r.href)"
+          >
+            <span class="search-bar-result-label">{{ r.label }}</span>
+            <span class="search-bar-result-section">{{ r.section }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  } @else if (isOpen() && query().trim().length > 0) {
+    <div class="search-bar-empty">No pages match “{{ query() }}”.</div>
+  }
+</div>

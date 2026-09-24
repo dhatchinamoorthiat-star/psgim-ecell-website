@@ -1,0 +1,13 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">{{ reach.kicker }}</span>
+  <h1>{{ reach.heading }}</h1>
+  <p class="lede">{{ reach.lede }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="grid grid-2">
+    @for (l of reach.layers; track l) {
+      <div class="card">{{ l }}</div>
+    }
+  </div>
+</section>

@@ -1,0 +1,14 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">{{ vision.kicker }}</span>
+  <h1>{{ vision.heading }}</h1>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <ui-pending-flag *ngIf="vision.pending" [label]="vision.note" style="display:inline-block; margin-bottom: var(--s-5)"></ui-pending-flag>
+  <p class="lede" style="max-width: var(--wrap-narrow)">{{ vision.statement }}</p>
+  <ul class="grid grid-2" style="margin-top: var(--s-6)">
+    @for (m of vision.mission; track m) {
+      <li class="card">{{ m }}</li>
+    }
+  </ul>
+</section>

@@ -32,6 +32,7 @@ export interface NavItem {
   label: string;
   href: string;
   highlight?: boolean;
+  children?: NavItem[];
 }
 
 export interface Cta {
@@ -76,6 +77,116 @@ export interface TimelineContent {
   note: string;
   pending: boolean;
   entries: TimelineEntry[];
+}
+
+export interface ReachContent {
+  kicker: string;
+  heading: string;
+  lede: string;
+  layers: string[];
+}
+
+export interface SpotlightContent {
+  kicker: string;
+  heading: string;
+  note: string;
+}
+
+export interface WhyContent {
+  kicker: string;
+  heading: string;
+  lede: string;
+  questions: string[];
+  body: string;
+}
+
+export interface ActionCard {
+  title: string;
+  body: string;
+}
+
+export interface WhatHappensContent {
+  kicker: string;
+  heading: string;
+  cards: ActionCard[];
+}
+
+export interface WayItem {
+  left: string;
+  right: string;
+  note: string;
+}
+
+export interface EcellWayContent {
+  kicker: string;
+  heading: string;
+  items: WayItem[];
+}
+
+export interface EcosystemContent {
+  kicker: string;
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface IdentityContent {
+  kicker: string;
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface DreamEcellContent {
+  kicker: string;
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface CreateItem {
+  label: string;
+  body: string;
+}
+
+export interface WhatWeCreateContent {
+  kicker: string;
+  heading: string;
+  items: CreateItem[];
+}
+
+export interface AlumniContent {
+  kicker: string;
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface ClosingContent {
+  kicker: string;
+  heading: string;
+  paragraphs: string[];
+}
+
+export interface JoinContent {
+  kicker: string;
+  heading: string;
+  lede: string;
+}
+
+export interface InaugurationVideo {
+  title: string;
+  speaker: string;
+  pending: boolean;
+}
+
+export interface InaugurationChecklistItem {
+  label: string;
+  done: boolean;
+}
+
+export interface InaugurationData {
+  hero: { kicker: string; title: string; lede: string };
+  videos: { heading: string; note: string; items: InaugurationVideo[] };
+  launch: { heading: string; note: string; items: InaugurationChecklistItem[] };
+  avVideo: { heading: string; note: string };
+  coreCommittee: { heading: string; note: string };
 }
 
 export interface ColophonContent {
@@ -226,6 +337,25 @@ export interface NecData {
   guidelines: string[];
   faq: NecFaq[];
   join: { heading: string; lead: string; body: string };
+}
+
+export interface PodcastContent {
+  kicker: string;
+  heading: string;
+  note: string;
+}
+
+export interface WebsiteAvContent {
+  kicker: string;
+  heading: string;
+  note: string;
+}
+
+export interface SearchEntry {
+  label: string;
+  href: string;
+  section: string;
+  keywords: string[];
 }
 
 export interface RoadmapItem {
