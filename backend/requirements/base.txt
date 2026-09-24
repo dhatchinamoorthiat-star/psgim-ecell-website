@@ -1,0 +1,9 @@
+# Runtime dependencies. Keep this list short — every entry must be justified
+# (docs/13_FRONTEND_ARCHITECTURE.md "Dependency policy" applies here too).
+Django>=6.1,<6.2
+djangorestframework>=3.18,<3.19
+drf-spectacular>=0.30,<0.31      # OpenAPI generated from the code (docs/12)
+psycopg[binary]>=3.3,<3.4        # PostgreSQL driver
+argon2-cffi>=25.1                # Argon2 password hashing
+dj-database-url>=3.1,<4          # DATABASE_URL parsing (Neon / Docker / CI)
+gunicorn>=26,<27                 # production WSGI server

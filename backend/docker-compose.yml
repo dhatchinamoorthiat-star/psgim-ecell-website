@@ -1,0 +1,21 @@
+# Local PostgreSQL for development. Production uses Neon (ADR-008).
+#   docker compose up -d db
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ecell
+      POSTGRES_USER: ecell
+      POSTGRES_PASSWORD: ecell
+    ports:
+      - "5432:5432"
+    volumes:
+      - ecell_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ecell -d ecell"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ecell_pgdata:
