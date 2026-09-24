@@ -1,7 +1,22 @@
 <section class="hero wrap" revealOnScroll>
   <span class="kicker">What we run</span>
-  <h1>Six ways to move an idea forward</h1>
+  <h1>Seven ways to move an idea forward</h1>
   <p class="lede">Every programme maps to a stage of the journey — spark, test, build, back.</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ whatWeCreate.kicker }}</span>
+    <h2>{{ whatWeCreate.heading }}</h2>
+  </div>
+  <div class="grid grid-3" style="margin-top: var(--s-6)">
+    @for (item of whatWeCreate.items; track item.label) {
+      <div class="card">
+        <p class="role" style="text-transform: uppercase; letter-spacing: var(--track-wide); font-size: var(--t-xs); color: var(--accent)">{{ item.label }}</p>
+        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ item.body }}</p>
+      </div>
+    }
+  </div>
 </section>
 
 <section class="section wrap" revealOnScroll>

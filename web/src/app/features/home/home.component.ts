@@ -3,6 +3,7 @@ import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, 
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { hero, intro } from '../../core/data/about.data';
+import { why, whatHappens, ecellWay } from '../../core/data/home.data';
 import { initiatives, stages } from '../../core/data/initiatives.data';
 import { events, splitEvents } from '../../core/data/events.data';
 import { stats, drive } from '../../core/data/stats.data';
@@ -30,6 +31,9 @@ import { PendingFlagComponent } from '../../shared/ui/pending-flag.component';
 export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   hero = hero;
   intro = intro;
+  why = why;
+  whatHappens = whatHappens;
+  ecellWay = ecellWay;
   initiatives = initiatives;
   stages = stages;
   stats = stats;

@@ -41,6 +41,56 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
+    <span class="kicker">{{ reach.kicker }}</span>
+    <h2>{{ reach.heading }}</h2>
+  </div>
+  <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ reach.lede }}</p>
+  <div class="grid grid-2" style="margin-top: var(--s-6)">
+    @for (l of reach.layers; track l) {
+      <div class="card">{{ l }}</div>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ spotlight.kicker }}</span>
+    <h2>{{ spotlight.heading }}</h2>
+  </div>
+  <div style="margin-top: var(--s-6)">
+    <ui-awaiting-panel heading="Spotlight — awaiting confirmation" [message]="spotlight.note"></ui-awaiting-panel>
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ identity.kicker }}</span><h2>{{ identity.heading }}</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    @for (p of identity.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ ecosystem.kicker }}</span><h2>{{ ecosystem.heading }}</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    @for (p of ecosystem.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ dreamEcell.kicker }}</span><h2>{{ dreamEcell.heading }}</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    @for (p of dreamEcell.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
     <span class="kicker">{{ timeline.kicker }}</span>
     <h2>{{ timeline.heading }}</h2>
   </div>
@@ -52,6 +102,34 @@
         <p style="color: var(--ink-2)">{{ e.what }}</p>
       </div>
     }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ alumni.kicker }}</span><h2>{{ alumni.heading }}</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    @for (p of alumni.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ closing.kicker }}</span><h2>{{ closing.heading }}</h2></div>
+  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    @for (p of closing.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
+  </div>
+</section>
+
+<section class="section wrap" style="text-align:center" revealOnScroll>
+  <span class="kicker">{{ join.kicker }}</span>
+  <h2 style="margin-top: var(--s-3)">{{ join.heading }}</h2>
+  <p class="lede" style="margin: var(--s-4) auto 0; max-width: var(--wrap-narrow)">{{ join.lede }}</p>
+  <div class="hero-actions" style="justify-content:center; margin-top: var(--s-6)">
+    <a routerLink="/contact/" class="btn btn-primary">Get in touch</a>
+    <a routerLink="/team/" class="btn btn-ghost">Meet the team</a>
   </div>
 </section>
 

@@ -17,6 +17,35 @@
   </div>
 </section>
 
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ why.kicker }}</span>
+    <h2>{{ why.heading }}</h2>
+  </div>
+  <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ why.lede }}</p>
+  <ul class="grid grid-3" style="margin-top: var(--s-6)">
+    @for (q of why.questions; track q) {
+      <li class="card">{{ q }}</li>
+    }
+  </ul>
+  <p style="color: var(--ink-2); margin-top: var(--s-6); max-width: var(--wrap-narrow)">{{ why.body }}</p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ whatHappens.kicker }}</span>
+    <h2>{{ whatHappens.heading }}</h2>
+  </div>
+  <div class="grid grid-3" style="margin-top: var(--s-6)">
+    @for (c of whatHappens.cards; track c.title) {
+      <div class="card">
+        <h3>{{ c.title }}</h3>
+        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ c.body }}</p>
+      </div>
+    }
+  </div>
+</section>
+
 <section class="section wrap" #journeySection revealOnScroll>
   <div class="section-heading">
     <span class="kicker">The journey</span>
@@ -39,7 +68,7 @@
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
     <span class="kicker">What we run</span>
-    <h2>Six ways in</h2>
+    <h2>Seven ways in</h2>
   </div>
   <div class="initiatives-grid" style="margin-top: var(--s-7)">
     @for (item of initiatives; track item.id) {
@@ -119,8 +148,25 @@
   </div>
 </section>
 
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">{{ ecellWay.kicker }}</span>
+    <h2>{{ ecellWay.heading }}</h2>
+  </div>
+  <div class="grid grid-2" style="margin-top: var(--s-6)">
+    @for (item of ecellWay.items; track item.left) {
+      <div class="card">
+        <p style="text-transform: uppercase; letter-spacing: var(--track-wide); font-size: var(--t-xs); color: var(--accent)">{{ item.left }} &gt; {{ item.right }}</p>
+        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ item.note }}</p>
+      </div>
+    }
+  </div>
+</section>
+
 <section class="section wrap" style="text-align:center" revealOnScroll>
-  <h2 style="font-size: var(--t-h1)">{{ site.tagline }}</h2>
+  <span class="kicker">Got an idea?</span>
+  <h2 style="font-size: var(--t-h1); margin-top: var(--s-3)">{{ site.tagline }}</h2>
+  <p class="lede" style="margin: var(--s-4) auto 0; max-width: var(--wrap-narrow)">Don’t wait until it’s perfect. Bring the rough version, the ridiculous version, the version you haven’t figured out yet. We’ll start there.</p>
   <div class="hero-actions" style="justify-content:center; margin-top: var(--s-6)">
     <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
     <a routerLink="/nec/" class="btn btn-ghost">See NEC 2026</a>

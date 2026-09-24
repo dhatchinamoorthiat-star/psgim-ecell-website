@@ -1,4 +1,4 @@
-import { Initiative, JourneyStage } from '../models/models';
+import { Initiative, JourneyStage, WhatWeCreateContent } from '../models/models';
 
 export const initiatives: Initiative[] = [
   {
@@ -68,7 +68,31 @@ export const initiatives: Initiative[] = [
     summary: 'One-on-one feedback sessions where a team leaves with a mentor and a concrete next step.',
     body: 'Book a 20-minute slot, bring whatever you have, and talk it through with a mentor and two senior Cell members. No pitch deck required. Every clinic ends with a written next step and, where it fits, an introduction — to a mentor, a potential user, or a past founder who has solved the same problem.',
   },
+  {
+    id: 'unpitched',
+    index: '07',
+    title: 'UNPITCHED',
+    tag: 'Podcast',
+    cadence: 'Ongoing',
+    venue: null,
+    stage: 'spark',
+    summary: 'Conversations beyond the pitch — the doubts, failures and questions behind the ideas.',
+    body: 'Entrepreneurship is more than success stories. UNPITCHED opens up conversations around the people, experiences, choices and lessons behind ideas — no rehearsed success story, just real conversations.',
+  },
 ];
+
+export const whatWeCreate: WhatWeCreateContent = {
+  kicker: 'What we create',
+  heading: 'From ideas to experiences',
+  items: [
+    { label: 'Conversations', body: 'Stories, perspectives and honest conversations through podcasts and student-focused content.' },
+    { label: 'Collaborations', body: 'Building connections across PSG, Coimbatore, India and beyond.' },
+    { label: 'Communities', body: 'Creating spaces where students, alumni and entrepreneurial communities can continue conversations beyond the classroom.' },
+    { label: 'Initiatives', body: 'Turning student ideas into meaningful experiences, experiments and opportunities.' },
+    { label: 'Challenges', body: 'Creating opportunities to question, solve, compete and think differently.' },
+    { label: 'Learning', body: 'Learning doesn’t always happen inside a classroom. Sometimes it happens while building something together.' },
+  ],
+};
 
 export const stages: JourneyStage[] = [
   { id: 'spark', index: '01', label: 'Spark', note: 'Hear how it actually happens, and say the idea out loud.' },
