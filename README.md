@@ -142,21 +142,22 @@ web/
 
 ### Design system in one paragraph
 
-Taken from the official **E-Cell | PSGIM** brand sheet — *Ideas today. Impact
-tomorrow.*
+*Ideas today. Impact tomorrow.* The two brand colours are sampled from the
+pixels of the logo itself (`web/public/logo@2x.png`) — the mark's navy spine
+and turquoise wings. Light-mode values below; dark mode overrides some of them.
 
 | | |
 | --- | --- |
-| Deep Navy | `#0D3B8E` — `--navy` |
-| Royal Blue | `#0077FF` — `--accent` (interaction) |
-| Ocean Blue | `#00B4FF` — `--ocean` (graphics only; 3.0:1, never text) |
-| Light Blue | `#4FC3F7` — `--sky` |
-| Pale Blue | `#E6F4FF` — `--accent-soft` |
+| Navy | `#002050` — `--navy` (structure) |
+| Turquoise | `#00B098` — `--accent` (interaction, fills) |
+| Deep teal | `#007070` — `--accent-ink` (accent-coloured **text**; clears 4.5:1 on paper) |
+| Near-black | `#00120E` — `--on-accent` (text on turquoise; white fails at 2.74:1) |
+| Light teal | `#00B8A0` / `#4DD9C4` — `--ocean` / `--sky` (graphics) |
+| Pale teal | `#E1F7F2` — `--accent-soft` |
 | Typeface | Montserrat — Light 300 / Medium 500 / SemiBold 600 / Bold 700–800 |
 
-An all-blue site slides very easily into generic-SaaS territory, so the blues
-are held to the role of accent: a near-black navy (`--ink`) and cool paper
-carry the page, and Royal Blue is spent on the things that should feel live —
+The brand colours are held to the role of accent: a near-black navy (`--ink`)
+and cool paper carry the page, and turquoise is spent on the things that should feel live —
 the kicker rule, the active nav indicator, the emphasised word in the hero, a
 reached stage on the journey spine. Hierarchy comes from weight and tracking
 within one family rather than from mixing typefaces, which is also why the
