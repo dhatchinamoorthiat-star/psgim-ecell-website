@@ -42,7 +42,7 @@ console.log(`[postbuild] writing SEO artifacts into ${outDir}`);
 // sitemap is derived from the build output rather than a hand-kept list
 // (which drifted: it had 9 of 18 routes). Routes that are noindex are
 // excluded here and disallowed in robots.txt below.
-const EXCLUDED = new Set(['/control/']);
+const EXCLUDED = new Set(['/control/', '/platform/']);
 const PRIORITY = { '/': ['weekly', '1.0'], '/events/': ['weekly', '0.9'], '/nec/': ['weekly', '0.9'], '/blogs/': ['weekly', '0.8'] };
 
 function collectRoutes(dir, prefix = '/') {
@@ -81,6 +81,7 @@ writeFileSync(path.join(outDir, 'sitemap.xml'), sitemap);
 const robots = `User-agent: *
 Allow: /
 Disallow: /control/
+Disallow: /platform/
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;

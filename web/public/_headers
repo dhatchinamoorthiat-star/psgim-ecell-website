@@ -19,3 +19,12 @@
 
 /og.png
   Cache-Control: public, max-age=86400
+
+# The member platform is never indexed (principle 20) and never cached.
+/platform
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store
+
+/platform/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store

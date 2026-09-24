@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { PageShellComponent } from './layout/page-shell/page-shell.component';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  imports: [PageShellComponent],
+  imports: [RouterOutlet],
   selector: 'app-root',
-  template: `<app-page-shell></app-page-shell>`,
+  template: `<router-outlet></router-outlet>`,
 })
 export class App {}

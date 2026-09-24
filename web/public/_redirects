@@ -1,0 +1,7 @@
+# Cloudflare Pages rewrites (status 200 = serve this file, keep the URL).
+#
+# /platform is rendered in the browser only (app.routes.server.ts), so it has
+# no prerendered HTML. Serve Angular's client-side shell for every platform
+# URL; without this, Pages would fall back to the prerendered *home page*.
+/platform    /index.csr.html  200
+/platform/*  /index.csr.html  200
