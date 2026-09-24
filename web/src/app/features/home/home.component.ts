@@ -47,8 +47,17 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
 
   @ViewChild('journeySection') journeySection?: ElementRef<HTMLElement>;
+  @ViewChild('heroVideo') heroVideo?: ElementRef<HTMLVideoElement>;
   readonly arcProgress = signal(0);
   readonly litCount = signal(0);
+  readonly muted = signal(true);
+
+  toggleSound(): void {
+    const video = this.heroVideo?.nativeElement;
+    if (!video) return;
+    video.muted = !video.muted;
+    this.muted.set(video.muted);
+  }
 
   ngOnInit(): void {
     this.seo.set({

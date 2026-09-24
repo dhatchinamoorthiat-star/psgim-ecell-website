@@ -1,12 +1,32 @@
-<section class="hero wrap" revealOnScroll>
-  <div class="hero-grid" aria-hidden="true"></div>
-  <span class="kicker">{{ hero.kicker }}</span>
-  <h1>{{ hero.headline }}</h1>
-  <p class="lede">{{ hero.lede }}</p>
-  <div class="hero-actions">
-    <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
-    <a routerLink="/initiatives/" class="btn btn-ghost">See what we run</a>
+<section class="hero-video">
+  <video
+    #heroVideo
+    class="hero-video-el"
+    poster="/videos/meet-the-team-poster.jpg"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+  >
+    <source src="/videos/meet-the-team.mp4" type="video/mp4" />
+  </video>
+  <div class="hero-video-scrim" aria-hidden="true"></div>
+
+  <div class="hero-video-content wrap">
+    <span class="kicker">{{ hero.kicker }}</span>
+    <h1>{{ hero.headline }}</h1>
+    <p class="lede">{{ hero.lede }}</p>
+    <div class="hero-actions">
+      <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
+      <a routerLink="/team/" class="btn btn-ghost">Meet the team</a>
+    </div>
   </div>
+
+  <button type="button" class="hero-sound-toggle" (click)="toggleSound()">
+    {{ muted() ? 'Sound off' : 'Sound on' }}
+  </button>
+  <span class="hero-scroll-cue">Scroll</span>
 </section>
 
 <section class="section section-band">

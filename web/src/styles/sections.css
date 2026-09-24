@@ -1,30 +1,65 @@
-/* Hero */
-.hero {
+/* Hero — full-bleed video, always dark regardless of theme (the one screen
+   that borrows the brand video's own cinematography instead of the page's
+   light/dark tokens). */
+.hero-video {
   position: relative;
   overflow: hidden;
-  padding-block: clamp(4rem, 3rem + 6vw, 8rem) var(--section-y);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  color: var(--on-ink);
 }
-.hero .kicker { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--accent-ink); margin-bottom: var(--s-4); }
-.hero h1 { font-size: var(--t-display); max-width: 20ch; }
-.hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 42ch; margin-top: var(--s-5); }
-.hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
-
-/* The measured grid behind the hero — a drafting-table reference, very low
-   contrast, masked so it fades out before it reaches the text. Dropped
-   during the Angular rewrite (markup + rule both went missing); restored
-   from the static site's original sections.css. */
-.hero-grid {
+.hero-video-el {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.hero-video-scrim {
   position: absolute;
   inset: 0;
   z-index: -1;
-  pointer-events: none;
-  background-image:
-    linear-gradient(to right, var(--rule) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
-  background-size: clamp(48px, 7vw, 88px) clamp(48px, 7vw, 88px);
-  opacity: 0.5;
-  -webkit-mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
-  mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+  background:
+    linear-gradient(180deg, rgba(2,6,14,.75) 0%, rgba(2,6,14,.35) 32%, rgba(2,6,14,.55) 68%, rgba(2,6,14,.92) 100%);
+}
+.hero-video-content {
+  padding-block: clamp(6rem, 4rem + 8vw, 10rem) clamp(3rem, 2rem + 4vw, 5rem);
+}
+.hero-video-content .kicker { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--sky); margin-bottom: var(--s-4); }
+.hero-video-content h1 { font-size: var(--t-display); max-width: 20ch; color: var(--on-ink); }
+.hero-video-content .lede { font-size: var(--t-lede); color: var(--on-ink-2); max-width: 42ch; margin-top: var(--s-5); }
+.hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
+
+.hero-sound-toggle {
+  position: absolute;
+  right: var(--gutter);
+  bottom: var(--s-6);
+  z-index: 1;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--on-ink-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--s-2);
+}
+.hero-sound-toggle:hover { color: var(--on-ink); }
+
+.hero-scroll-cue {
+  position: absolute;
+  left: var(--gutter);
+  bottom: var(--s-6);
+  z-index: 1;
+  font-size: var(--t-micro);
+  font-weight: 700;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--on-ink-3);
 }
 
 /* Stats band */
