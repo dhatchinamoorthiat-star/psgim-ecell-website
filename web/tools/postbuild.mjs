@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Post-build step: emits sitemap.xml, robots.txt and _headers (if missing)
 // into the prerendered static output directory. Runs after `ng build`.
-import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,17 +38,30 @@ function findBrowserDir() {
 const outDir = findBrowserDir();
 console.log(`[postbuild] writing SEO artifacts into ${outDir}`);
 
-const routes = [
-  { path: '/', changefreq: 'weekly', priority: '1.0' },
-  { path: '/about/', changefreq: 'monthly', priority: '0.8' },
-  { path: '/initiatives/', changefreq: 'monthly', priority: '0.8' },
-  { path: '/events/', changefreq: 'weekly', priority: '0.9' },
-  { path: '/team/', changefreq: 'monthly', priority: '0.7' },
-  { path: '/gallery/', changefreq: 'monthly', priority: '0.6' },
-  { path: '/nec/', changefreq: 'weekly', priority: '0.9' },
-  { path: '/contact/', changefreq: 'monthly', priority: '0.8' },
-  { path: '/soon/', changefreq: 'monthly', priority: '0.5' },
-];
+// Every prerendered route is a directory holding an index.html, so the
+// sitemap is derived from the build output rather than a hand-kept list
+// (which drifted: it had 9 of 18 routes). Routes that are noindex are
+// excluded here and disallowed in robots.txt below.
+const EXCLUDED = new Set(['/control/']);
+const PRIORITY = { '/': ['weekly', '1.0'], '/events/': ['weekly', '0.9'], '/nec/': ['weekly', '0.9'], '/blogs/': ['weekly', '0.8'] };
+
+function collectRoutes(dir, prefix = '/') {
+  const found = [];
+  if (existsSync(path.join(dir, 'index.html'))) found.push(prefix);
+  for (const e of readdirSync(dir)) {
+    const p = path.join(dir, e);
+    if (statSync(p).isDirectory()) found.push(...collectRoutes(p, `${prefix}${e}/`));
+  }
+  return found;
+}
+
+const routes = collectRoutes(outDir)
+  .filter((r) => !EXCLUDED.has(r))
+  .sort()
+  .map((r) => {
+    const [changefreq, priority] = PRIORITY[r] ?? ['monthly', '0.7'];
+    return { path: r, changefreq, priority };
+  });
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -73,28 +86,14 @@ Sitemap: ${SITE_URL}/sitemap.xml
 `;
 writeFileSync(path.join(outDir, 'robots.txt'), robots);
 
+// web/public/_headers is the single source of truth and is copied into the
+// output by the Angular build. If it is ever missing, copy it from source
+// rather than writing a second, divergent copy (the old fallback here set
+// X-Frame-Options: DENY while production served SAMEORIGIN).
 const headersPath = path.join(outDir, '_headers');
 if (!existsSync(headersPath)) {
-  const headers = `/*
-  X-Content-Type-Options: nosniff
-  Referrer-Policy: strict-origin-when-cross-origin
-  X-Frame-Options: DENY
-  Permissions-Policy: geolocation=(), camera=(), microphone=()
-
-/*.js
-  Cache-Control: public, max-age=3600, must-revalidate
-
-/*.css
-  Cache-Control: public, max-age=3600, must-revalidate
-
-/*.html
-  Cache-Control: public, max-age=0, must-revalidate
-
-/og.png
-  Cache-Control: public, max-age=86400
-`;
-  writeFileSync(headersPath, headers);
-  console.log('[postbuild] wrote _headers (not copied from public/)');
+  copyFileSync(path.join(root, 'public', '_headers'), headersPath);
+  console.log('[postbuild] _headers was missing from the build; copied web/public/_headers');
 } else {
   console.log('[postbuild] _headers already present from public/, leaving as-is');
 }
