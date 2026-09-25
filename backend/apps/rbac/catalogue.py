@@ -219,6 +219,8 @@ SYSTEM_ROLES: dict[str, dict] = {
         "name": "Faculty Advisor",
         "description": "Faculty approval where an ApprovalRule requires it. Whether anyone holds this is an organisational decision (N-4).",
         "is_privileged": False,
+        # Organisation-wide only (R7a); may still be limited to an academic year or end date.
+        "global_only": True,
         "permissions": [CONTENT_APPROVE_FACULTY, CONTENT_VIEW, EVENT_VIEW, ANALYTICS_VIEW],
         "own_only": [],
     },

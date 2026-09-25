@@ -14,6 +14,9 @@ lives here (docs/03_RBAC_MODEL.md, "Anti-escalation rules", and ADR-010):
   R7  Privileged roles (Role.is_privileged) are assigned only GLOBAL, with no
       academic year and no end date, so governance can never lapse by a year
       switch or the passage of time (review finding F1).
+  R7a Organisation-wide roles (Role.global_only) are assigned only GLOBAL.
+      Academic-year and end-date limits remain allowed (e.g. a Faculty
+      Advisor appointed for one academic year). Separate from R7 on purpose.
 
 Governance-changing operations (revoke, user deactivation, academic-year
 switch) take `lock_governance()` and re-check R3 inside their transaction,
@@ -112,6 +115,12 @@ def _check_privileged_shape(role: Role, scope_type: str, academic_year, ends_at)
         raise ValidationError(errors)
 
 
+def _check_global_only_scope(role: Role, scope_type: str) -> None:
+    """R7a: organisation-wide roles cannot be vertical/event/project scoped."""
+    if role.global_only and scope_type != ScopeType.GLOBAL:
+        raise ValidationError({"scope_type": [f"{role.name} can only be assigned organisation-wide (GLOBAL)."]})
+
+
 def _check_may_grant(actor, target_user, role: Role, target) -> None:
     if actor.pk == target_user.pk:
         raise EscalationDenied("You cannot change your own role assignments.")  # R4
@@ -147,6 +156,7 @@ def assign_role(request, *, user, role: Role, scope_type: str, scope_id=None, ac
         deny(request, "role.assign", f"Refused: {actor.email} tried to give {user.email} {role.key}.", target=user, after=detail)
         raise exc
     _check_privileged_shape(role, scope_type, academic_year, ends_at)  # R7
+    _check_global_only_scope(role, scope_type)  # R7a
     if not user.is_active:
         raise ValidationError({"user_id": ["This account is not active."]})
     if RoleAssignment.objects.filter(

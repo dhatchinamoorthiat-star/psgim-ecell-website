@@ -27,6 +27,7 @@ def seed_rbac() -> tuple[int, int]:
                     "description": spec["description"],
                     "is_system": True,
                     "is_privileged": spec["is_privileged"],
+                    "global_only": spec.get("global_only", False),
                     "assign_permission_id": spec.get("assign_permission", ROLE_ASSIGN),
                 },
             )

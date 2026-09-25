@@ -200,3 +200,140 @@ def test_concurrent_deactivation_never_removes_all_governors(monkeypatch):
     assert loser in (400, 409), results
     assert User.objects.filter(status="active", email__startswith="race-").count() == 1
     assert governance_holders_after() == 1
+
+
+# --- R7a: organisation-wide (global_only) roles — FACULTY_ADVISOR ---------------------------------------
+
+
+def _fa(actor, org, **extra):
+    return assign(actor, {"user_id": str(org["member_a"].pk), "role": "FACULTY_ADVISOR", "scope_type": "GLOBAL", **extra})
+
+
+def test_faculty_advisor_vertical_assignment_is_rejected(org):
+    r = assign(
+        org["super_admin"],
+        {
+            "user_id": str(org["member_a"].pk),
+            "role": "FACULTY_ADVISOR",
+            "scope_type": "VERTICAL",
+            "scope_id": str(org["vertical_a"].pk),
+        },
+    )
+    assert r.status_code == 400 and "scope_type" in r.json()["error"]["fields"]
+    assert not RoleAssignment.objects.filter(role__key="FACULTY_ADVISOR").exists()
+
+
+@pytest.mark.parametrize("scope_type", ["EVENT", "PROJECT"])
+def test_faculty_advisor_other_non_global_scopes_are_rejected(org, scope_type):
+    import uuid
+
+    r = assign(
+        org["super_admin"],
+        {"user_id": str(org["member_a"].pk), "role": "FACULTY_ADVISOR", "scope_type": scope_type, "scope_id": str(uuid.uuid4())},
+    )
+    assert r.status_code == 400
+    assert not RoleAssignment.objects.filter(role__key="FACULTY_ADVISOR").exists()
+
+
+def test_faculty_advisor_global_assignment_is_accepted(org):
+    r = _fa(org["super_admin"], org)
+    assert r.status_code == 201, r.content
+
+
+def test_faculty_advisor_global_with_academic_year_is_accepted(org):
+    r = _fa(org["super_admin"], org, academic_year_id=str(org["year"].pk))
+    assert r.status_code == 201, r.content
+    assert RoleAssignment.objects.get(pk=r.json()["id"]).academic_year_id == org["year"].pk
+
+
+def test_faculty_advisor_global_with_end_date_is_accepted(org):
+    r = _fa(org["super_admin"], org, ends_at=(timezone.now() + timedelta(days=180)).isoformat())
+    assert r.status_code == 201, r.content
+    assert RoleAssignment.objects.get(pk=r.json()["id"]).ends_at is not None
+
+
+def test_faculty_advisor_global_with_academic_year_and_end_date_is_accepted(org):
+    r = _fa(
+        org["super_admin"], org, academic_year_id=str(org["year"].pk), ends_at=(timezone.now() + timedelta(days=180)).isoformat()
+    )
+    assert r.status_code == 201, r.content
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"scope_type": "VERTICAL", "scope_id": "vertical_a"},
+        {"scope_type": "GLOBAL", "academic_year_id": "year"},
+        {"scope_type": "GLOBAL", "ends_at": "future"},
+    ],
+    ids=["vertical", "academic_year", "end_date"],
+)
+def test_platform_admin_is_unchanged_by_r7_and_r7a(org, extra):
+    body = {"user_id": str(org["member_a"].pk), "role": "PLATFORM_ADMIN", **extra}
+    if body.get("scope_id") == "vertical_a":
+        body["scope_id"] = str(org["vertical_a"].pk)
+    if body.get("academic_year_id") == "year":
+        body["academic_year_id"] = str(org["year"].pk)
+    if body.get("ends_at") == "future":
+        body["ends_at"] = (timezone.now() + timedelta(days=30)).isoformat()
+    r = assign(org["super_admin"], body)
+    assert r.status_code == 201, r.content
+
+
+def test_r7a_does_not_leak_to_unauthorised_actors(org):
+    """Callers who may not grant FACULTY_ADVISOR get 403 — never the 400 describing R7a."""
+    bad = {
+        "user_id": str(org["member_a"].pk),
+        "role": "FACULTY_ADVISOR",
+        "scope_type": "VERTICAL",
+        "scope_id": str(org["vertical_a"].pk),
+    }
+    for actor in ["admin_head", "tech_head", "head_a", "member_a"]:
+        assert assign(org[actor], bad).status_code == 403, actor
+    assert not RoleAssignment.objects.filter(role__key="FACULTY_ADVISOR").exists()
+
+
+def test_faculty_advisor_duplicate_is_still_a_conflict(org):
+    assert _fa(org["super_admin"], org).status_code == 201
+    assert _fa(org["super_admin"], org).status_code == 409
+
+
+def test_permission_catalogue_unchanged():
+    """R7a added a scope flag only. Role permissions, own-only flags, privileged flags and assign permissions
+    are byte-for-byte what they were before (hashes taken from the catalogue before the change)."""
+    import hashlib
+    import json
+
+    from apps.rbac.catalogue import PERMISSIONS, SYSTEM_ROLES
+
+    snap = {
+        k: {
+            "perms": sorted(v["permissions"]),
+            "own": sorted(v["own_only"]),
+            "priv": v["is_privileged"],
+            "assign": v.get("assign_permission", "role.assign"),
+        }
+        for k, v in SYSTEM_ROLES.items()
+    }
+    assert (len(PERMISSIONS), len(SYSTEM_ROLES)) == (46, 7)
+    assert (
+        hashlib.sha256(json.dumps(snap, sort_keys=True).encode()).hexdigest()
+        == "2b75042f762e8c60ecc3a6b0ef35a65a8bcd9d2ba032eba01e39a2a8be619d5c"
+    )
+    assert (
+        hashlib.sha256(json.dumps(sorted(PERMISSIONS.items())).encode()).hexdigest()
+        == "7ac51ad7c19f4f10c5c9ef032db821e5e0ee91e7d164ee6273a5347e54d41e67"
+    )
+    assert [k for k, v in SYSTEM_ROLES.items() if v.get("global_only")] == ["FACULTY_ADVISOR"]
+    assert [k for k, v in SYSTEM_ROLES.items() if v["is_privileged"]] == ["SUPER_ADMIN", "ADMIN_HEAD", "TECHNICAL_HEAD"]
+
+
+def test_seeded_roles_carry_the_flags(db):
+    from apps.rbac.models import Role
+
+    assert list(Role.objects.filter(global_only=True).values_list("key", flat=True)) == ["FACULTY_ADVISOR"]
+    assert sorted(Role.objects.filter(is_privileged=True).values_list("key", flat=True)) == [
+        "ADMIN_HEAD",
+        "SUPER_ADMIN",
+        "TECHNICAL_HEAD",
+    ]

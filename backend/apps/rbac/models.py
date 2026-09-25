@@ -48,6 +48,9 @@ class Role(TimeStampedModel):
     # Granting or revoking a privileged role additionally needs `role.manage`
     # at GLOBAL scope (only Super Admin holds it) — rule 2 in docs/03.
     is_privileged = models.BooleanField(default=False)
+    # Organisation-wide only (rule R7a): assignments must be GLOBAL scope. Unlike
+    # privileged roles (R7), academic-year and end-date limits remain allowed.
+    global_only = models.BooleanField(default=False)
     # The permission an actor needs (at the target scope) to hand this role out.
     assign_permission = models.ForeignKey(Permission, on_delete=models.PROTECT, related_name="+", default="role.assign")
     permissions = models.ManyToManyField(Permission, through="RolePermission", related_name="roles")
