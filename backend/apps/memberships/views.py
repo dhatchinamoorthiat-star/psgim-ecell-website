@@ -12,6 +12,7 @@ from apps.rbac import catalogue as P
 from apps.rbac import policy
 from apps.rbac.api import AUTHENTICATED, PermissionedAPIView
 from apps.rbac.models import ScopeType
+from apps.rbac.services import ensure_governance_remains, governance_holders_after, lock_governance
 from apps.verticals.models import Vertical
 
 from .models import AcademicYear, Membership
@@ -50,12 +51,21 @@ class AcademicYearMakeCurrentView(PermissionedAPIView):
         if year is None:
             raise NotFound()
         with transaction.atomic():
+            # Serialise with other governance changes (apps/rbac/services.py).
+            lock_governance()
             previous = AcademicYear.objects.select_for_update().filter(is_current=True).first()
             if previous == year:
                 raise Conflict("This is already the current academic year.")
+            governors_before = governance_holders_after()
             AcademicYear.objects.filter(is_current=True).update(is_current=False)
             year.is_current = True
             year.save(update_fields=["is_current", "updated_at"])
+            # Year-bound assignments stop counting once their year is no longer
+            # current. Refuse (and roll back) a switch that would leave nobody
+            # governing. An organisation with no governor beforehand is not made
+            # worse by the switch, so that case is allowed.
+            if governors_before > 0:
+                ensure_governance_remains()
             audit.record(request, "academic_year.set_current", target=year,
                          summary=f"{request.user.email} made {year.label} the current academic year.",
                          before={"current": previous.label if previous else None}, after={"current": year.label})  # fmt: skip

@@ -11,6 +11,13 @@ lives here (docs/03_RBAC_MODEL.md, "Anti-escalation rules", and ADR-010):
   R5  Assigning needs the role's `assign_permission` at the target scope, so
       a vertical-scoped head can never create a GLOBAL assignment.
   R6  Every attempt is audited — including refusals (result=DENIED).
+  R7  Privileged roles (Role.is_privileged) are assigned only GLOBAL, with no
+      academic year and no end date, so governance can never lapse by a year
+      switch or the passage of time (review finding F1).
+
+Governance-changing operations (revoke, user deactivation, academic-year
+switch) take `lock_governance()` and re-check R3 inside their transaction,
+so concurrent operations cannot together remove the last governor (F6).
 
 Refusals raise `EscalationDenied` (HTTP 403) or `Conflict` (HTTP 409). The
 caller records DENIED audit rows via `deny()` so they survive the rollback.
@@ -70,6 +77,41 @@ def governance_holders_after(excluding_assignment=None, excluding_user=None) -> 
     return qs.values("user_id").distinct().count()
 
 
+def lock_governance() -> None:
+    """
+    Serialise every operation that could reduce governance. Locks all live
+    GLOBAL assignments in primary-key order (a consistent order avoids
+    deadlocks). Must be called inside transaction.atomic(); held until commit.
+    """
+    list(
+        RoleAssignment.objects.select_for_update()
+        .filter(scope_type=ScopeType.GLOBAL, revoked_at__isnull=True)
+        .order_by("pk")
+        .values_list("pk", flat=True)
+    )
+
+
+def ensure_governance_remains(*, excluding_assignment=None, excluding_user=None) -> None:
+    """R3: raise 409 if the change would leave no active user holding role.manage globally."""
+    if governance_holders_after(excluding_assignment=excluding_assignment, excluding_user=excluding_user) == 0:
+        raise Conflict("This would leave the organisation without a Super Admin.")
+
+
+def _check_privileged_shape(role: Role, scope_type: str, academic_year, ends_at) -> None:
+    """R7: privileged roles are organisation-wide and open-ended."""
+    if not role.is_privileged:
+        return
+    errors = {}
+    if scope_type != ScopeType.GLOBAL:
+        errors["scope_type"] = [f"{role.name} can only be assigned organisation-wide (GLOBAL)."]
+    if academic_year is not None:
+        errors["academic_year_id"] = [f"{role.name} cannot be limited to an academic year; revoke it on handover instead."]
+    if ends_at is not None:
+        errors["ends_at"] = [f"{role.name} cannot have an end date; revoke it on handover instead."]
+    if errors:
+        raise ValidationError(errors)
+
+
 def _check_may_grant(actor, target_user, role: Role, target) -> None:
     if actor.pk == target_user.pk:
         raise EscalationDenied("You cannot change your own role assignments.")  # R4
@@ -104,6 +146,7 @@ def assign_role(request, *, user, role: Role, scope_type: str, scope_id=None, ac
     except EscalationDenied as exc:
         deny(request, "role.assign", f"Refused: {actor.email} tried to give {user.email} {role.key}.", target=user, after=detail)
         raise exc
+    _check_privileged_shape(role, scope_type, academic_year, ends_at)  # R7
     if not user.is_active:
         raise ValidationError({"user_id": ["This account is not active."]})
     if RoleAssignment.objects.filter(
@@ -148,18 +191,18 @@ def revoke_assignment(request, assignment: RoleAssignment, reason: str = "") -> 
         and assignment.role.rolepermission_set.filter(permission_id=P.ROLE_MANAGE, own_only=False).exists()
     )
 
-    if confers_governance and governance_holders_after(excluding_assignment=assignment) == 0:
-        raise Conflict("This would leave the organisation without a Super Admin.")  # R3
+    if confers_governance:
+        ensure_governance_remains(excluding_assignment=assignment)  # R3 (early, unlocked)
     try:
         _check_may_grant(actor, assignment.user, assignment.role, target)  # revoking needs the same authority
     except EscalationDenied as exc:
         refuse(exc)
 
     with transaction.atomic():
-        # Re-check R3 under a lock so two concurrent revocations cannot both pass it.
-        list(RoleAssignment.objects.select_for_update().filter(scope_type=ScopeType.GLOBAL, revoked_at__isnull=True))
-        if confers_governance and governance_holders_after(excluding_assignment=assignment) == 0:
-            raise Conflict("This would leave the organisation without a Super Admin.")
+        # Re-check R3 under the governance lock so concurrent changes cannot both pass it.
+        lock_governance()
+        if confers_governance:
+            ensure_governance_remains(excluding_assignment=assignment)
         assignment.revoked_at = timezone.now()
         assignment.revoked_by = actor
         assignment.save(update_fields=["revoked_at", "revoked_by", "updated_at"])

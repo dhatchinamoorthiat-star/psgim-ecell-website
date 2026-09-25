@@ -13,7 +13,7 @@ from apps.rbac import catalogue as P
 from apps.rbac import policy
 from apps.rbac.api import PermissionedAPIView
 from apps.rbac.models import RoleAssignment, ScopeType
-from apps.rbac.services import deny, governance_holders_after
+from apps.rbac.services import deny, ensure_governance_remains, lock_governance
 
 from .emails import send_password_reset
 from .models import User
@@ -120,12 +120,17 @@ class UserDeactivateView(_UserBase):
             deny(request, "user.deactivate", f"Refused: {user.email} tried to deactivate themselves.", target=user)
             raise PermissionDenied("You cannot deactivate your own account.")
         self.require_manage(user)
-        if user.status != User.Status.ACTIVE:
-            raise Conflict("This account is not active.")
-        if policy.has_perm(user, P.ROLE_MANAGE) and governance_holders_after(excluding_user=user) == 0:
-            raise Conflict("This would leave the organisation without a Super Admin.")
         before = _snapshot(user)
         with transaction.atomic():
+            # Same lock as role revocation: two Super Admins deactivating each
+            # other at once are serialised, and the second re-check sees the
+            # first's commit (review finding F6).
+            lock_governance()
+            user = User.objects.select_for_update().get(pk=user.pk)
+            if user.status != User.Status.ACTIVE:
+                raise Conflict("This account is not active.")
+            if policy.has_perm(user, P.ROLE_MANAGE):
+                ensure_governance_remains(excluding_user=user)
             user.status = User.Status.INACTIVE
             user.deactivated_at = timezone.now()
             user.deactivated_by = request.user
