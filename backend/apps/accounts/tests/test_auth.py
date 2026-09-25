@@ -3,6 +3,7 @@
 import re
 
 import pytest
+from django.contrib.sessions.backends.db import SessionStore
 from django.contrib.sessions.models import Session
 from django.core import mail
 from rest_framework.test import APIClient
@@ -55,13 +56,33 @@ def test_login_with_csrf_sets_session_and_returns_me():
 
 
 def test_login_rotates_session_key():
-    make_user("a@test.example")
-    client, token = csrf_client()
-    client.session["probe"] = 1
-    pre = client.cookies.get("ecell_session")
-    r = client.post(LOGIN, {"email": "a@test.example", "password": PASSWORD}, HTTP_X_CSRFTOKEN=token)
+    """
+    Session fixation: a session id known before sign-in (e.g. planted by an attacker) must not
+    become the authenticated session. Fails if django.contrib.auth.login() stops cycling the key.
+    """
+    user = make_user("a@test.example")
+    # 1. an anonymous session exists and its key is known
+    pre = SessionStore()
+    pre["planted"] = True
+    pre.create()
+    old_key = pre.session_key
+    client = APIClient()
+    client.cookies["ecell_session"] = old_key
+    # 2-3. sign in while presenting it
+    r = client.post(LOGIN, {"email": user.email, "password": PASSWORD})
     assert r.status_code == 200
-    assert pre is None or pre.value != r.cookies["ecell_session"].value
+    # 4-5. a different key is issued
+    new_key = r.cookies["ecell_session"].value
+    assert new_key and new_key != old_key
+    # 6. the old key is gone and does not authenticate
+    assert not SessionStore().exists(old_key)
+    attacker = APIClient()
+    attacker.cookies["ecell_session"] = old_key
+    assert attacker.get("/api/v1/auth/me").status_code == 401
+    # 7. the new session works
+    victim = APIClient()
+    victim.cookies["ecell_session"] = new_key
+    assert victim.get("/api/v1/auth/me").json()["user"]["email"] == user.email
 
 
 def test_authenticated_unsafe_request_without_csrf_is_rejected():
@@ -189,3 +210,36 @@ def test_production_hasher_is_argon2():
     from config.settings import base
 
     assert base.PASSWORD_HASHERS[0].endswith("Argon2PasswordHasher")
+
+
+def test_expired_reset_token_is_rejected(monkeypatch):
+    from datetime import datetime, timedelta
+
+    from django.conf import settings
+    from django.contrib.auth.tokens import default_token_generator
+
+    user = make_user("a@test.example")
+    client_for(None).post("/api/v1/auth/password/forgot", {"email": user.email})
+    uid, token = _reset_params()
+    later = datetime.now() + timedelta(seconds=settings.PASSWORD_RESET_TIMEOUT + 60)
+    monkeypatch.setattr(default_token_generator, "_now", lambda: later)
+    r = client_for(None).post(
+        "/api/v1/auth/password/reset", {"uid": uid, "token": token, "new_password": "a-brand-new-passphrase"}
+    )
+    assert r.status_code == 400 and r.json()["error"]["code"] == "invalid_token"
+    user.refresh_from_db()
+    assert user.check_password(PASSWORD)  # unchanged
+
+
+def test_old_password_stops_working_after_reset():
+    user = make_user("a@test.example")
+    client_for(None).post("/api/v1/auth/password/forgot", {"email": user.email})
+    uid, token = _reset_params()
+    assert (
+        client_for(None)
+        .post("/api/v1/auth/password/reset", {"uid": uid, "token": token, "new_password": "a-brand-new-passphrase"})
+        .status_code
+        == 200
+    )
+    assert client_for(None).post(LOGIN, {"email": user.email, "password": PASSWORD}).status_code == 400
+    assert client_for(None).post(LOGIN, {"email": user.email, "password": "a-brand-new-passphrase"}).status_code == 200

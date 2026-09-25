@@ -117,13 +117,31 @@ def test_admin_head_cannot_grant_permissions_they_lack(org, role):
 
 def test_admin_head_can_assign_vertical_head_and_member(org):
     client = client_for(org["admin_head"])
-    for role in ["VERTICAL_HEAD", "MEMBER"]:
-        r = client.post(
-            "/api/v1/role-assignments",
-            {"user_id": str(org["member_b"].pk), "role": role, "scope_type": "VERTICAL", "scope_id": str(org["vertical_b"].pk)},
-        )
-        assert r.status_code in (201, 409), r.content  # MEMBER @ B already exists -> 409
-    assert AuditLog.objects.filter(actor=org["admin_head"], action="role.assign", result="SUCCESS").exists()
+    head = client.post(
+        "/api/v1/role-assignments",
+        {
+            "user_id": str(org["member_b"].pk),
+            "role": "VERTICAL_HEAD",
+            "scope_type": "VERTICAL",
+            "scope_id": str(org["vertical_b"].pk),
+        },
+    )
+    assert head.status_code == 201, head.content
+    member = client.post(
+        "/api/v1/role-assignments",
+        {"user_id": str(org["outsider"].pk), "role": "MEMBER", "scope_type": "VERTICAL", "scope_id": str(org["vertical_b"].pk)},
+    )
+    assert member.status_code == 201, member.content
+    assert AuditLog.objects.filter(actor=org["admin_head"], action="role.assign", result="SUCCESS").count() == 2
+
+
+def test_duplicate_live_assignment_is_a_conflict(org):
+    # member_b already holds MEMBER @ vertical B (fixture).
+    r = client_for(org["admin_head"]).post(
+        "/api/v1/role-assignments",
+        {"user_id": str(org["member_b"].pk), "role": "MEMBER", "scope_type": "VERTICAL", "scope_id": str(org["vertical_b"].pk)},
+    )
+    assert r.status_code == 409
 
 
 def test_admin_head_cannot_revoke_super_admin(org):
@@ -224,3 +242,27 @@ def test_deactivated_user_loses_session(org):
     assert victim_client.get("/api/v1/auth/me").status_code == 200
     assert client_for(org["super_admin"]).post(f"/api/v1/users/{org['member_a'].pk}/deactivate").status_code == 200
     assert victim_client.get("/api/v1/auth/me").status_code == 401
+
+
+def test_vertical_head_cannot_end_membership_in_another_vertical(org):
+    from apps.memberships.models import Membership
+
+    m = Membership.objects.get(user=org["member_b"])
+    r = client_for(org["head_a"]).post(f"/api/v1/memberships/{m.pk}/end")
+    assert r.status_code == 404  # outside scope: not even acknowledged
+    m.refresh_from_db()
+    assert m.status == "active"
+
+
+def test_vertical_head_cannot_edit_users(org):
+    head = client_for(org["head_a"])
+    # outside their scope: invisible
+    other = head.patch(f"/api/v1/users/{org['member_b'].pk}", {"full_name": "Hacked"})
+    assert other.status_code == 403  # coarse gate: heads hold no user.manage at all
+    # inside their scope: still no user.manage
+    own = head.patch(f"/api/v1/users/{org['member_a'].pk}", {"full_name": "Hacked"})
+    assert own.status_code == 403
+    for u in (org["member_a"], org["member_b"]):
+        u.refresh_from_db()
+        assert u.full_name != "Hacked"
+    assert denied_rows(org["head_a"], "user.manage").count() == 2

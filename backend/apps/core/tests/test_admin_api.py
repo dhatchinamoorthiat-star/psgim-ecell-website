@@ -144,3 +144,26 @@ def test_errors_use_contract_shape(org):
     body = r.json()
     assert r.status_code == 400
     assert body["error"]["code"] == "validation_error" and "slug" in body["error"]["fields"]
+
+
+def test_failed_audit_write_rolls_back_the_change(org, monkeypatch):
+    """A change must never commit without its audit row (docs/09): if recording fails, the mutation is undone."""
+    from apps.verticals import views as vertical_views
+
+    def broken_record(*args, **kwargs):
+        raise RuntimeError("audit storage unavailable")
+
+    monkeypatch.setattr(vertical_views.audit, "record", broken_record)
+    c = client_for(org["super_admin"])
+    c.raise_request_exception = False
+    r = c.patch(f"/api/v1/verticals/{org['vertical_a'].pk}", {"name": "Changed"})
+    assert r.status_code == 500
+    org["vertical_a"].refresh_from_db()
+    assert org["vertical_a"].name == "Test Vertical A"
+    assert not AuditLog.objects.filter(action="vertical.update").exists()
+
+
+def test_refused_mutation_leaves_no_success_row(org):
+    r = client_for(org["super_admin"]).post(f"/api/v1/verticals/{org['vertical_a'].pk}/archive", {"confirm": "test-vertical-a"})
+    assert r.status_code == 409
+    assert not AuditLog.objects.filter(action="vertical.archive", result="SUCCESS").exists()

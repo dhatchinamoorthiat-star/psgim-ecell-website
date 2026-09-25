@@ -37,3 +37,43 @@ def test_schema_generates_and_is_not_public_outside_dev(org):
     r = client_for(org["member_a"]).get("/api/v1/schema")
     assert r.status_code == 200
     assert b"/api/v1/auth/login" in r.content
+
+
+def _protected_routes():
+    """Every (method, concrete URL) of a non-public /api/v1 view, generated from the URL conf."""
+    import uuid
+
+    routes = []
+    for route, callback in _walk(get_resolver().url_patterns):
+        cls = getattr(callback, "cls", None) or getattr(callback, "view_class", None)
+        if cls is None or getattr(cls, "public", False):
+            continue
+        url = "/" + route.replace("<uuid:pk>", str(uuid.uuid4()))
+        for method in cls.required_perms:
+            routes.append((method.lower(), url))
+    return routes
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(("method", "url"), _protected_routes())
+def test_every_protected_endpoint_requires_a_session(method, url):
+    from rest_framework.test import APIClient
+
+    response = getattr(APIClient(), method)(url, {}, format="json")
+    assert response.status_code == 401, f"{method.upper()} {url} -> {response.status_code}"
+
+
+def test_sweep_covers_the_known_endpoints():
+    urls = {u for _, u in _protected_routes()}
+    for fragment in [
+        "users",
+        "role-assignments",
+        "verticals",
+        "memberships",
+        "academic-years",
+        "audit",
+        "settings",
+        "auth/me",
+        "auth/logout",
+    ]:
+        assert any(fragment in u for u in urls), fragment
