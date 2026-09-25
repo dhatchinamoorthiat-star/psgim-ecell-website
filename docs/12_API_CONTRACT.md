@@ -70,7 +70,7 @@ Base `/api/v1`, **no trailing slashes**. Every endpoint below is live in
 | `POST /users/{id}/deactivate`, `/reactivate` | `user.manage`; privileged targets need `role.manage` | self → 403; last Super Admin → 409 |
 | `GET /permissions` | `permission.view` | |
 | `GET /roles` | `role.view` | read-only in Phase 1 |
-| `GET/POST /role-assignments` | `role.view` (scoped) / role's `assign_permission` at target scope | filters `active, user_id, scope_id, role`; privileged roles with non-GLOBAL scope, an `academic_year_id` or `ends_at` → **400** (R7) |
+| `GET/POST /role-assignments` | `role.view` (scoped) / role's `assign_permission` at target scope | filters `active, user_id, scope_id, role`; privileged roles with non-GLOBAL scope, an `academic_year_id` or `ends_at` → **400** (R7); `FACULTY_ADVISOR` with non-GLOBAL scope → **400** (R7a; year/end date allowed) |
 | `POST /role-assignments/{id}/revoke` | same as assigning | `{reason}`; last Super Admin → 409 |
 | `GET/POST /verticals` | `vertical.view` (scoped) / `vertical.manage` (global) | `?include_archived=true` |
 | `GET/PATCH /verticals/{id}` | `vertical.view` / `vertical.manage` | |

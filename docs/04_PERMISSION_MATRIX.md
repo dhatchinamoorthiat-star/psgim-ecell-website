@@ -45,8 +45,13 @@ faculty approval is needed, is set by **ApprovalRule** configuration
 approval by ADMIN_HEAD or SUPER_ADMIN, never the author.
 
 `FACULTY_ADVISOR` is a system role holding `content.approve_faculty`,
-`content.view`, `analytics.view` and `event.view` at GLOBAL scope. Whether
-anyone holds it is an organizational decision.
+`content.view`, `analytics.view` and `event.view`, assigned only at GLOBAL
+scope (R7a). Whether anyone holds it is an organizational decision (N-4).
+
+`PLATFORM_ADMIN` is **non-privileged**: a technical support/custodial role,
+not an organisational governance role (ratified 2026-09-25). Its permissions
+are exactly its column above; it may be vertical-scoped, year-bound or
+end-dated.
 
 Technical deliberately has **no** default content-edit permissions for other
 verticals (brief §06).
@@ -71,7 +76,12 @@ the matrix did not list:
 | membership.manage | G | G | — | — | V | — |
 | event.view / content.view | G | G | — | — | V | — |
 
-**FACULTY_ADVISOR** (seventh system role; not a column above; assigned GLOBAL; assigned to nobody until N-4):
+**FACULTY_ADVISOR** (seventh system role; not a column above). Classification, ratified 2026-09-25:
+- **non-privileged** (`is_privileged=False`; R7 does not apply);
+- **organisation-wide only** (`global_only=True`; rule R7a — a vertical/event/project-scoped assignment is refused with 400);
+- **may be assigned for an academic year and/or a defined period** (academic year and end date allowed);
+- holds **faculty approval authority, not organisational governance authority**;
+- assigned to nobody until **N-4** names the actual faculty advisor(s).
 
 | Permission | FACULTY_ADVISOR |
 |---|---|
@@ -93,4 +103,6 @@ developer).
 - Technical Head's `audit.view` is currently the whole log. The matrix says "technical events"; filtering is deferred (see implementation notes).
 - `role.manage` holders are exempt from the grant-subset rule (**ADR-010**).
 - Privileged roles (SUPER_ADMIN, ADMIN_HEAD, TECHNICAL_HEAD) are only ever assigned GLOBAL, without an academic year or end date (rule R7 in doc 03).
+- FACULTY_ADVISOR is only ever assigned GLOBAL, but academic-year and end-date limits are allowed (rule R7a). PLATFORM_ADMIN has neither constraint.
+- No permissions changed with these classifications.
 - Assigning `VERTICAL_HEAD` requires `vertical_head.assign`. Every other role requires `role.assign` (stored as `Role.assign_permission`).

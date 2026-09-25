@@ -1,6 +1,6 @@
 # ADR-010 — Super Admin Exemption from the "Grant Only What You Hold" Rule
 
-- **Status:** IMPLEMENTED (Phase 1, 2026-09-25). **NOT YET RATIFIED — requires a human governance decision (see "Ratification decision" below).**
+- **Status:** **RATIFIED — Option A, 2026-09-25** (see "Ratification decision" below). Implemented in Phase 1.
 - **Found during:** Phase 1 implementation of `apps/rbac/services.py`
 - **Kind:** resolves a contradiction between two accepted documents. It is not a redesign.
 
@@ -8,7 +8,7 @@
 
 Two accepted rules cannot both hold:
 
-1. `03_RBAC_MODEL.md`, anti-escalation rule 1: *"A user can only grant permissions they themselves hold **globally**."*
+1. `03_RBAC_MODEL.md`, anti-escalation rule 1, **as originally written**: *"A user can only grant permissions they themselves hold **globally**."* (Doc 03 now states the rule with this ADR's exception.)
 2. `04_PERMISSION_MATRIX.md` deliberately withholds permissions from `SUPER_ADMIN`:
    - `content_type.manage`. Block types belong to Technical (principle 1).
    - `content.approve_faculty`. Faculty authority is separate from organizational authority (ADR record §E).
@@ -69,12 +69,25 @@ Mitigations that are organisational rather than technical: at least two Super Ad
 different parts of the organisation (N-5); periodic review of privileged grants in the audit log
 by faculty coordinators; account issuance tied to institutional email.
 
-## Ratification decision (open — requires human input)
+## Ratification decision — RATIFIED: Option A
 
-The mechanism above stays as implemented. What needs deciding is how to treat the residual risk:
+- **Decision:** Option A — accept the residual account/person identity risk.
+- **Decision date:** 2026-09-25
+- **Decision status:** RATIFIED (by the project owner, recorded in the Phase 1 decision packet).
 
-- **(a)** Accept it, relying on audit visibility plus organisational controls (two or more Super Admins, periodic review).
-- **(b)** Additionally enforce a separation-of-duties rule, e.g. an account holding `SUPER_ADMIN` may not also hold `FACULTY_ADVISOR` (and/or `TECHNICAL_HEAD`). This is a new governance rule and has **not** been implemented.
+What this ratifies:
+- A Super Admin may appoint roles whose permissions they do not personally hold. This grants
+  **appointment authority**, not those permissions.
+- Existing protections remain unchanged: no self-escalation (R4), last-Super-Admin protection
+  (R3), privileged-role restrictions (R2, R7), and every grant and revoke is audited (R6).
+- The system controls **accounts, not human identity**. Potential multi-account or cross-role
+  control by one person is accepted as an **organisational governance risk**, not a technical
+  invariant.
 
-Neither has been chosen. ADR-010 remains unratified until the Super Admin / faculty coordinators
-record a decision here, with a date.
+Not adopted: Option B (a separation-of-duties rule). No such rule, no role separation field and no
+migration for it exist.
+
+Organisational requirements that follow from this decision (not technical controls):
+- At least two Super Admins, still to be named under **N-5** (unresolved).
+- **Periodic review of privileged assignments** in the audit log (`/api/v1/audit`, actions
+  `role.assign` / `role.revoke`) as part of governance and operational practice.

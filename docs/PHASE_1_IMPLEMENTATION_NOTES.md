@@ -97,11 +97,11 @@ Each app has one `0001_initial.py`. Commit migrations with the model change; CI 
 
 ## 3. Test results at completion
 
-(Updated after the review remediation — see §8. Original Phase 1 counts were 116 / 19 / 5.)
+(Updated after the review remediation and governance decisions — see §8–§9. Original Phase 1 counts were 116 / 19 / 5; after remediation 170 / 22 / 34.)
 
 | Suite | Result |
 |---|---|
-| Backend `pytest` | **170 passed** |
+| Backend `pytest` | **184 passed** |
 | Frontend `ng test` (Vitest) | **22 passed** |
 | `/api` proxy (`node --test`) | **34 passed** |
 | `ruff check`, `ruff format --check`, `manage.py check`, `makemigrations --check` | clean |
@@ -186,11 +186,8 @@ test, probe-only behaviours, and documentation drift. This pass fixed exactly th
   An organisation with no governor before the switch is not made worse by it, so that case is
   allowed.
 - Enforcement: APPLICATION (a CHECK constraint cannot reach `rbac_role.is_privileged`).
-- **Open question, not decided:** the existing model classes only three roles as privileged.
-  `PLATFORM_ADMIN` and `FACULTY_ADVISOR` are *not* privileged, so R7 does not constrain them (they
-  can be vertical-scoped, year-bound or time-limited). Neither confers governance, so lapsing
-  cannot empty the organisation's governance. Whether they should be `is_privileged` is a
-  governance decision; changing it would also change who may manage their holders' accounts.
+- The open question about `PLATFORM_ADMIN` / `FACULTY_ADVISOR` classification was decided on
+  2026-09-25 — see §9.
 
 ### F6 — deactivation race (fixed)
 - `lock_governance()` locks all live GLOBAL assignments in primary-key order. Revoke,
@@ -241,8 +238,39 @@ additions); deployment (proxy allowlist maintenance).
 | F5 | Forgot-password timing (email sent synchronously) | before production email |
 | F7 | Log refused GETs on governance endpoints | Phase 2 |
 | F8 | Database-level append-only for `audit_auditlog` (REVOKE UPDATE/DELETE); users must never be deleted | first deployment |
-| F9 | Session lifetime: decision record promises 7-day absolute / shorter admin sessions / rotation on privilege change; code has 12 h sliding only | decide, then implement or amend |
+| F9 | Session lifetime: decision record promises 7-day absolute / shorter admin sessions / rotation on privilege change; code has 12 h sliding only | **outstanding** architecture/documentation decision (not amended, not implemented) |
 | F10 | Undeclared HTTP methods return 403 instead of 405 | Phase 2 |
 | F11 | Platform skip link invisible on focus | Phase 2 |
 | F12 | Platform ignores the saved theme preference | Phase 2 |
 | F13 | Preview-deploy label: allowlist `^[a-z0-9-]+$` and refuse any case/space variant of `ecell` | before the preview workflow is first used |
+
+---
+
+## 9. Governance decisions (ratified 2026-09-25)
+
+1. **ADR-010: Option A.** Residual account/person identity risk accepted. The Super Admin
+   appointment exemption and R1–R7 are unchanged. No R8, no separation field, no migration for
+   separation of duties. The organisational requirements are at least two Super Admins (N-5,
+   unresolved) and periodic review of privileged assignments. Recorded in ADR-010.
+2. **PLATFORM_ADMIN: non-privileged.** A technical support/custodial role. `is_privileged=False`;
+   R7 and R7a do not apply; scope, academic-year and end-date behaviour unchanged; permissions
+   unchanged.
+3. **FACULTY_ADVISOR: non-privileged, organisation-wide.** `is_privileged=False` (R7 does not
+   apply). New `Role.global_only` flag (migration `rbac.0002_role_global_only`, additive,
+   default False), set for FACULTY_ADVISOR only, enforced by **R7a**: a non-GLOBAL assignment is
+   refused with 400. Academic-year and end-date limits remain allowed. Faculty approval authority,
+   not governance authority. Appointment still governed by N-4.
+
+Tests added (all in `apps/rbac/tests/test_governance_invariant.py`): Faculty Advisor
+vertical/event/project → 400; global, global + year, global + end date, global + both → 201;
+Platform Admin vertical, year-bound and end-dated → 201; unauthorised callers → 403 (never the
+R7a 400); duplicate → 409; catalogue pinned to its pre-change hashes (permissions unchanged);
+seeded flags. A mutation check (R7a disabled) makes the vertical test fail. For EVENT/PROJECT
+scopes the 400 currently comes from the earlier "scope not available yet" check. R7a would
+refuse them too once those scopes are enabled.
+
+Migration validated on the existing development database (reversed and re-applied; role
+permissions, permissions, assignments and users byte-identical; only FACULTY_ADVISOR flagged after
+`seed_rbac`) and on a fresh database migrated from zero.
+
+**Still outstanding:** F9 (separate decision), the F3–F13 items in §8 (unchanged), N-1–N-9.
