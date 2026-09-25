@@ -70,13 +70,13 @@ Base `/api/v1`, **no trailing slashes**. Every endpoint below is live in
 | `POST /users/{id}/deactivate`, `/reactivate` | `user.manage`; privileged targets need `role.manage` | self → 403; last Super Admin → 409 |
 | `GET /permissions` | `permission.view` | |
 | `GET /roles` | `role.view` | read-only in Phase 1 |
-| `GET/POST /role-assignments` | `role.view` (scoped) / role's `assign_permission` at target scope | filters `active, user_id, scope_id, role` |
+| `GET/POST /role-assignments` | `role.view` (scoped) / role's `assign_permission` at target scope | filters `active, user_id, scope_id, role`; privileged roles with non-GLOBAL scope, an `academic_year_id` or `ends_at` → **400** (R7) |
 | `POST /role-assignments/{id}/revoke` | same as assigning | `{reason}`; last Super Admin → 409 |
 | `GET/POST /verticals` | `vertical.view` (scoped) / `vertical.manage` (global) | `?include_archived=true` |
 | `GET/PATCH /verticals/{id}` | `vertical.view` / `vertical.manage` | |
 | `POST /verticals/{id}/archive` | `vertical.manage` | `{confirm: <slug>}`; live assignments → 409 |
 | `GET/POST /academic-years` | signed in / `academic_year.manage` | |
-| `POST /academic-years/{id}/make-current` | `academic_year.manage` | |
+| `POST /academic-years/{id}/make-current` | `academic_year.manage` | **409** if the switch would leave no active Super Admin (rolled back) |
 | `GET/POST /memberships` | `membership.view` / `membership.manage` on the vertical | defaults to current year |
 | `POST /memberships/{id}/end` | `membership.manage` | row kept |
 | `GET /audit` | `audit.view` (global) | cursor pagination; filters `action` (prefix), `actor_id`, `actor_email`, `result`, `target_type`, `target_id`, `since`, `until`, `q` |

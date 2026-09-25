@@ -20,7 +20,7 @@ deferred or could not be verified, it says so.
 | `audit` | Append-only `AuditLog` (ORM update/delete raise `AppendOnlyError`), `audit.record()` (redacts secrets, snapshots actor grants, IP, user agent, request id), `GET /audit` (cursor-paginated, filterable) |
 | `verticals` | `Vertical` as data (slug, name, description, order, active/archived, at most one `is_platform_custodian`), CRUD plus archive with typed confirmation |
 | `memberships` | `AcademicYear` (DB-enforced single current year), year-bound `Membership` (ends, never deleted), endpoints |
-| `rbac` | `Permission`, `Role`, `RolePermission(own_only)`, `RoleAssignment(scope_type, scope_id, academic_year, starts/ends, revoked)`, `catalogue.py`, `policy.py` (the engine), `services.py` (anti-escalation rules R1–R6), `api.py` (per-method permission declarations), `approvals.py` (self-approval guard for Phase 2), `seed_rbac` |
+| `rbac` | `Permission`, `Role`, `RolePermission(own_only)`, `RoleAssignment(scope_type, scope_id, academic_year, starts/ends, revoked)`, `catalogue.py`, `policy.py` (the engine), `services.py` (anti-escalation rules R1–R7, governance lock), `api.py` (per-method permission declarations), `approvals.py` (self-approval guard for Phase 2), `seed_rbac` |
 
 There is no Django admin site, on purpose: it would be a second, unaudited way to change roles.
 
@@ -42,7 +42,7 @@ There is no Django admin site, on purpose: it would be a second, unaudited way t
 
 - `backend/docker-compose.yml` (Postgres 17), `backend/Dockerfile` (gunicorn, prod settings), `backend/.env.example`.
 - `web/proxy.conf.json`: `ng serve` forwards `/api` to `localhost:8000`.
-- `functions/api/[[path]].js`: the Cloudflare Pages `/api/*` same-origin proxy. **Inert unless `API_ORIGIN` is set** (answers 503). Never forwards `/api/v1/internal/*`.
+- `functions/api/[[path]].js`: the Cloudflare Pages `/api/*` same-origin proxy. **Inert unless `API_ORIGIN` is set** (answers 503). Forwards only canonical, allowlisted `/api/v1/` resources; never `/api/v1/internal/*` in any encoding (see §8).
 - `.github/workflows/ci.yml` (validation only) and `deploy-preview.yml` (manual; refuses `ECell`; needs secrets that do not exist).
 
 ---
@@ -97,11 +97,13 @@ Each app has one `0001_initial.py`. Commit migrations with the model change; CI 
 
 ## 3. Test results at completion
 
+(Updated after the review remediation — see §8. Original Phase 1 counts were 116 / 19 / 5.)
+
 | Suite | Result |
 |---|---|
-| Backend `pytest` | **116 passed** |
-| Frontend `ng test` (Vitest) | **19 passed** |
-| `/api` proxy (`node --test`) | **5 passed** |
+| Backend `pytest` | **170 passed** |
+| Frontend `ng test` (Vitest) | **22 passed** |
+| `/api` proxy (`node --test`) | **34 passed** |
 | `ruff check`, `ruff format --check`, `manage.py check`, `makemigrations --check` | clean |
 | `ng build` | 18 routes prerendered, no warnings |
 
@@ -166,3 +168,81 @@ Production deployment of anything · Neon/Render accounts · Supabase data migra
 4. Decide whether to merge `platform/phase-1` before N-1 (see §5).
 5. For the first *shared* environment: N-1 (hosting spend and account), N-6 (GitHub org), then a staging deploy using the Dockerfile + Neon + preview proxy.
 6. N-3/N-4 before the approval workflow is switched on in Phase 2.
+
+---
+
+## 8. Review remediation (2026-09-25)
+
+An independent review of the branch found two blocking defects, an ineffective security
+test, probe-only behaviours, and documentation drift. This pass fixed exactly those.
+
+### F1 — governance could lapse (fixed)
+- **R7** (`rbac/services.py` `_check_privileged_shape`): roles with `is_privileged`
+  (SUPER_ADMIN, ADMIN_HEAD, TECHNICAL_HEAD) are assigned only GLOBAL, with no academic year and no
+  end date → otherwise **400**. The check runs after authorisation, so unauthorised actors still get
+  403 and learn nothing about the rule.
+- `POST /academic-years/{id}/make-current` takes the governance lock, flips the year, and
+  refuses with **409** (rolled back, no audit row) if that would leave no active Super Admin.
+  An organisation with no governor before the switch is not made worse by it, so that case is
+  allowed.
+- Enforcement: APPLICATION (a CHECK constraint cannot reach `rbac_role.is_privileged`).
+- **Open question, not decided:** the existing model classes only three roles as privileged.
+  `PLATFORM_ADMIN` and `FACULTY_ADVISOR` are *not* privileged, so R7 does not constrain them (they
+  can be vertical-scoped, year-bound or time-limited). Neither confers governance, so lapsing
+  cannot empty the organisation's governance. Whether they should be `is_privileged` is a
+  governance decision; changing it would also change who may manage their holders' accounts.
+
+### F6 — deactivation race (fixed)
+- `lock_governance()` locks all live GLOBAL assignments in primary-key order. Revoke,
+  deactivate and make-current all take it inside their transaction and re-check R3 after it,
+  so concurrent operations serialise and the later one sees the earlier commit.
+- `test_concurrent_deactivation_never_removes_all_governors` runs two real concurrent requests
+  (transactional DB, threads, a widened race window). Verified: it **fails** with the lock removed
+  and passes with it. The loser is refused with 409, or 400 "session interrupted" when the
+  winner's deactivation has already ended the loser's session.
+
+### F2 — proxy internal-path bypass (fixed)
+- The proxy decodes the path once (as Django does), **rejects** rather than rewrites anything
+  non-canonical (empty/dot segments, characters outside `[A-Za-z0-9._~-]`, so no encoded
+  slashes, backslashes, leftover `%` or double encoding), then allowlists known `/api/v1/`
+  resources (case-insensitive), never `internal`. It forwards the original path, so what was
+  checked is exactly what Django routes, and it asserts the upstream origin equals `API_ORIGIN`.
+  It also strips `Server` / `X-Powered-By` from responses.
+- 34 proxy tests, covering every bypass form from the review, traversal, query-string, SSRF
+  and legitimate paths. The previous proxy fails 22 of them.
+
+### Tests
+- **Session fixation rewritten:** a planted pre-login session key must change on login, the old key
+  must be deleted and not authenticate, and the new one must work. Verified: it **fails** when
+  session key rotation is disabled.
+- **Promoted from review probes:** expired reset token; old password rejected after reset;
+  unauthenticated sweep over every protected endpoint/method (generated from the URL conf, so
+  new endpoints are covered automatically); cross-scope membership-end (404); vertical-head
+  user PATCH in and out of scope (403); audit-write failure rolls the mutation back (500, no
+  change, no row); refused mutation leaves no SUCCESS row; Angular session-expiry interceptor
+  (401 → expire and redirect with returnUrl; auth endpoints and 403 ignored).
+- The admin-head assignment test now asserts **201** for each assignment. The duplicate case has
+  its own test asserting **409**.
+- Cross-scope user PATCH: no seeded role holds vertical-scoped `user.manage`, so the cross-scope
+  case is refused at the coarse gate (403). The test documents both in-scope and out-of-scope attempts.
+
+### Documentation reconciled
+`03_RBAC_MODEL.md` (seven system roles, `own_only`, `PermissionedAPIView`/`DeclaredPermission`,
+R1–R7 including ADR-010, seeding via `seed_rbac`, `revoked_at`, custom roles not implemented);
+`04_PERMISSION_MATRIX.md` (FACULTY_ADVISOR table, Vertical Head `kb.view` effectively
+vertical-scoped, R7 note); ADR-010 (residual governance risk, unratified); API contract (400/409
+additions); deployment (proxy allowlist maintenance).
+
+### Follow-ups deliberately NOT done in this pass (from the review)
+| ID | Item | When |
+|---|---|---|
+| F3 | Per-IP login throttle (current limit is per IP+email only) | before first deployment |
+| F4 | Trust `CF-Connecting-IP` only with a proxy shared secret (backend is directly reachable) | before first deployment |
+| F5 | Forgot-password timing (email sent synchronously) | before production email |
+| F7 | Log refused GETs on governance endpoints | Phase 2 |
+| F8 | Database-level append-only for `audit_auditlog` (REVOKE UPDATE/DELETE); users must never be deleted | first deployment |
+| F9 | Session lifetime: decision record promises 7-day absolute / shorter admin sessions / rotation on privilege change; code has 12 h sliding only | decide, then implement or amend |
+| F10 | Undeclared HTTP methods return 403 instead of 405 | Phase 2 |
+| F11 | Platform skip link invisible on focus | Phase 2 |
+| F12 | Platform ignores the saved theme preference | Phase 2 |
+| F13 | Preview-deploy label: allowlist `^[a-z0-9-]+$` and refuse any case/space variant of `ecell` | before the preview workflow is first used |

@@ -18,7 +18,7 @@ npm run deploy
 ## Phase 1 additions (prepared, not deployed)
 
 - `web/public/_redirects` rewrites `/platform` and `/platform/*` to `/index.csr.html` (the platform is client-rendered); `_headers` marks them `noindex` + `no-store`.
-- `functions/api/[[path]].js` (repo root, picked up by `wrangler pages deploy` run from the root) proxies `/api/*` to `API_ORIGIN`. **Unset = inert (503).** Set `API_ORIGIN` only for the Pages preview environment until N-1. Pair with backend `CSRF_TRUSTED_ORIGINS=<site origin>` and `CLIENT_IP_HEADER=CF-Connecting-IP`.
+- `functions/api/[[path]].js` (repo root, picked up by `wrangler pages deploy` run from the root) proxies `/api/*` to `API_ORIGIN`. **Unset = inert (503).** It forwards only canonical paths under an **allowlist of API resources** (`ALLOWED_RESOURCES`); every new top-level API resource (Phase 2+) must be added there, or it will answer 404 through the proxy. `/api/v1/internal/*` is never forwarded in any encoding. Set `API_ORIGIN` only for the Pages preview environment until N-1. Pair with backend `CSRF_TRUSTED_ORIGINS=<site origin>` and `CLIENT_IP_HEADER=CF-Connecting-IP`.
 - Backend release steps (when a host exists): `python manage.py migrate && python manage.py createcachetable && python manage.py seed_rbac`, then revoke UPDATE/DELETE on `audit_auditlog` from the app's DB role.
 - CI: `.github/workflows/ci.yml` validates only. `deploy-preview.yml` is manual, refuses `ECell`, needs `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`.
 - ⚠ Merging `platform/phase-1` and running the manual production deploy would publish a non-functional `/platform` (API 503). See `PHASE_1_IMPLEMENTATION_NOTES.md` §5.

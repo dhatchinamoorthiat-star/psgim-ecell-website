@@ -71,6 +71,16 @@ the matrix did not list:
 | membership.manage | G | G | — | — | V | — |
 | event.view / content.view | G | G | — | — | V | — |
 
+**FACULTY_ADVISOR** (seventh system role; not a column above; assigned GLOBAL; assigned to nobody until N-4):
+
+| Permission | FACULTY_ADVISOR |
+|---|---|
+| content.approve_faculty | G |
+| content.view | G |
+| event.view | G |
+| analytics.view | G |
+| everything else | — |
+
 `membership.manage` for Vertical Heads implements brief §54 (a head manages
 their vertical's members) and success criterion 13 (members added without a
 developer).
@@ -79,7 +89,8 @@ developer).
 - G/V/C/E columns do not live on the role; the *assignment's* scope decides where a permission applies. A Vertical Head is `VERTICAL_HEAD` assigned with `scope=VERTICAL:<id>`.
 - "O" means `RolePermission.own_only = true`: the permission only covers objects whose `rbac_owner_id()` is the user.
 - "E" in the MEMBER column (event.edit, event_media.manage) is **not** in the MEMBER role. It will be granted by EVENT-scoped assignments in Phase 3.
-- `kb.view` is in MEMBER, but a member's assignment is vertical-scoped, so organisation-wide KB reading needs revisiting when the KB lands (Phase 4).
+- `kb.view` is marked **G** for VERTICAL_HEAD and MEMBER in the table above, but both roles are assigned with VERTICAL scope, so in the implementation it is **effectively V** for them. Organisation-wide KB reading for heads and members needs a decision when the KB lands (Phase 4); nothing in Phase 1 enforces `kb.view`.
 - Technical Head's `audit.view` is currently the whole log. The matrix says "technical events"; filtering is deferred (see implementation notes).
 - `role.manage` holders are exempt from the grant-subset rule (**ADR-010**).
+- Privileged roles (SUPER_ADMIN, ADMIN_HEAD, TECHNICAL_HEAD) are only ever assigned GLOBAL, without an academic year or end date (rule R7 in doc 03).
 - Assigning `VERTICAL_HEAD` requires `vertical_head.assign`. Every other role requires `role.assign` (stored as `Role.assign_permission`).
