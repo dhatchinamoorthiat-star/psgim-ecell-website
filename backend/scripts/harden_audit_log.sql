@@ -1,0 +1,31 @@
+-- Deployment-time hardening for audit_auditlog (review finding F8).
+--
+-- The BEFORE UPDATE/DELETE/TRUNCATE triggers added by migration
+-- apps/audit/migrations/0002_append_only_trigger.py are what make this
+-- table reject ORDINARY DML AND TRUNCATE for every role, including the
+-- table owner, identically in local dev, CI and production. They do NOT
+-- protect against the table owner disabling or dropping the trigger with
+-- privileged DDL (`ALTER TABLE ... DISABLE TRIGGER`, `DROP TRIGGER`) --
+-- PostgreSQL ties that ability to ownership, not to a revocable privilege,
+-- and this project's single DATABASE_URL role owns the table. There is no
+-- migration or trigger that can close that gap without a second,
+-- non-owning database role, which does not exist in this project.
+--
+-- This script is a SEPARATE, optional layer of defense in depth for any
+-- database role that is NOT the table owner (for example, a future
+-- read-only reporting or BI role). REVOKE is a no-op against the owning
+-- role -- PostgreSQL table owners always keep their implicit privileges
+-- regardless of GRANT/REVOKE -- so do not rely on this script alone, and do
+-- not run it against the same role that runs `manage.py migrate` and
+-- expect it to change anything. It also cannot revoke the owner's ability
+-- to disable/drop the trigger described above, for the same reason.
+--
+-- Run once per environment, by hand, against the production/staging
+-- database, after identifying which role(s) should never be able to write
+-- to this table:
+--
+--   psql "$DATABASE_URL" -f backend/scripts/harden_audit_log.sql -v role=some_readonly_role
+--
+-- Replace :role below, or run interactively substituting the role name.
+
+REVOKE UPDATE, DELETE, TRUNCATE ON audit_auditlog FROM :role;

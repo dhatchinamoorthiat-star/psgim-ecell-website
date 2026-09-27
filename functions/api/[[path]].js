@@ -12,6 +12,17 @@
  * Backend settings that go with it: CSRF_TRUSTED_ORIGINS=<site origin>,
  * CLIENT_IP_HEADER=CF-Connecting-IP.
  *
+ * CLIENT-IP TRUST BOUNDARY (review finding F4). Render gives the backend a
+ * public URL, so a request can reach Django directly, skipping this proxy
+ * and Cloudflare's edge, and set CF-Connecting-IP to anything it likes. To
+ * stop that, this function attaches X-Ecell-Proxy-Secret (from the
+ * PROXY_SHARED_SECRET environment variable, set only here — never shipped
+ * to browser code) to every forwarded request. Django trusts CLIENT_IP_HEADER
+ * only when that secret is present and correct (apps/core/net.py); a direct
+ * request without it falls back to Django's own REMOTE_ADDR and cannot spoof
+ * its address. Any client-supplied copy of that header is stripped first so
+ * the forwarded value always comes from this function, never the caller.
+ *
  * PATH SAFETY (review finding F2). Django percent-decodes the path once and
  * routes case-sensitively, so the proxy must judge the path the way Django
  * will see it. Rather than rewriting ambiguous paths (which could itself
@@ -107,7 +118,12 @@ export async function onRequest({ request, env }) {
   for (const h of HOP_BY_HOP) headers.delete(h);
   headers.set('X-Forwarded-Host', url.host);
   headers.set('X-Forwarded-Proto', url.protocol.replace(':', ''));
-  // CF-Connecting-IP passes through untouched; Django trusts it only when CLIENT_IP_HEADER is set.
+  // CF-Connecting-IP passes through untouched; Django trusts it only when both
+  // CLIENT_IP_HEADER and the proxy secret below are set and match (F4).
+  headers.delete('x-ecell-proxy-secret'); // never let a caller set this themselves
+  if (env.PROXY_SHARED_SECRET) {
+    headers.set('X-Ecell-Proxy-Secret', env.PROXY_SHARED_SECRET);
+  }
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   let upstream;

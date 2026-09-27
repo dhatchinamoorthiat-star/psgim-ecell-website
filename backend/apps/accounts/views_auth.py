@@ -26,11 +26,11 @@ from apps.core.models import OrganizationSettings
 from apps.rbac import policy
 from apps.rbac.api import AUTHENTICATED, PermissionedAPIView
 
-from .emails import send_password_reset
+from .emails import send_password_reset_async
 from .models import User, normalize_email
 from .serializers import ForgotSerializer, LoginSerializer, MeSerializer, ResetSerializer, validate_new_password
 from .sessions import end_all_sessions
-from .throttles import LoginThrottle, PasswordForgotThrottle, PasswordResetThrottle
+from .throttles import LoginIpThrottle, LoginThrottle, PasswordForgotThrottle, PasswordResetThrottle
 
 FORGOT_RESPONSE = {"detail": "If an account exists for that address, a reset link is on its way."}
 
@@ -66,7 +66,7 @@ class CsrfView(_PublicView):
 
 @method_decorator(csrf_protect, name="dispatch")
 class LoginView(_PublicView):
-    throttle_classes = [LoginThrottle]
+    throttle_classes = [LoginThrottle, LoginIpThrottle]
 
     @extend_schema(request=LoginSerializer, responses={200: dict})
     def post(self, request):
@@ -114,7 +114,9 @@ class PasswordForgotView(_PublicView):
         s.is_valid(raise_exception=True)
         user = User.objects.filter(email=normalize_email(s.validated_data["email"])).first()
         if user is not None and user.is_active:
-            send_password_reset(user)
+            # Sent on a background thread (F5): the response must not wait on
+            # SMTP I/O, or its latency reveals whether the account exists.
+            send_password_reset_async(user)
             audit.record(request, "auth.password_reset_requested", summary=f"Password reset requested for {user.email}.",
                          target=user, actor=None)  # fmt: skip
         # Identical response either way: this endpoint must never reveal who has an account.

@@ -1,6 +1,7 @@
 """Authentication, sessions and CSRF (docs/12_API_CONTRACT.md "Auth"; ADR-005)."""
 
 import re
+import threading
 
 import pytest
 from django.contrib.sessions.backends.db import SessionStore
@@ -8,6 +9,7 @@ from django.contrib.sessions.models import Session
 from django.core import mail
 from rest_framework.test import APIClient
 
+from apps.accounts import emails as emails_module
 from apps.accounts.throttles import LoginThrottle, PasswordForgotThrottle
 from apps.audit.models import AuditLog
 from conftest import PASSWORD, client_for, make_user
@@ -141,7 +143,95 @@ def test_forgot_password_does_not_reveal_accounts():
     unknown = client.post("/api/v1/auth/password/forgot", {"email": "ghost@test.example"})
     assert known.status_code == unknown.status_code == 202
     assert known.json() == unknown.json()
+    emails_module.join_pending()
     assert len(mail.outbox) == 1 and mail.outbox[0].to == ["a@test.example"]
+
+
+def test_forgot_password_response_does_not_block_on_email_delivery(monkeypatch):
+    """
+    F5: the response must not wait for the email to actually send — that
+    synchronous wait was the account-enumeration timing signal. Proven by
+    making the send hang and observing the view still returns.
+    """
+    user = make_user("a@test.example")
+    entered = threading.Event()
+    release = threading.Event()
+
+    def blocking_send(u, *, invite=False):
+        entered.set()
+        assert release.wait(timeout=5), "test failed to release the blocked send"
+
+    monkeypatch.setattr(emails_module, "send_password_reset", blocking_send)
+    r = client_for(None).post("/api/v1/auth/password/forgot", {"email": user.email})
+    assert r.status_code == 202  # returned...
+    assert entered.wait(timeout=2)  # ...while the send is still in flight in the background
+    release.set()
+    emails_module.join_pending()
+
+
+def test_forgot_password_for_unknown_account_starts_no_background_work():
+    client_for(None).post("/api/v1/auth/password/forgot", {"email": "ghost@test.example"})
+    with emails_module._lock:
+        assert emails_module._pending == []
+
+
+def test_forgot_password_worker_pool_is_bounded_and_created_once():
+    """
+    F5: the executor must be a module-level singleton (created once at
+    import), not one per request, and its worker count must be capped —
+    otherwise sustained requests could still exhaust process resources.
+    """
+    executor = emails_module._executor
+    assert executor._max_workers == emails_module.MAX_WORKERS
+    client = client_for(None)
+    for i in range(3):
+        client.post("/api/v1/auth/password/forgot", {"email": f"pool{i}@test.example"})
+    assert emails_module._executor is executor  # unchanged by repeated dispatch
+    emails_module.join_pending()
+
+
+def test_smtp_timeout_is_configured():
+    """F5: a stuck SMTP connection must not block a worker forever."""
+    from config.settings import base
+
+    assert base._smtp_options["timeout"] > 0
+
+
+def test_smtp_failure_is_logged_not_silently_dropped(monkeypatch, caplog):
+    """F5: a send failure must surface through the application's logging, not vanish."""
+    import logging
+
+    user = make_user("a@test.example")
+
+    def failing_send(u, *, invite=False):
+        raise ConnectionError("smtp server unreachable")
+
+    monkeypatch.setattr(emails_module, "send_password_reset", failing_send)
+    with caplog.at_level(logging.ERROR, logger="apps.accounts.emails"):
+        r = client_for(None).post("/api/v1/auth/password/forgot", {"email": user.email})
+        assert r.status_code == 202  # response is unaffected by the send failing
+        emails_module.join_pending()
+    assert any("Failed to send password-reset email" in rec.message for rec in caplog.records)
+
+
+def test_forgot_password_backlog_is_bounded(monkeypatch):
+    """F5: once MAX_QUEUED sends are pending, further requests drop the send rather than queue forever."""
+    release = threading.Event()
+
+    def blocking_send(u, *, invite=False):
+        assert release.wait(timeout=5)
+
+    monkeypatch.setattr(emails_module, "send_password_reset", blocking_send)
+    monkeypatch.setattr(emails_module, "MAX_QUEUED", 2)
+    users = [make_user(f"backlog{i}@test.example") for i in range(3)]
+    client = client_for(None)
+    for user in users:
+        r = client.post("/api/v1/auth/password/forgot", {"email": user.email})
+        assert r.status_code == 202  # identical response whether queued or dropped
+    with emails_module._lock:
+        assert len(emails_module._pending) == 2  # the 3rd was dropped, not queued
+    release.set()
+    emails_module.join_pending()
 
 
 def test_forgot_password_is_rate_limited(monkeypatch):
@@ -152,6 +242,7 @@ def test_forgot_password_is_rate_limited(monkeypatch):
 
 
 def _reset_params():
+    emails_module.join_pending()  # the send is dispatched on a background thread (F5)
     link = re.search(r"https?://\S+", mail.outbox[-1].body).group(0)
     uid = re.search(r"uid=([^&]+)", link).group(1)
     token = re.search(r"token=([^&\s]+)", link).group(1)

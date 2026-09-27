@@ -156,6 +156,11 @@ _smtp_options = {
     "username": env("EMAIL_HOST_USER", ""),
     "password": env("EMAIL_HOST_PASSWORD", ""),
     "use_tls": env_bool("EMAIL_USE_TLS", True),
+    # Without this, a hung SMTP connection blocks its worker thread forever
+    # (review finding F5) — the bounded pool in apps/accounts/emails.py only
+    # protects against *unbounded thread growth*, not a stuck one. 10s is
+    # generous for a reset email (a few KB of text) over a working connection.
+    "timeout": int(env("EMAIL_TIMEOUT", "10")),
 }
 MAILERS = {
     "default": {
@@ -173,6 +178,14 @@ FRONTEND_URL = env("FRONTEND_URL", "http://localhost:4200")
 # otherwise anyone could spoof their IP for rate limiting and the audit log.
 CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", "")
 
+# Shared secret the Cloudflare Pages Function attaches to every request it
+# forwards (review finding F4). The backend is directly reachable (Render
+# gives it a public URL), so CLIENT_IP_HEADER alone is spoofable by anyone
+# who skips the proxy. CLIENT_IP_HEADER is trusted ONLY when this secret is
+# also set and the request presents a matching value — see apps/core/net.py.
+# Empty (the default) fails closed: the header is never trusted.
+PROXY_SHARED_SECRET = env("PROXY_SHARED_SECRET", "")
+
 # --- DRF ------------------------------------------------------------------
 
 REST_FRAMEWORK = {
@@ -186,6 +199,7 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_RATES": {
         "login": "5/min",
+        "login_ip": "20/min",
         "password_forgot": "5/hour",
         "password_reset": "10/hour",
     },

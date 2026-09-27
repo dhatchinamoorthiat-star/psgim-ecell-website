@@ -12,5 +12,10 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 # else gets generous limits so unrelated tests never trip them.
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,
-    "DEFAULT_THROTTLE_RATES": {"login": "1000/min", "password_forgot": "1000/min", "password_reset": "1000/min"},
+    "DEFAULT_THROTTLE_RATES": {
+        "login": "1000/min",
+        "login_ip": "1000/min",
+        "password_forgot": "1000/min",
+        "password_reset": "1000/min",
+    },
 }

@@ -20,6 +20,25 @@ class LoginThrottle(SimpleRateThrottle):
         return self.cache_format % {"scope": self.scope, "ident": f"{client_ip(request)}|{email}"}
 
 
+class LoginIpThrottle(_IpThrottle):
+    """
+    20/min per IP regardless of the email tried (review finding F3).
+
+    LoginThrottle alone buckets by (IP, email), so one attacker can spray
+    unlimited different email addresses from a single IP without ever
+    tripping it. This bucket closes that gap.
+
+    Rate: 20/min. LoginThrottle already caps genuine guessing at 5/min per
+    account, so 20/min per IP still allows four full accounts' worth of
+    attempts a minute from one address — generous enough that a shared
+    network (a hostel or lab NAT with several students signing in around
+    the same time) is not blocked by normal use, while capping how many
+    distinct accounts one IP can probe per minute.
+    """
+
+    scope = "login_ip"
+
+
 class PasswordForgotThrottle(_IpThrottle):
     scope = "password_forgot"
 

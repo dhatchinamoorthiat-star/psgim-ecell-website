@@ -18,8 +18,8 @@ npm run deploy
 ## Phase 1 additions (prepared, not deployed)
 
 - `web/public/_redirects` rewrites `/platform` and `/platform/*` to `/index.csr.html` (the platform is client-rendered); `_headers` marks them `noindex` + `no-store`.
-- `functions/api/[[path]].js` (repo root, picked up by `wrangler pages deploy` run from the root) proxies `/api/*` to `API_ORIGIN`. **Unset = inert (503).** It forwards only canonical paths under an **allowlist of API resources** (`ALLOWED_RESOURCES`); every new top-level API resource (Phase 2+) must be added there, or it will answer 404 through the proxy. `/api/v1/internal/*` is never forwarded in any encoding. Set `API_ORIGIN` only for the Pages preview environment until N-1. Pair with backend `CSRF_TRUSTED_ORIGINS=<site origin>` and `CLIENT_IP_HEADER=CF-Connecting-IP`.
-- Backend release steps (when a host exists): `python manage.py migrate && python manage.py createcachetable && python manage.py seed_rbac`, then revoke UPDATE/DELETE on `audit_auditlog` from the app's DB role.
+- `functions/api/[[path]].js` (repo root, picked up by `wrangler pages deploy` run from the root) proxies `/api/*` to `API_ORIGIN`. **Unset = inert (503).** It forwards only canonical paths under an **allowlist of API resources** (`ALLOWED_RESOURCES`); every new top-level API resource (Phase 2+) must be added there, or it will answer 404 through the proxy. `/api/v1/internal/*` is never forwarded in any encoding. Set `API_ORIGIN` only for the Pages preview environment until N-1. Pair with backend `CSRF_TRUSTED_ORIGINS=<site origin>` and `CLIENT_IP_HEADER=CF-Connecting-IP`. Also set `PROXY_SHARED_SECRET` to the same random value on **both** the Pages Function environment and the Django backend — the function attaches it to every forwarded request, and Django trusts `CLIENT_IP_HEADER` only when it matches (review finding F4); until both are set, the backend safely falls back to its own `REMOTE_ADDR` instead of trusting a spoofable header.
+- Backend release steps (when a host exists): `python manage.py migrate && python manage.py createcachetable && python manage.py seed_rbac`. `audit_auditlog` already rejects ordinary UPDATE/DELETE/TRUNCATE at the database level via triggers shipped in the `audit.0002_append_only_trigger` migration (no manual step needed) — but not against the owning DB role's own DDL (`ALTER TABLE ... DISABLE TRIGGER`), since this project has one DATABASE_URL role that owns every table it migrates; see `docs/09_AUDIT_LOG_SPECIFICATION.md` for the precise guarantee. Optionally also run `backend/scripts/harden_audit_log.sql` against any DB role that is *not* the table owner, as defense in depth (see `PHASE_1_IMPLEMENTATION_NOTES.md` §10, F8).
 - CI: `.github/workflows/ci.yml` validates only. `deploy-preview.yml` is manual, refuses `ECell`, needs `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID`.
 - ⚠ Merging `platform/phase-1` and running the manual production deploy would publish a non-functional `/platform` (API 503). See `PHASE_1_IMPLEMENTATION_NOTES.md` §5.
 
@@ -39,7 +39,7 @@ Backend: Docker image built in CI, deployed to Render (ADR-008; fallback Cloud R
 
 ## Environment variables (backend — see `backend/.env.example` when created)
 
-`DJANGO_SECRET_KEY`, `DATABASE_URL`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `CLOUDINARY_URL`, `EMAIL_*`, `GITHUB_DISPATCH_TOKEN`, `TICK_SECRET`, `ORG_TIMEZONE=Asia/Kolkata`, `SENTRY_DSN` (optional, free tier).
+`DJANGO_SECRET_KEY`, `DATABASE_URL`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, `CLIENT_IP_HEADER`, `PROXY_SHARED_SECRET` (must match the value set on the Pages Function; see above), `CLOUDINARY_URL`, `EMAIL_*`, `GITHUB_DISPATCH_TOKEN`, `TICK_SECRET`, `ORG_TIMEZONE=Asia/Kolkata`, `SENTRY_DSN` (optional, free tier).
 
 ## Rollback
 

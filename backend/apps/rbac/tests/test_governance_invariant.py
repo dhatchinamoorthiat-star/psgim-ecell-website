@@ -10,6 +10,7 @@ from datetime import date, timedelta
 
 import pytest
 from django.db import connection
+from django.db.backends.base.introspection import BaseDatabaseIntrospection
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -21,6 +22,59 @@ from apps.rbac.services import governance_holders_after
 from conftest import client_for, grant
 
 pytestmark = pytest.mark.django_db
+
+# --- Test-database flush vs. the append-only audit log (review finding F8, follow-up) ------------
+#
+# test_concurrent_deactivation_never_removes_all_governors below needs
+# `@pytest.mark.django_db(transaction=True)`: its worker threads each open
+# their own real database connection, and only genuinely committed setup
+# data (not the usual rollback-wrapped fixture) is visible across connections.
+#
+# Django's `TransactionTestCase` (what `transaction=True` uses) cleans up
+# after itself with ONE combined `TRUNCATE <every table> CASCADE;`. Two
+# security-review findings collide here:
+#   - `apps/audit/migrations/0002_append_only_trigger.py` makes
+#     `audit_auditlog` reject *any* TRUNCATE, including one reached via
+#     CASCADE from another table -- verified directly: even restricting
+#     Django's `available_apps` to exclude only `apps.audit` still fails,
+#     because `audit_auditlog.actor` references `accounts_user`, so
+#     CASCADE reaches it through that foreign key regardless.
+#   - `accounts_user` cannot be excluded from the flush either:
+#     `apps.accounts` must stay registered for the whole test (confirmed by
+#     trying -- `get_user_model()` is called on every authenticated
+#     request and raises `LookupError` the moment it is not).
+#
+# This is a genuine, permanent structural fact about this schema now, not a
+# quirk of this one test: once F8 exists, no combined flush that includes
+# both `accounts_user` and `audit_auditlog` can ever succeed, because
+# deleting/truncating a user who has been an audit actor is blocked at
+# every layer by design (see apps/accounts/tests/test_no_user_deletion.py
+# and apps/core/tests/test_models.py) -- there is no ORM- or SQL-level
+# operation that could make the combined statement succeed without
+# weakening F8. So Django must simply never be asked to flush these two
+# tables together, for any transaction=True test, present or future.
+#
+# The fix below patches Django's own test-flush table lookup (not
+# application code, not the migration, not the trigger) to exclude exactly
+# those two tables from what `flush`/`TransactionTestCase` ever considers.
+# It is applied once, at import time, for the rest of the test session --
+# not undone, because the underlying fact it encodes (these two tables can
+# never be jointly flushed) does not change between tests. The F8 security
+# guarantee itself is untouched and re-verified independently, at the raw
+# SQL level, in apps/core/tests/test_models.py.
+_TABLES_THAT_CAN_NEVER_BE_TEST_FLUSHED_TOGETHER = {AuditLog._meta.db_table, User._meta.db_table}
+_original_django_table_names = BaseDatabaseIntrospection.django_table_names
+
+
+def _django_table_names_excluding_audit_and_its_actor(self, *args, **kwargs):
+    return [
+        table
+        for table in _original_django_table_names(self, *args, **kwargs)
+        if table not in _TABLES_THAT_CAN_NEVER_BE_TEST_FLUSHED_TOGETHER
+    ]
+
+
+BaseDatabaseIntrospection.django_table_names = _django_table_names_excluding_audit_and_its_actor
 
 PRIVILEGED = ["SUPER_ADMIN", "ADMIN_HEAD", "TECHNICAL_HEAD"]
 
@@ -156,6 +210,18 @@ def test_concurrent_deactivation_never_removes_all_governors(monkeypatch):
     check widens the race window: without the governance lock both checks would pass and the
     organisation would be left with no governor. With the lock, exactly one succeeds.
     (Verified to fail when lock_governance() is removed from the deactivate view.)
+
+    Needs `transaction=True`, not the default rollback-wrapped `db` fixture: the two worker
+    threads below each open their own real database connection (see `finally: connection.close()`),
+    and with the default fixture the setup data (users, roles) would sit in an uncommitted
+    outer transaction on a different connection, invisible to them — and `lock_governance()`'s
+    row locking needs genuinely separate, committed transactions to race against each other at all.
+
+    Its teardown flush is scoped by the module-level patch above (review finding F8, follow-up)
+    to skip `accounts_user`/`audit_auditlog`, which can never be jointly flushed once the F8
+    append-only trigger exists. The `AuditLog` rows and the two users this test creates persist
+    afterwards — harmless (the log is append-only by design; no other test depends on either
+    table being empty).
     """
     from apps.accounts import views_users
     from apps.rbac.management.commands.seed_rbac import seed_rbac

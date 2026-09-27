@@ -158,6 +158,29 @@ test('legitimate API paths still forward unchanged', async () => {
   }
 });
 
+// --- Client-IP trust boundary (review finding F4) --------------------------------------------------
+
+test('attaches the proxy shared secret when configured', async () => {
+  const calls = capture();
+  const request = new Request('https://site.example/api/v1/auth/me');
+  await onRequest({ request, env: { API_ORIGIN: 'https://api.example', PROXY_SHARED_SECRET: 'topsecret' } });
+  assert.equal(calls[0].init.headers.get('x-ecell-proxy-secret'), 'topsecret');
+});
+
+test('sends no proxy secret header when none is configured', async () => {
+  const calls = capture();
+  const request = new Request('https://site.example/api/v1/auth/me');
+  await onRequest({ request, env: { API_ORIGIN: 'https://api.example' } });
+  assert.equal(calls[0].init.headers.get('x-ecell-proxy-secret'), null);
+});
+
+test('strips any client-supplied proxy secret before forwarding', async () => {
+  const calls = capture();
+  const request = new Request('https://site.example/api/v1/auth/me', { headers: { 'X-Ecell-Proxy-Secret': 'forged' } });
+  await onRequest({ request, env: { API_ORIGIN: 'https://api.example', PROXY_SHARED_SECRET: 'real' } });
+  assert.equal(calls[0].init.headers.get('x-ecell-proxy-secret'), 'real');
+});
+
 test('backend implementation headers are not passed to the browser', async () => {
   capture(new Response('ok', { headers: { Server: 'gunicorn', 'X-Powered-By': 'x', 'Set-Cookie': 'a=b' } }));
   const res = await onRequest({ request: new Request('https://site.example/api/v1/auth/me'), env: ORIGIN });

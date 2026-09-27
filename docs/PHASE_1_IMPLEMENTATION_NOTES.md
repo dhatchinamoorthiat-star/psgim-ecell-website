@@ -244,6 +244,9 @@ additions); deployment (proxy allowlist maintenance).
 | F12 | Platform ignores the saved theme preference | Phase 2 |
 | F13 | Preview-deploy label: allowlist `^[a-z0-9-]+$` and refuse any case/space variant of `ecell` | before the preview workflow is first used |
 
+This table records the review pass as it stood on 2026-09-25. **F3, F4, F5, F8 and F13 were
+remediated on 2026-09-27 — see §10.** F7, F9–F12 are unchanged and remain as listed.
+
 ---
 
 ## 9. Governance decisions (ratified 2026-09-25)
@@ -273,4 +276,267 @@ Migration validated on the existing development database (reversed and re-applie
 permissions, permissions, assignments and users byte-identical; only FACULTY_ADVISOR flagged after
 `seed_rbac`) and on a fresh database migrated from zero.
 
-**Still outstanding:** F9 (separate decision), the F3–F13 items in §8 (unchanged), N-1–N-9.
+**Still outstanding (at the time of §9):** F9 (separate decision), the F3–F13 items in §8, N-1–N-9.
+F3, F4, F5, F8 and F13 were remediated afterwards — see §10.
+
+---
+
+## 10. Engineering gate remediation (2026-09-27)
+
+Closes five of the deployment blockers recorded in §8: F3, F4, F5, F8, F13. F9 and N-1–N-9 are
+unchanged and remain outstanding; this pass did not touch them, `ecell/`, or any deployment
+configuration.
+
+### F3 — per-IP login throttle
+
+- **Problem:** `LoginThrottle` bucketed by `(IP, email)`, so one IP could spray unlimited distinct
+  email addresses without ever tripping a limit.
+- **Solution:** `LoginIpThrottle` (`apps/accounts/throttles.py`), an IP-only DRF `SimpleRateThrottle`
+  scope `login_ip`, added alongside the existing `LoginThrottle` on `LoginView.throttle_classes`.
+  Both must pass for a login attempt to be admitted.
+- **Rate:** `20/min` per IP (`DEFAULT_THROTTLE_RATES["login_ip"]`, `config/settings/base.py`).
+  Rationale: `LoginThrottle` already limits genuine password guessing to 5/min per account, so
+  20/min per IP still admits four full accounts' worth of attempts a minute from one address —
+  enough that a shared network (a hostel or lab NAT with several students signing in around the
+  same time) is not blocked by normal use, while capping how many distinct accounts one IP can
+  probe per minute.
+- **Tests:** `apps/accounts/tests/test_login_ip_throttle.py` — below/at/over the IP limit, distinct
+  emails from one IP sharing the bucket, independent buckets per IP, the pre-existing (IP, email)
+  throttle still enforced, and correct success/failure behaviour once the IP bucket is exhausted.
+- **Deployment step:** none; the rate ships as a Django setting.
+- **Residual risk:** none identified. A sufficiently large botnet spread across many IPs is out of
+  scope for an application-layer throttle (this was true before, too); Cloudflare-level protection
+  is a Phase 2+ concern.
+
+### F4 — proxy-to-backend client-IP trust
+
+- **Problem:** `client_ip()` trusted `CLIENT_IP_HEADER` (`CF-Connecting-IP`) whenever it was
+  configured, with no check that the request had actually gone through the Cloudflare proxy. Render
+  gives the backend a public URL, so a request could reach Django directly and set that header to
+  anything.
+- **Solution:** a shared secret, `PROXY_SHARED_SECRET` (`config/settings/base.py`, env var, never
+  hardcoded). `functions/api/[[path]].js` strips any client-supplied
+  `X-Ecell-Proxy-Secret` header and attaches its own from `env.PROXY_SHARED_SECRET` (a Cloudflare
+  Pages environment variable — never sent to the browser) to every forwarded request.
+  `apps/core/net.py::client_ip()` trusts `CLIENT_IP_HEADER` only when that header is present and
+  matches `PROXY_SHARED_SECRET` via `hmac.compare_digest` (constant-time). No secret configured, no
+  header, or a mismatch all fall back to `REMOTE_ADDR` — the trust decision fails closed, not open.
+- **Trust boundary:** the Pages Function is the only party that can set a proxy secret Django will
+  accept; the backend never trusts a client-IP header on a request it cannot verify came through
+  that function. No CORS or JWT was introduced — sessions/CSRF are unchanged (ADR-005).
+- **Tests:** `tools/tests/api-proxy.test.mjs` (secret attached when configured, absent when not,
+  client-supplied copy stripped and replaced) and `apps/core/tests/test_net.py` (valid secret +
+  client IP → trusted; missing/invalid secret + spoofed IP → not trusted, falls back to
+  `REMOTE_ADDR`; valid secret without a client-IP header → safe fallback; `CLIENT_IP_HEADER` unset →
+  unchanged prior behaviour; `CLIENT_IP_HEADER` set without a secret → fails closed).
+- **Deployment step:** set `PROXY_SHARED_SECRET` to the same random value in both the Cloudflare
+  Pages Function environment and the Django backend environment. Until both are set, `client_ip()`
+  falls back to `REMOTE_ADDR` (safe, but records the Render load balancer's address rather than the
+  real client — no worse than today, not yet the fix).
+- **Residual risk:** none identified, given the secret is generated randomly and kept out of
+  version control (`.env.example` documents the variable name only, not a value).
+
+### F5 — forgot-password timing leakage
+
+- **Problem:** `PasswordForgotView` called `send_password_reset()` (synchronous SMTP) only when the
+  account existed, so response latency could reveal account existence even though the response body
+  was identical.
+- **First solution (2026-09-27, superseded below):** dispatched the send on one uncapped
+  `threading.Thread` per request. A follow-up security review correctly found this created a new
+  problem: no worker limit, no SMTP timeout, so a slow/unresponsive mail server could leave threads
+  blocked indefinitely and sustained requests could exhaust process resources.
+- **Bounded solution (current):** `apps/accounts/emails.py` now dispatches through a small,
+  module-level `concurrent.futures.ThreadPoolExecutor` singleton (`MAX_WORKERS = 4`, created once at
+  import — not per request) instead of a raw thread per request:
+  - **Worker bound:** at most 4 sends run concurrently. Chosen because Phase 1 runs one small Render
+    dyno, not a mail farm; 4 is enough to absorb a burst without meaningfully competing with request
+    handling for CPU/memory.
+  - **SMTP timeout:** `EMAIL_TIMEOUT` (new setting, `config/settings/base.py`, default 10s, plumbed
+    into the SMTP backend's `timeout` kwarg via `MAILERS.default.OPTIONS`) bounds how long a single
+    send can occupy a worker, so a stuck mail server cannot permanently consume one — the queue
+    behind it. 10s is generous for a few-KB reset email over a working connection.
+  - **Backlog bound:** `MAX_QUEUED = 50`. `ThreadPoolExecutor`'s own work queue has no size limit,
+    which would just move the "unbounded" problem from threads to queued callables. Once 50 sends are
+    already pending, `send_password_reset_async()` drops the send (logged at ERROR) instead of
+    queuing indefinitely or blocking the request.
+  - **Failure visibility:** the target function catches every exception and logs it via
+    `logging.getLogger("apps.accounts.emails").exception(...)`, so an SMTP failure is no longer
+    silently swallowed by Python's default `threading.excepthook` — it appears in the application's
+    own logs.
+  - **Graceful shutdown:** unchanged from Python's own behavior — `ThreadPoolExecutor` registers an
+    `atexit` hook that waits for already-submitted work at normal interpreter shutdown; no extra code
+    needed for Phase 1's process model.
+  - `join_pending()` (test-only) now waits on `Future`s from the executor instead of joining raw
+    threads.
+- **Tests:** `apps/accounts/tests/test_auth.py` — `test_forgot_password_response_does_not_block_on_email_delivery`
+  proves the response returns while a send is still in flight, via a `threading.Event`, not a
+  sleep-based timing assertion; `test_forgot_password_worker_pool_is_bounded_and_created_once` asserts
+  the executor is a singleton with a fixed worker count; `test_smtp_timeout_is_configured` asserts
+  `EMAIL_TIMEOUT` is wired into the SMTP backend options; `test_smtp_failure_is_logged_not_silently_dropped`
+  asserts a raised exception in the send is captured by `caplog` at ERROR level and the response is
+  still 202; `test_forgot_password_backlog_is_bounded` pins `MAX_QUEUED` low and proves the Nth send
+  beyond the cap is dropped (identical response either way) rather than queued forever; the existing
+  existing/non-existing-account, identical-response-body, no-background-work-for-unknown-account,
+  rate-limiting and token/reset tests are all still covered.
+- **Deployment step:** none required; optionally tune `EMAIL_TIMEOUT` per the production SMTP
+  provider's expected latency.
+- **Residual risks (documented, not eliminated — no durable queue exists in Phase 1 by design):**
+  1. The existing-account path still does one extra synchronous DB write (the
+     `auth.password_reset_requested` audit row) that the non-existing path does not — a sub-millisecond,
+     fixed-cost signal, orders of magnitude smaller than the SMTP round trip it replaces.
+  2. **In-process dispatch has no persistence.** A worker process restart (deploy, crash, OOM) loses
+     any send that had not yet completed, with no retry. A user who does not receive a reset email can
+     simply request another one; this is judged acceptable for Phase 1 given the explicit
+     no-Redis/Celery constraint, but it is a real limitation of an in-process executor, not a solved
+     problem — a durable queue would remove it if the constraint is ever revisited.
+  3. Under sustained load beyond `MAX_QUEUED`, sends are dropped rather than delayed — a deliberate
+     choice (bounded resource use over guaranteed delivery) that should be revisited if reset-email
+     volume ever approaches that scale.
+
+### F8 — audit log database integrity
+
+- **Problem:** `AuditLog` was append-only only at the application layer (`AppendOnlyError`);
+  nothing stopped a raw SQL client, a maintenance script, or any other path that bypasses the ORM
+  from updating or deleting rows. `docs/09_AUDIT_LOG_SPECIFICATION.md` claimed a migration already
+  revoked UPDATE/DELETE from the application DB role — no such migration existed, and it would not
+  have worked anyway (see below).
+- **First solution (2026-09-27, corrected below):** migration
+  `apps/audit/migrations/0002_append_only_trigger.py` added `BEFORE UPDATE`/`BEFORE DELETE` triggers.
+  A follow-up security review found two gaps and one overstated claim:
+  1. **`TRUNCATE audit_auditlog` was not blocked at all** — PostgreSQL never fires row-level
+     `BEFORE UPDATE`/`BEFORE DELETE` triggers for `TRUNCATE`, and this was verified by actually running
+     it: the table was wiped in one statement.
+  2. **The owning role can disable or drop the trigger with ordinary DDL** — verified by running
+     `ALTER TABLE audit_auditlog DISABLE TRIGGER audit_auditlog_no_delete;` as the same role the
+     application uses, then deleting a row successfully. PostgreSQL ties this ability to table
+     ownership, not to a revocable privilege, and this project's single `DATABASE_URL` role owns the
+     table it migrates.
+  3. The original migration docstring and this document both said the protection was "identical...
+     regardless of ownership" — true against ordinary DML, **not** true against DDL from the owning
+     role. That wording has been corrected below and in the migration itself.
+- **Corrected solution:**
+  - Added a third, **statement-level** trigger (`FOR EACH STATEMENT`, since `BEFORE TRUNCATE` cannot
+    be row-level) — `audit_auditlog_no_truncate` — reusing the same function, in the same migration
+    (edited in place; it had not been applied anywhere outside local development).
+  - **What is now guaranteed, precisely:** any *ordinary* UPDATE, DELETE, or TRUNCATE statement is
+    rejected by PostgreSQL itself, for every role including the table owner, identically in local
+    dev, CI and production. Verified directly against PostgreSQL with raw SQL (bypassing Django and
+    the ORM entirely) for all three statement types.
+  - **What is explicitly NOT guaranteed:** protection against the owning database role issuing
+    privileged DDL (`ALTER TABLE ... DISABLE/ENABLE TRIGGER`, `DROP TRIGGER`, `DROP FUNCTION`). Since
+    this architecture has one DATABASE_URL role that both migrates and serves the application, that
+    role can always do this — no trigger or migration can prevent an owner from altering its own
+    table. Closing that specific gap would require a second, non-owning database role (the migrating
+    role granting privileges to a separate, restricted runtime role), which does not exist in this
+    project and is a deployment/architecture decision, not something addressed here.
+  - `backend/scripts/harden_audit_log.sql` updated to also `REVOKE ... TRUNCATE` (previously only
+    UPDATE/DELETE) and to state the ownership limitation explicitly rather than implying the trigger
+    alone is tamper-proof.
+- **User deletion:** confirmed there is no delete endpoint anywhere in `apps.accounts` — only
+  `UserDeactivateView`/`UserReactivateView`. This is recorded as an explicit invariant in
+  `apps/accounts/tests/test_no_user_deletion.py` rather than left implicit, since deleting a user
+  row would either cascade into audit history or require weakening `AuditLog.actor`'s `SET_NULL`.
+  No deletion feature was added.
+- **Tests:** `apps/core/tests/test_models.py` — INSERT succeeds; UPDATE, DELETE and now TRUNCATE via
+  raw SQL (bypassing the ORM entirely, each in its own savepoint) are rejected by the database
+  trigger, not just `AppendOnlyError`; a new `test_owning_role_can_disable_the_trigger_via_ddl` proves
+  — and pins as an accepted, documented limitation rather than an untested assumption — that the
+  owning role *can* disable the trigger and then delete a row, so this claim cannot silently drift
+  out of date; an audit row survives the only lifecycle event that touches its subject (user
+  deactivation) unchanged. `apps/accounts/tests/test_no_user_deletion.py` unchanged from the first
+  pass.
+- **Deployment step:** none required for the DML/TRUNCATE guarantee (ships in the migration).
+  Optionally run `backend/scripts/harden_audit_log.sql` against any non-owner DB role once one exists
+  (it has no effect on the owning role, by design of PostgreSQL ownership, not a bug in the script).
+- **Residual risk (accurately stated, not eliminated):** the application's own database role can
+  disable or drop the append-only triggers using its own credentials via DDL. This is a real,
+  verified limitation, not a hypothetical one, and matches the trust boundary already implied by
+  N-1/N-6 (whoever holds the application's database credentials already controls the data) — it is
+  not a new exposure introduced by this fix, but the fix's guarantee should not be described as
+  stronger than it is.
+
+**Follow-up (2026-09-27, same day): test-infrastructure conflict.** Adding the TRUNCATE trigger
+broke `apps/rbac/tests/test_governance_invariant.py::test_concurrent_deactivation_never_removes_all_governors`,
+which needs `@pytest.mark.django_db(transaction=True)` for genuine cross-connection concurrency.
+Django's `TransactionTestCase` teardown flushes every table with one combined
+`TRUNCATE ... CASCADE`, and — confirmed by direct investigation, not assumption —
+`audit_auditlog.actor` referencing `accounts_user` means CASCADE always tries to reach
+`audit_auditlog` through that foreign key whenever `accounts_user` is flushed, *regardless* of
+Django's `available_apps` scoping (tried and rejected: excluding `apps.accounts` from
+`available_apps` breaks `get_user_model()` on every authenticated request, since `apps.accounts`
+must stay registered for the whole test). Since a user who has been an audit actor cannot be
+deleted or have its audit rows removed through any path (ORM, raw SQL, or DDL-free means — this
+is intentional, see the residual risk above and `apps/accounts/tests/test_no_user_deletion.py`),
+no combined flush that includes both tables can ever succeed once F8 exists — a permanent,
+structural fact about this schema, not a quirk of one test. The fix, entirely inside the test file
+(no application code, migration, or trigger touched): a module-level patch to Django's own
+`BaseDatabaseIntrospection.django_table_names`, applied once at import time, excluding exactly
+`audit_auditlog` and `accounts_user` from what any `flush`/`TransactionTestCase` teardown ever
+considers for the rest of the session. The test's own logic (thread barrier, timing, assertions)
+is unchanged; only its decorator reverted to plain `transaction=True` and its docstring grew.
+Verified clean over 15 isolated runs and 3 full-suite runs (213/213, zero teardown errors). The
+test's own pre-existing, independent `SessionInterrupted` timing race (present before F8, confirmed
+by stashing all F3–F13 changes and reproducing it on bare `main`) is untouched and remains
+intermittent — it did not reproduce in any of these verification runs, which does not mean it is
+fixed, only that it did not trigger this time; it was not investigated or fixed here.
+
+### F13 — preview deployment label guard
+
+- **Problem:** `deploy-preview.yml` refused only the exact, case-insensitive string `ECell`; every
+  other case/format variant, or a label with whitespace/punctuation, passed through unchecked.
+- **Solution:** `tools/validate-preview-label.mjs` (`isValidPreviewLabel`), enforcing
+  `^[a-z0-9-]+$` and rejecting any label whose hyphens-removed, lower-cased form equals `ecell`
+  (catches `ECell`, `ecell`, `ECELL`, `e-cell`, etc., while still allowing `ecell-preview` or
+  `not-ecell` as distinct labels). `deploy-preview.yml` now checks out the repo and runs
+  `node tools/validate-preview-label.mjs "$LABEL"` before installing dependencies or building,
+  replacing the old inline exact-match check.
+- **Tests:** `tools/tests/preview-label.test.mjs` — representative accepted labels
+  (`preview`, `platform-preview`, `feature-123`, …) and rejected ones (every case/hyphenation of
+  `ECell`, whitespace, punctuation, non-ASCII, empty/non-string input).
+- **Deployment step:** none; the workflow change is already in the repo. No production deployment
+  workflow was created — this remains a manual, `workflow_dispatch`-only preview workflow.
+- **Residual risk:** none identified for this workflow. Production deployment is still gated on
+  N-1/N-6, unchanged.
+
+### Verification run for this pass (2026-09-27, F3/F4/F5/F8/F13)
+
+- Backend: `pytest` — 207 passed (184 from the merged checkpoint + 23 new, table above).
+- Frontend: `ng test --watch=false` — 22 passed, unchanged.
+- Proxy: `node --test "tools/tests/*.test.mjs"` — 66 passed (34 from the checkpoint + 32 new: 3 for
+  F4's secret-header behaviour, 29 accepted/rejected preview-label cases for F13).
+- `ruff check .` / `ruff format --check .`: clean.
+- `manage.py check`: no issues.
+- `manage.py makemigrations --check --dry-run`: no changes detected.
+- Migrations verified on a freshly created database (`migrate` from zero) and by rolling
+  `audit.0002_append_only_trigger` back to `0001` and reapplying it, confirming the triggers are
+  present afterwards.
+
+### Verification run for the F5/F8 security-review fix (2026-09-27, same day)
+
+A follow-up security review of the pass above found two issues, fixed in this second round (see the
+corrected F5 and F8 write-ups above): the F5 background-send thread pool was unbounded with no SMTP
+timeout, and the F8 trigger did not cover `TRUNCATE` and its docstring overstated its immunity to
+owner-level DDL.
+
+- Backend: `pytest` — 213 passed. (207 from the prior pass + 6 new: 4 F5 tests — bounded worker pool,
+  SMTP timeout configured, SMTP failure logged, backlog bounded — and 2 F8 tests — TRUNCATE rejected,
+  owning-role DDL limitation pinned.) One pre-existing, unrelated failure,
+  `apps/rbac/tests/test_governance_invariant.py::test_concurrent_deactivation_never_removes_all_governors`
+  (a `SessionInterrupted` race in a concurrency test, nothing to do with F3/F4/F5/F8/F13), reproduces
+  identically on the untouched pre-fix code and is out of scope for this pass — not investigated or
+  fixed here.
+- Frontend: `ng test --watch=false` — 22 passed, unchanged.
+- Proxy: `node --test "tools/tests/*.test.mjs"` — 66 passed, unchanged (F3/F4/F13 were not touched in
+  this round).
+- `ruff check .` / `ruff format --check .`: clean.
+- `manage.py check`: no issues. `manage.py makemigrations --check --dry-run`: no changes detected.
+- Migration re-verified on a fresh database (`migrate` from zero), and by rolling
+  `audit.0002_append_only_trigger` back to `0001` and reapplying it — all three triggers
+  (`audit_auditlog_no_update`, `audit_auditlog_no_delete`, `audit_auditlog_no_truncate`) present
+  afterwards, no orphaned function/triggers after rollback.
+- Raw PostgreSQL verification (bypassing Django and the test suite), against the same `ecell` role
+  the application uses: `INSERT` succeeds; `UPDATE`, `DELETE` and `TRUNCATE` all rejected with
+  `audit_auditlog is append-only: ... is not permitted`; the row survives all three. Separately
+  confirmed `ALTER TABLE audit_auditlog DISABLE TRIGGER audit_auditlog_no_delete;` followed by a
+  plain `DELETE` succeeds as the owning role — the documented DDL limitation is real, not
+  hypothetical.

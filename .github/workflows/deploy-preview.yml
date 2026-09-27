@@ -1,9 +1,11 @@
 # Manual PREVIEW deployment to Cloudflare Pages (ADR-009).
 #
 # - Triggered by hand only; never on push.
-# - Refuses the production label `ECell`: production deployment is gated by
-#   N-1/N-6 in docs/PHASE_1_AUTHORIZATION.md and must get its own workflow
-#   once authorized.
+# - Refuses any label that is not ^[a-z0-9-]+$, or that is the production
+#   label `ECell` in any case/hyphenation (tools/validate-preview-label.mjs,
+#   review finding F13): production deployment is gated by N-1/N-6 in
+#   docs/PHASE_1_AUTHORIZATION.md and must get its own workflow once
+#   authorized.
 # - Needs repository secrets CLOUDFLARE_API_TOKEN (Pages:Edit only) and
 #   CLOUDFLARE_ACCOUNT_ID. Until they exist this workflow simply fails.
 name: Deploy preview (manual)
@@ -23,21 +25,16 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Refuse the production label
-        env:
-          LABEL: ${{ inputs.label }}
-        run: |
-          shopt -s nocasematch
-          if [[ "$LABEL" == "ECell" ]]; then
-            echo "::error::'ECell' is the production label. Production deploys are not authorized from this workflow."
-            exit 1
-          fi
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: npm
           cache-dependency-path: web/package-lock.json
+      - name: Validate preview label
+        env:
+          LABEL: ${{ inputs.label }}
+        run: node tools/validate-preview-label.mjs "$LABEL"
       - run: npm ci --prefix web
       - run: npm --prefix web run build
       - name: Nothing uncommitted is deployed
