@@ -1,6 +1,11 @@
 import { Routes } from '@angular/router';
+import { PageShellComponent } from './layout/page-shell/page-shell.component';
 
-export const routes: Routes = [
+/**
+ * Public site routes. They render inside PageShellComponent (notice bar,
+ * navbar, footer). URLs are unchanged from before the platform existed.
+ */
+const publicRoutes: Routes = [
   { path: '', loadComponent: () => import('./features/home/home.component').then((m) => m.HomeComponent) },
   { path: 'about', loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent) },
   { path: 'origin', loadComponent: () => import('./features/origin/origin.component').then((m) => m.OriginComponent) },
@@ -31,5 +36,12 @@ export const routes: Routes = [
   { path: 'contact', loadComponent: () => import('./features/contact/contact.component').then((m) => m.ContactComponent) },
   { path: 'soon', loadComponent: () => import('./features/soon/soon.component').then((m) => m.SoonComponent) },
   { path: 'control', loadComponent: () => import('./features/control/control.component').then((m) => m.ControlComponent) },
+];
+
+export const routes: Routes = [
+  // The member platform has its own shell and is never prerendered or indexed
+  // (app.routes.server.ts, _headers, robots.txt). Its code loads only here.
+  { path: 'platform', loadChildren: () => import('./platform/platform.routes').then((m) => m.platformRoutes) },
+  { path: '', component: PageShellComponent, children: publicRoutes },
   { path: '**', redirectTo: '' },
 ];

@@ -22,6 +22,15 @@ A separate app, `ecell/` (Next.js + Supabase), is the real event-registration
 / check-in / admin "Control Room" — it deploys independently to Vercel and is
 untouched by anything in this section.
 
+### The platform (in development — branch `platform/phase-1`)
+
+The PSGIM E-Cell Platform is being built alongside the site: a Django API in
+**`backend/`** and a members' area at **`/platform`** inside the same Angular
+app. It is not deployed. The architecture and decisions are in
+[`docs/`](docs/README.md); how to run it locally is in
+[`docs/PHASE_1_IMPLEMENTATION_NOTES.md`](docs/PHASE_1_IMPLEMENTATION_NOTES.md).
+The public pages below are unchanged by it.
+
 ---
 
 ## Editing content — you do not need to touch the design

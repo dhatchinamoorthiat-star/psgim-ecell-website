@@ -49,3 +49,41 @@ the generated schema wins on conflicts.
 Each view declares `required_perm` and a scope resolver; `04_PERMISSION_MATRIX.md`
 is the reference. A test enumerates every URL pattern and asserts each has
 a permission declaration (no accidentally open endpoints).
+
+---
+
+## Phase 1 — implemented endpoints (2026-09-25)
+
+Base `/api/v1`, **no trailing slashes**. Every endpoint below is live in
+`backend/` and described by the generated schema (`/api/v1/schema`).
+
+| Method & path | Permission (coarse gate → scoped check) | Notes |
+|---|---|---|
+| `GET /auth/csrf` | public | sets `csrftoken` cookie, returns `{csrf_token}` |
+| `POST /auth/login` | public, CSRF, 5/min per IP+email | `{email, password}` → `me` payload; failure **400 `invalid_credentials`** (same for unknown/wrong/inactive) |
+| `POST /auth/logout` | signed in, CSRF | 204 |
+| `GET /auth/me` | signed in | `{user, permissions:[{permission, scope_type, scope_id, own_only}], organization:{name, timezone}}` |
+| `POST /auth/password/forgot` | public, CSRF, 5/hour per IP | always **202** with the same body |
+| `POST /auth/password/reset` | public, CSRF, 10/hour per IP | `{uid, token, new_password}`; bad/expired → **400 `invalid_token`**; ends all sessions |
+| `GET/POST /users` | `user.view` (scoped) / `user.manage` (global) | POST `{email, full_name, send_invite}` |
+| `GET/PATCH /users/{id}` | `user.view` / `user.manage` | out of scope → 404 |
+| `POST /users/{id}/deactivate`, `/reactivate` | `user.manage`; privileged targets need `role.manage` | self → 403; last Super Admin → 409 |
+| `GET /permissions` | `permission.view` | |
+| `GET /roles` | `role.view` | read-only in Phase 1 |
+| `GET/POST /role-assignments` | `role.view` (scoped) / role's `assign_permission` at target scope | filters `active, user_id, scope_id, role`; privileged roles with non-GLOBAL scope, an `academic_year_id` or `ends_at` → **400** (R7); `FACULTY_ADVISOR` with non-GLOBAL scope → **400** (R7a; year/end date allowed) |
+| `POST /role-assignments/{id}/revoke` | same as assigning | `{reason}`; last Super Admin → 409 |
+| `GET/POST /verticals` | `vertical.view` (scoped) / `vertical.manage` (global) | `?include_archived=true` |
+| `GET/PATCH /verticals/{id}` | `vertical.view` / `vertical.manage` | |
+| `POST /verticals/{id}/archive` | `vertical.manage` | `{confirm: <slug>}`; live assignments → 409 |
+| `GET/POST /academic-years` | signed in / `academic_year.manage` | |
+| `POST /academic-years/{id}/make-current` | `academic_year.manage` | **409** if the switch would leave no active Super Admin (rolled back) |
+| `GET/POST /memberships` | `membership.view` / `membership.manage` on the vertical | defaults to current year |
+| `POST /memberships/{id}/end` | `membership.manage` | row kept |
+| `GET /audit` | `audit.view` (global) | cursor pagination; filters `action` (prefix), `actor_id`, `actor_email`, `result`, `target_type`, `target_id`, `since`, `until`, `q` |
+| `GET/PATCH /settings` | `system.settings` | `{name, timezone}` |
+| `GET /schema`, `GET /docs` | dev: public; otherwise signed in | generated OpenAPI + Swagger UI |
+
+Contract clarifications made during implementation: a duplicate unique field
+(e.g. vertical slug, user email) is a **400 field error**, not 409; 409 is
+reserved for state conflicts (last Super Admin, already archived/revoked/ended,
+live assignments). Refused mutations write a `DENIED` audit row.

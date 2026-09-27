@@ -1,0 +1,22 @@
+[project]
+name = "psgim-ecell-platform"
+version = "0.1.0"
+description = "PSGIM E-Cell Platform API (Django + DRF)"
+requires-python = ">=3.13"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "-q --strict-markers"
+
+[tool.ruff]
+line-length = 130
+target-version = "py313"
+extend-exclude = ["apps/*/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ"]
+ignore = ["E501"]  # long lines are left to judgement; ruff format handles layout
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]

@@ -1,0 +1,489 @@
+/*
+ * Platform UI layer (docs/14_DESIGN_SYSTEM.md, "Platform layer").
+ *
+ * Same tokens as the public site, denser and calmer: no reveal animation, no
+ * custom cursor, no video. Loaded only with the /platform route. Every class
+ * is prefixed `pf-` so nothing here can leak into or collide with the public
+ * site's styles. No raw colours — tokens only.
+ */
+
+.pf-root {
+  --pf-row-h: 40px;
+  --pf-sidebar-w: 15rem;
+  min-height: 100dvh;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+.pf-root,
+.pf-root a,
+.pf-root button {
+  cursor: auto;
+}
+.pf-root a[href],
+.pf-root button:not(:disabled) {
+  cursor: pointer;
+}
+
+/* --- shell ------------------------------------------------------------- */
+.pf-shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100dvh;
+}
+.pf-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 56px;
+  padding: 0 var(--s-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+.pf-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 700;
+  letter-spacing: var(--track-head);
+  text-decoration: none;
+  color: var(--ink);
+}
+.pf-brand img {
+  width: 28px;
+  height: 28px;
+}
+.pf-brand small {
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.pf-topbar-spacer {
+  flex: 1;
+}
+.pf-user {
+  display: none;
+  color: var(--ink-2);
+}
+.pf-menu-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule);
+}
+
+.pf-sidebar {
+  display: none;
+  background: var(--surface);
+  border-right: 1px solid var(--rule);
+  padding: var(--s-4) var(--s-3);
+}
+.pf-sidebar[data-open='true'] {
+  display: block;
+  position: fixed;
+  inset: 56px 0 0 0;
+  z-index: 15;
+  overflow-y: auto;
+}
+.pf-nav-section + .pf-nav-section {
+  margin-top: var(--s-5);
+}
+.pf-nav-label {
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: var(--track-kicker);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0 var(--s-3) var(--s-2);
+}
+.pf-nav a {
+  display: flex;
+  align-items: center;
+  min-height: 44px; /* touch target */
+  padding: 0 var(--s-3);
+  border-radius: var(--r-md);
+  color: var(--ink-2);
+  text-decoration: none;
+  font-weight: 500;
+}
+.pf-nav a:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.pf-nav a.pf-active {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.pf-main {
+  padding: var(--s-5) var(--s-4) var(--s-8);
+  min-width: 0;
+}
+.pf-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-5);
+}
+.pf-page-head h1 {
+  font-size: var(--t-h3);
+  font-weight: 700;
+  letter-spacing: var(--track-head);
+  margin: 0;
+}
+.pf-page-head p {
+  margin: var(--s-1) 0 0;
+  color: var(--ink-3);
+}
+
+@media (min-width: 1024px) {
+  .pf-shell {
+    grid-template-columns: var(--pf-sidebar-w) 1fr;
+    grid-template-rows: 56px 1fr;
+  }
+  .pf-topbar {
+    grid-column: 1 / -1;
+  }
+  .pf-sidebar,
+  .pf-sidebar[data-open='true'] {
+    display: block;
+    position: sticky;
+    top: 56px;
+    inset: auto;
+    height: calc(100dvh - 56px);
+  }
+  .pf-menu-toggle {
+    display: none;
+  }
+  .pf-user {
+    display: inline;
+  }
+  .pf-main {
+    padding: var(--s-6) var(--s-7) var(--s-8);
+  }
+}
+
+/* --- building blocks ----------------------------------------------------- */
+.pf-card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+}
+.pf-card + .pf-card {
+  margin-top: var(--s-4);
+}
+.pf-card h2 {
+  font-size: var(--t-body);
+  font-weight: 600;
+  margin: 0 0 var(--s-3);
+}
+.pf-grid {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+.pf-muted {
+  color: var(--ink-3);
+}
+.pf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+  margin-bottom: var(--s-4);
+}
+
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 40px;
+  padding: 0 var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: var(--t-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pf-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.pf-btn:disabled {
+  opacity: 0.55;
+}
+.pf-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.pf-btn-primary:hover:not(:disabled) {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+  color: var(--ink-inverse);
+}
+.pf-btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.pf-btn-danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.pf-btn-sm {
+  min-height: 32px;
+  padding: 0 var(--s-3);
+  font-size: var(--t-xs);
+}
+@media (pointer: coarse) {
+  .pf-btn,
+  .pf-btn-sm {
+    min-height: 44px;
+  }
+}
+
+/* forms: 16px inputs on phones so iOS does not zoom (docs/14) */
+.pf-field {
+  display: grid;
+  gap: var(--s-1);
+  margin-bottom: var(--s-4);
+}
+.pf-field label {
+  font-weight: 600;
+  font-size: var(--t-xs);
+  color: var(--ink-2);
+}
+.pf-field small {
+  color: var(--ink-3);
+}
+.pf-input,
+.pf-select,
+.pf-textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px;
+}
+@media (min-width: 640px) {
+  .pf-input,
+  .pf-select,
+  .pf-textarea {
+    font-size: var(--t-sm);
+    min-height: var(--pf-row-h);
+  }
+}
+.pf-input:focus-visible,
+.pf-select:focus-visible,
+.pf-textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.pf-input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.pf-field-error {
+  color: var(--danger);
+  font-size: var(--t-xs);
+}
+.pf-form-row {
+  display: grid;
+  gap: var(--s-4);
+}
+@media (min-width: 640px) {
+  .pf-form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.pf-check {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  min-height: 44px;
+}
+
+.pf-alert {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--rule);
+  background: var(--surface-2);
+  margin-bottom: var(--s-4);
+}
+.pf-alert-error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.pf-alert-ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+  color: var(--ok);
+}
+
+/* tables collapse into stacked rows on phones */
+.pf-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.pf-table th {
+  text-align: left;
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-kicker);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  padding: var(--s-2) var(--s-3);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.pf-table td {
+  padding: var(--s-3);
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.pf-table td.pf-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+@media (max-width: 767px) {
+  .pf-table thead {
+    display: none;
+  }
+  .pf-table,
+  .pf-table tbody,
+  .pf-table tr,
+  .pf-table td {
+    display: block;
+    width: 100%;
+  }
+  .pf-table tr {
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    margin-bottom: var(--s-3);
+    padding: var(--s-2) 0;
+    background: var(--surface);
+  }
+  .pf-table td {
+    border: 0;
+    padding: var(--s-1) var(--s-3);
+  }
+  .pf-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: var(--t-micro);
+    letter-spacing: var(--track-kicker);
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pf-table td.pf-actions {
+    text-align: left;
+  }
+}
+
+.pf-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+  font-size: var(--t-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  margin: 0 var(--s-1) var(--s-1) 0;
+}
+.pf-chip-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+  border-color: transparent;
+}
+.pf-chip-warn {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: transparent;
+}
+.pf-chip-accent {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: transparent;
+}
+
+/* dialogs use the native <dialog>: focus trap and Escape come from the platform */
+.pf-dialog {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  width: min(32rem, calc(100vw - 2rem));
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-lg);
+}
+.pf-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+.pf-dialog h2 {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-body);
+}
+.pf-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-5);
+}
+
+/* auth screens */
+.pf-auth {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5) var(--s-4);
+}
+.pf-auth-card {
+  width: min(26rem, 100%);
+}
+.pf-auth-card .pf-brand {
+  margin-bottom: var(--s-5);
+}
+.pf-auth-card h1 {
+  font-size: var(--t-h3);
+  margin: 0 0 var(--s-2);
+}
+.pf-auth-links {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+}
+.pf-auth-links a {
+  color: var(--accent-ink);
+}
+.pf-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

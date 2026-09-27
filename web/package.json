@@ -8,7 +8,9 @@
     "postbuild": "node tools/postbuild.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:web": "node dist/web/server/server.mjs"
+    "serve:ssr:web": "node dist/web/server/server.mjs",
+    "lint": "prettier --check \"src/app/platform/**/*.{ts,css}\" src/app/app.ts src/app/app.config.ts src/app/app.routes.server.ts src/app/app.routes.spec.ts",
+    "test:ci": "ng test --watch=false"
   },
   "private": true,
   "packageManager": "npm@11.19.0",

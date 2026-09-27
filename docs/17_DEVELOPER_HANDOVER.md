@@ -5,11 +5,14 @@ Written for a student who has never seen this project. Sections marked
 
 ## 1. What this is
 
-The PSGIM E-Cell Platform: the public website (Angular, `web/`) and, from
-Phase 1, a Django API (`backend/`) that powers a members' platform at
-`/platform`. Start with `00_AUDIT.md` and `02_SYSTEM_ARCHITECTURE.md`.
+The PSGIM E-Cell Platform: the public website (Angular, `web/`), a Django
+API (`backend/`) and a members' platform at `/platform` (Angular, same app).
+Start with `ARCHITECTURE_DECISION_RECORD.md`, then
+`PHASE_1_IMPLEMENTATION_NOTES.md` for what exists today.
 
-## 2. Local setup (today)
+## 2. Local setup
+
+Public site only:
 
 ```bash
 npm install --prefix web
@@ -19,9 +22,11 @@ npm install --prefix web
 npm run dev
 ```
 
-Opens http://localhost:4200. Content is in `web/src/app/core/data/` until the CMS lands.
+Opens http://localhost:4200. Public content is still in `web/src/app/core/data/` until the CMS lands (Phase 2).
 
-*(Phase 1)* Backend: `cd backend && cp .env.example .env && docker compose up -d db && python -m venv .venv && pip install -r requirements.txt && python manage.py migrate && python manage.py seed_rbac && python manage.py runserver`.
+Platform + API: follow `PHASE_1_IMPLEMENTATION_NOTES.md` §2 exactly (venv, `docker compose up -d db`,
+`migrate`, `seed_rbac`, `create_dev_user` or `seed_dev_demo`, `runserver`, `npm run dev`), then open
+http://localhost:4200/platform/. `ng serve` forwards `/api` to Django (`web/proxy.conf.json`).
 
 ## 3. Deploying
 
@@ -29,15 +34,19 @@ See `16_DEPLOYMENT.md`. Remember: production branch is **`ECell`**.
 
 ## 4. RBAC in one minute
 
-Permissions are strings in `backend/apps/rbac/permissions.py`. Roles bundle
-them. A user gets a role *in a scope* (global / a vertical / an event). Views
-declare the permission they need. Never write `if user.role == ...`.
+Permissions are strings in `backend/apps/rbac/catalogue.py`; roles bundle them there too, and
+`python manage.py seed_rbac` writes both to the database. A user gets a role *in a scope*
+(`RoleAssignment`: global / a vertical / later an event or project). The single decision point
+is `backend/apps/rbac/policy.py` (`has_perm`, `scopes_for`). Every view subclasses
+`PermissionedAPIView` and declares `required_perms` per HTTP method — a test fails if one is
+missing. Anti-escalation rules live in `backend/apps/rbac/services.py`. Never write
+`if user.role == ...` (a test scans for it).
 
 ## 5. Common tasks (Phase 1+)
 
-- **Add a vertical** — no code: Platform → Admin → Verticals → New.
-- **Assign a vertical head** — Admin → Verticals → *vertical* → Assign head (audited).
-- **Add a permission** — add constant in `permissions.py`, data migration to attach to roles, use in a view, add a test in `rbac/tests/test_escalation.py`.
+- **Add a vertical** — no code: `/platform/admin/verticals` → Add vertical (needs `vertical.manage`).
+- **Assign a vertical head** — `/platform/admin/assignments` → Assign a role → Vertical Head → the vertical (needs `vertical_head.assign`; audited).
+- **Add a permission** — add a constant + description in `rbac/catalogue.py`, add it to the right roles there, run `seed_rbac` (also on deploy), use it in a view's `required_perms` / `self.require()`, add rows to `rbac/tests/test_escalation.py`, and update `docs/04_PERMISSION_MATRIX.md`.
 - **Add a content block type** — JSON schema in `content/blocks/`, renderer in `web/src/app/shared/ui/blocks/`, register in both registries, add to the editor palette.
 - **Add an API endpoint** — view + serializer in the app, `required_perm`, URL, test; schema regenerates automatically.
 - **Update Angular** — `npx ng update @angular/core @angular/cli` on a branch; run build + tests + parity checklist (doc 15 §4).
