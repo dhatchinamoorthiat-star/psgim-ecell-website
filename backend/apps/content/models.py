@@ -112,6 +112,13 @@ class ContentVersion(TimeStampedModel):
     seo = models.JSONField(default=dict, blank=True)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="content_versions")
     change_note = models.CharField(max_length=300, blank=True)
+    # Snapshot of the ApprovalRule-resolved stages at the moment `submit()` was
+    # called (docs/07_CONTENT_WORKFLOW.md Invariant 5: "rules are evaluated at
+    # submit time and stored on the submission, so changing a rule mid-review
+    # doesn't silently change what an in-flight item needs"). Empty until
+    # submitted. `apps.content.workflow.approve` reads this, never a live
+    # ApprovalRule query, once it is set.
+    approval_stages_snapshot = models.JSONField(default=list, blank=True)
 
     class Meta:
         ordering = ["-number"]
