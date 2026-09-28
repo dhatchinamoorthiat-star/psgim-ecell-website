@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.memberships",
     "apps.verticals",
     "apps.rbac",
+    "apps.content",
 ]
 
 MIDDLEWARE = [
@@ -185,6 +186,14 @@ CLIENT_IP_HEADER = env("CLIENT_IP_HEADER", "")
 # also set and the request presents a matching value — see apps/core/net.py.
 # Empty (the default) fails closed: the header is never trusted.
 PROXY_SHARED_SECRET = env("PROXY_SHARED_SECRET", "")
+
+# Cloudinary (media library, docs/21_CMS_WORKFLOW.md, task §21). Uploads are
+# signed server-side and go browser -> Cloudinary directly; the API secret
+# never reaches Angular. Reuses the legacy ecell/src/lib/cloudinary.ts
+# signing scheme so both systems can share one Cloudinary account safely.
+CLOUDINARY_CLOUD_NAME = env("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = env("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = env("CLOUDINARY_API_SECRET", "")
 
 # --- DRF ------------------------------------------------------------------
 
