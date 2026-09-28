@@ -36,6 +36,16 @@ const publicRoutes: Routes = [
   { path: 'contact', loadComponent: () => import('./features/contact/contact.component').then((m) => m.ContactComponent) },
   { path: 'soon', loadComponent: () => import('./features/soon/soon.component').then((m) => m.SoonComponent) },
   { path: 'control', loadComponent: () => import('./features/control/control.component').then((m) => m.ControlComponent) },
+  // Phase 2B cutover route (docs/22_MIGRATION_MATRIX.md) — renders a
+  // published CMS document through the canonical BlockRenderer. Additive
+  // only: none of the routes above are replaced or removed. SSR'd at
+  // request time (app.routes.server.ts RenderMode.Server), not build-time
+  // prerendered, since the backend must be reachable to resolve content —
+  // see docs/25_VISUAL_EDITOR_ARCHITECTURE.md "SSR/prerender".
+  {
+    path: 'content/:contentType/:slug',
+    loadComponent: () => import('./features/cms-page/cms-page.component').then((m) => m.CmsPageComponent),
+  },
 ];
 
 export const routes: Routes = [
