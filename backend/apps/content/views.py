@@ -16,7 +16,7 @@ from apps.rbac.api import AUTHENTICATED, PermissionedAPIView
 from apps.rbac.models import ScopeType
 from apps.rbac.policy import ScopeTarget
 
-from . import media, workflow
+from . import dynamic_queries, media, media_resolution, workflow
 from .models import Approval, ApprovalRule, ContentBlockType, ContentItem, ContentVersion, MediaAsset
 from .serializers import (
     ApprovalRuleSerializer,
@@ -298,8 +298,8 @@ class PublicContentDetailView(APIView):
     """
     Unauthenticated, read-only. Exposes only `published_version` — drafts,
     rejected, and in-review content are never reachable here
-    (docs/06_CMS_ARCHITECTURE.md "Published content isolation"). This is
-    what the Phase 2B prerender step will consume; not wired to Angular yet.
+    (docs/06_CMS_ARCHITECTURE.md "Published content isolation"). Consumed by
+    the Angular `ContentApiService` (Phase 2B, `web/src/app/core/services`).
     """
 
     permission_classes = [AllowAny]
@@ -309,15 +309,41 @@ class PublicContentDetailView(APIView):
         item = get_object_or_404(ContentItem, content_type=content_type, slug=slug)
         if item.published_version_id is None:
             raise NotFound()
+        block_types = {bt.key: bt for bt in ContentBlockType.objects.filter(is_active=True)}
+        resolved_blocks = media_resolution.resolve_blocks_media(item.published_version.blocks, block_types)
         return Response(
             {
                 "content_type": item.content_type,
                 "slug": item.slug,
-                "blocks": item.published_version.blocks,
+                "blocks": resolved_blocks,
                 "seo": item.published_version.seo,
                 "published_at": item.published_version.updated_at,
             }
         )
+
+
+class PublicDynamicQueryView(APIView):
+    """
+    Unauthenticated, read-only. The only place a `dynamic_query` block's
+    `query` identifier is resolved — always through
+    `apps.content.dynamic_queries.resolve`, never a client-supplied filter,
+    ORM expression, or SQL. See docs/25_VISUAL_EDITOR_ARCHITECTURE.md
+    "Dynamic content".
+    """
+
+    permission_classes = [AllowAny]
+    public = True
+
+    def get(self, request, query_id):
+        sort = request.query_params.get("sort")
+        limit_param = request.query_params.get("limit")
+        limit = None
+        if limit_param is not None:
+            try:
+                limit = int(limit_param)
+            except ValueError as exc:
+                raise ValidationError({"limit": ["Must be an integer."]}) from exc
+        return Response(dynamic_queries.resolve(query_id, sort=sort, limit=limit))
 
 
 class ApprovalRuleListView(PermissionedAPIView):
