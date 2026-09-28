@@ -8,8 +8,11 @@ class ContentVersionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ContentVersion
-        fields = ["id", "content_item", "number", "state", "blocks", "seo", "author_email", "change_note", "created_at"]
-        read_only_fields = ["id", "content_item", "number", "state", "author_email", "created_at"]
+        fields = [
+            "id", "content_item", "number", "state", "blocks", "seo", "author_email", "change_note",
+            "approval_stages_snapshot", "created_at",
+        ]  # fmt: skip
+        read_only_fields = ["id", "content_item", "number", "state", "author_email", "approval_stages_snapshot", "created_at"]
 
 
 class ContentItemSerializer(serializers.ModelSerializer):

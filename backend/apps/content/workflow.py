@@ -19,7 +19,7 @@ from apps.rbac import policy
 from apps.rbac.approvals import check_approval
 
 from .models import Approval, ContentBlockType, ContentItem, ContentVersion, WorkflowState
-from .validation import validate_blocks_document
+from .validation import validate_blocks_document, validate_image_accessibility
 
 _DEFAULT_RULE_STAGES = [
     {"kind": "ORGANIZATIONAL", "permission": P.CONTENT_APPROVE, "scope": "GLOBAL", "min_approvers": 1}
@@ -31,13 +31,25 @@ def _active_block_types() -> dict:
 
 
 def create_draft(request, *, content_item: ContentItem, blocks: dict, seo: dict | None = None, change_note: str = ""):
-    """Create the first or a new draft version. Requires `content.view` (coarse gate; the
-    real authoring gate is `content.submit`/`content.review` etc. depending on what happens next)."""
+    """
+    Create the first or a new draft version. Requires `content.view` (coarse
+    gate; the real authoring gate is `content.submit`/`content.review` etc.
+    depending on what happens next).
+
+    Locks the parent `ContentItem` row (`select_for_update`) before reading
+    the current max version number, so two concurrent calls against the
+    same item (double-submit, two tabs, a future autosave race) serialize
+    correctly instead of racing to the same `next_number` and hitting the
+    `unique_version_number_per_item` constraint as an unhandled 500. The
+    second caller simply waits for the lock, then computes its number
+    against the first caller's now-committed version.
+    """
     validate_blocks_document(blocks, _active_block_types())
     with transaction.atomic():
-        next_number = (content_item.versions.aggregate(n=_max_number())["n"] or 0) + 1
+        locked_item = ContentItem.objects.select_for_update().get(pk=content_item.pk)
+        next_number = (locked_item.versions.aggregate(n=_max_number())["n"] or 0) + 1
         version = ContentVersion.objects.create(
-            content_item=content_item,
+            content_item=locked_item,
             number=next_number,
             state=WorkflowState.DRAFT,
             blocks=blocks,
@@ -45,13 +57,17 @@ def create_draft(request, *, content_item: ContentItem, blocks: dict, seo: dict 
             author=request.user,
             change_note=change_note,
         )
-        content_item.draft_version = version
-        content_item.state = WorkflowState.DRAFT
-        content_item.save(update_fields=["draft_version", "state", "updated_at"])
+        locked_item.draft_version = version
+        locked_item.state = WorkflowState.DRAFT
+        locked_item.save(update_fields=["draft_version", "state", "updated_at"])
         audit.record(
-            request, "content.version_created", summary=f"Created draft v{version.number} of {content_item}",
+            request, "content.version_created", summary=f"Created draft v{version.number} of {locked_item}",
             target=version, after={"blocks": blocks},
         )  # fmt: skip
+        # Keep the caller's in-memory instance consistent with what was just committed.
+        content_item.draft_version = version
+        content_item.draft_version_id = version.id
+        content_item.state = WorkflowState.DRAFT
         return version
 
 
@@ -80,7 +96,11 @@ def submit(request, *, version: ContentVersion):
         raise Conflict(f"Cannot submit from state {version.state}.")
     with transaction.atomic():
         version.state = WorkflowState.SUBMITTED
-        version.save(update_fields=["state", "updated_at"])
+        # Resolve and freeze the required stages now (Invariant 5): a later
+        # ApprovalRule change must not silently alter what this in-flight
+        # version needs. `approve()` reads this snapshot, never a live query.
+        version.approval_stages_snapshot = _resolve_stages(version.content_item)
+        version.save(update_fields=["state", "approval_stages_snapshot", "updated_at"])
         version.content_item.state = version.state
         version.content_item.save(update_fields=["state", "updated_at"])
         audit.record(request, "content.submitted", summary=f"Submitted {version} for review", target=version)
@@ -91,10 +111,15 @@ def open_review(request, *, version: ContentVersion):
     if version.state != WorkflowState.SUBMITTED:
         raise Conflict(f"Cannot open review from state {version.state}.")
     with transaction.atomic():
+        before_state = WorkflowState.SUBMITTED
         version.state = WorkflowState.IN_REVIEW
         version.save(update_fields=["state", "updated_at"])
         version.content_item.state = version.state
         version.content_item.save(update_fields=["state", "updated_at"])
+        audit.record(
+            request, "content.review_opened", summary=f"Opened review on {version}", target=version,
+            before={"state": before_state}, after={"state": version.state},
+        )  # fmt: skip
         return version
 
 
@@ -146,7 +171,10 @@ def _rule_matches(rule, item: ContentItem) -> bool:
 def approve(request, *, version: ContentVersion, comment: str = ""):
     if version.state != WorkflowState.IN_REVIEW:
         raise Conflict(f"Cannot approve from state {version.state}.")
-    stages = _resolve_stages(version.content_item)
+    # Use the stages frozen at submit time, never a live ApprovalRule query —
+    # Invariant 5 (docs/07_CONTENT_WORKFLOW.md): a rule change mid-review must
+    # not silently alter what this specific in-flight version needs.
+    stages = version.approval_stages_snapshot or _DEFAULT_RULE_STAGES
     prior_approvers = list(
         Approval.objects.filter(content_version=version, decision=Approval.Decision.APPROVED).values_list(
             "approver_id", flat=True
@@ -208,9 +236,16 @@ def publish(request, *, version: ContentVersion):
     Cloudflare deploy — that is the Phase 2D/2E deployment abstraction,
     deliberately out of scope here (task §20: saving/publishing/deploying
     are distinct concerns).
+
+    Gates on accessibility (docs/25_VISUAL_EDITOR_ARCHITECTURE.md "Image
+    props"): every `image` prop in the document must resolve to non-empty
+    alt text before this version can go live. This is checked here, not at
+    draft-save time, so an editor can save a draft with a picked image
+    before writing the caption.
     """
     if version.state not in (WorkflowState.APPROVED, WorkflowState.SCHEDULED):
         raise Conflict(f"Cannot publish from state {version.state}.")
+    validate_image_accessibility(version.blocks, _active_block_types())
     with transaction.atomic():
         version.state = WorkflowState.PUBLISHED
         version.save(update_fields=["state", "updated_at"])
