@@ -48,7 +48,7 @@ stays the legacy source and data moves by ETL scripts). The Control
 Room keeps running until each feature has a verified Django/Angular
 replacement — nothing is switched off early.
 
-### ADR-002 — Public site rendering: keep prerender, rebuild on publish — PROPOSED
+### ADR-002 — Public site rendering: keep prerender, rebuild on publish — **ACCEPTED 2026-09-28** (session override, see `PHASE_2_AUTHORIZATION.md` "Override record"; originally proposed, readiness-noted 2026-09-27)
 
 The public site stays **static prerendered HTML** (fast, SEO, free). The
 prerender step fetches *published* content from the API instead of
@@ -61,6 +61,23 @@ at this traffic). Revisit if publish-to-live latency of minutes is unacceptable.
 
 Time-sensitive fields (upcoming vs past events) are additionally re-evaluated
 client-side after hydration so they are never stale between builds.
+
+**Readiness note (2026-09-27, Phase 1→Phase 2 audit):** verified consistent
+with the actual repository and production state — the public site is
+already deployed as static prerendered HTML with no runtime backend
+dependency, and no evidence of an alternative (runtime-API or ISR) pipeline
+exists anywhere in the codebase. No new analysis changes this proposal.
+
+```text
+STATUS: ACCEPTED (2026-09-28)
+```
+
+Accepted by the project owner via the session override recorded in
+`PHASE_2_AUTHORIZATION.md`. Phase 2A (this session) builds the public
+read-only content endpoint this pipeline will consume
+(`GET /api/v1/content/public/<content_type>/<slug>`) but does **not** wire
+it to the Angular prerender step or add any Cloudflare deploy-hook call —
+that remains Phase 2B/2E.
 
 ### ADR-003 — Cloudflare Pages, not Workers Static Assets — ACCEPTED (see also `ADR-009-CLOUDFLARE-DEPLOYMENT.md`)
 

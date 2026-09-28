@@ -11,6 +11,10 @@ Start with **[ARCHITECTURE_DECISION_RECORD](ARCHITECTURE_DECISION_RECORD.md)** (
 | [PHASE_1_AUTHORIZATION](PHASE_1_AUTHORIZATION.md) | blockers classification |
 | [PHASE_1_IMPLEMENTATION_NOTES](PHASE_1_IMPLEMENTATION_NOTES.md) | what Phase 1 built, how to run and test it, limitations |
 | [ADR-010 Governance grant exemption](ADR-010-GOVERNANCE-GRANT-EXEMPTION.md) | contradiction found in Phase 1 and its resolution |
+| [PHASE_2_AUTHORIZATION](PHASE_2_AUTHORIZATION.md) | Phase 2 go/no-go — AUTHORIZED (session override 2026-09-28), N-3/N-4/F9 still open |
+| [ADR-011 CMS content model](ADR-011-CMS-CONTENT-MODEL.md) | typed relational detail models vs. generic JSON — ACCEPTED |
+| [ADR-012 Event model split](ADR-012-EVENT-MODEL-SPLIT.md) | content/operational split for Event — PROPOSED |
+| [ADR-013 Visual page builder](ADR-013-VISUAL-PAGE-BUILDER.md) | Canva/Figma-like block editor, extends ADR-011 — IMPLEMENTED (Phase 2A), proposed for ratification |
 
 | # | Doc | Also referred to as |
 |---|---|---|
@@ -34,3 +38,9 @@ Start with **[ARCHITECTURE_DECISION_RECORD](ARCHITECTURE_DECISION_RECORD.md)** (
 | 17 | [Developer handover](17_DEVELOPER_HANDOVER.md) | DEVELOPER_HANDOVER.md |
 | 18 | [Testing strategy](18_TESTING_STRATEGY.md) | |
 | 19 | [Implementation roadmap](19_IMPLEMENTATION_ROADMAP.md) | |
+| 20 | [CMS content model (Phase 2 proposal)](20_CMS_CONTENT_MODEL.md) | |
+| 21 | [CMS workflow (Phase 2 operationalization)](21_CMS_WORKFLOW.md) | |
+| 22 | [Legacy migration matrix](22_MIGRATION_MATRIX.md) | |
+| 23 | [Operations model: content vs. event](23_OPERATIONS_MODEL.md) | |
+| 24 | [Succession & governance](24_SUCCESSION_GOVERNANCE.md) | |
+| 25 | [Visual editor architecture](25_VISUAL_EDITOR_ARCHITECTURE.md) | Phase 2A implemented; 2B-2E not built |
