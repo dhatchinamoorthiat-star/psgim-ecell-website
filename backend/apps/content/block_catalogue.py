@@ -15,6 +15,9 @@ Derived from what the 17 existing public page components
                      proves the object_list pattern generalizes to people records
                      without inventing new site content; no real people are seeded here
   cta             -> the site-wide primary CTA pattern (site.data.ts primaryCta)
+  dynamic_query   -> Phase 2B: an allowlisted server-resolved listing (Events/
+                     Blogs), never a client-supplied query — see
+                     apps.content.dynamic_queries and docs/25 "Dynamic content"
 
 Structured list props use the `list` + `item_type: "object"` + `item_schema`
 shape (see `apps.content.validation`), not bare scalars — a Phase 2A gate
@@ -33,6 +36,20 @@ Only `page`-level composition is allowed at Phase 2A: every type accepts
 are enforced by `ContentBlockType.allowed_parent_keys` +
 `apps.content.validation`.
 """
+
+# The Pending<T> editorial marker (web/src/app/core/models/models.ts:
+# `{value: T, pending: boolean}`), used throughout about.data.ts/
+# stats.data.ts/events.data.ts/blogs.data.ts for "confirmed vs. still to be
+# confirmed" copy. Spliced into any block/item schema below that needs it,
+# rather than redeclared per type. Rendering: the existing
+# `ui-pending-flag` component (`shared/ui/pending-flag.component.ts`),
+# unchanged — same visual treatment the legacy pages already use for this
+# exact marker (e.g. `events.component.html`'s `@if (ev.pending) {
+# <ui-pending-flag label="Illustrative"> }`), not a new invented one.
+_PENDING_PROPS = {
+    "pending": {"type": "bool", "required": False},
+    "pending_label": {"type": "string", "required": False, "max_length": 300},
+}
 
 BLOCK_TYPES: list[dict] = [
     {
@@ -70,6 +87,7 @@ BLOCK_TYPES: list[dict] = [
                 "paragraphs": {
                     "type": "list", "item_type": "string", "required": True, "max_items": 40,
                 },  # fmt: skip
+                **_PENDING_PROPS,
             }
         },
         "allowed_parent_keys": [],
@@ -91,6 +109,7 @@ BLOCK_TYPES: list[dict] = [
                         }
                     },
                 },  # fmt: skip
+                **_PENDING_PROPS,
             }
         },
         "allowed_parent_keys": [],
@@ -110,6 +129,7 @@ BLOCK_TYPES: list[dict] = [
                         }
                     },
                 },  # fmt: skip
+                **_PENDING_PROPS,
             }
         },
         "allowed_parent_keys": [],
@@ -127,6 +147,19 @@ BLOCK_TYPES: list[dict] = [
                         "properties": {
                             "title": {"type": "string", "required": True, "max_length": 120},
                             "body": {"type": "string", "required": True, "max_length": 600},
+                            **_PENDING_PROPS,
+                            # Optional fields covering the richer card-like shapes actually
+                            # found in the site data (Initiative: tag/cadence/venue/stage/
+                            # index/href; RoadmapItem: status) — added here rather than as
+                            # separate block types, since they're all "a labelled card",
+                            # per docs/25 "no lossy migration unless documented".
+                            "tag": {"type": "string", "required": False, "max_length": 60},
+                            "cadence": {"type": "string", "required": False, "max_length": 60},
+                            "venue": {"type": "string", "required": False, "max_length": 120},
+                            "stage": {"type": "string", "required": False, "max_length": 40},
+                            "status": {"type": "string", "required": False, "enum": ["building", "planned"]},
+                            "index": {"type": "string", "required": False, "max_length": 10},
+                            "href": {"type": "url", "required": False},
                         }
                     },
                 },  # fmt: skip
@@ -144,7 +177,15 @@ BLOCK_TYPES: list[dict] = [
                     "type": "list", "item_type": "object", "required": True, "max_items": 200,
                     "item_schema": {
                         "properties": {
-                            "image": {"type": "image", "required": True},
+                            # Not required: today's gallery.data.ts entries carry a
+                            # filename that resolves to no actual asset anywhere in
+                            # web/public — the current site renders a captioned
+                            # placeholder tile, no <img>. `file` preserves that raw
+                            # source string verbatim for provenance without
+                            # pretending it's a working media reference; `image`
+                            # is populated once a real asset exists.
+                            "image": {"type": "image", "required": False},
+                            "file": {"type": "string", "required": False, "max_length": 200},
                             "caption": {"type": "string", "required": False, "max_length": 200},
                             "album": {"type": "string", "required": False, "max_length": 80},
                             "ratio": {"type": "string", "required": False, "enum": ["landscape", "portrait", "square"]},
@@ -165,8 +206,13 @@ BLOCK_TYPES: list[dict] = [
                     "type": "list", "item_type": "object", "required": True, "max_items": 100,
                     "item_schema": {
                         "properties": {
-                            "name": {"type": "string", "required": True, "max_length": 120},
+                            # Not required: team.data.ts's TeamRole carries real rows where
+                            # a role is defined but not yet filled (name: null) — the schema
+                            # must represent that honestly rather than force a placeholder.
+                            "name": {"type": "string", "required": False, "max_length": 120},
                             "role": {"type": "string", "required": False, "max_length": 120},
+                            "org": {"type": "string", "required": False, "max_length": 120},
+                            "remit": {"type": "string", "required": False, "max_length": 200},
                             "photo": {"type": "image", "required": False},
                         }
                     },
@@ -183,6 +229,28 @@ BLOCK_TYPES: list[dict] = [
                 "heading": {"type": "string", "max_length": 200},
                 "label": {"type": "string", "required": True, "max_length": 60},
                 "url": {"type": "url", "required": True},
+            }
+        },
+        "allowed_parent_keys": [],
+    },
+    {
+        "key": "dynamic_query",
+        "label": "Dynamic listing",
+        "json_schema": {
+            "props": {
+                "heading": {"type": "string", "max_length": 200},
+                # This schema check is defense in depth only — the actual
+                # allowlist/sort/limit enforcement lives server-side in
+                # apps.content.dynamic_queries.resolve, which is the only
+                # code path that ever executes a query. Nothing here lets a
+                # document carry SQL, an ORM expression, or a model name.
+                "query": {
+                    "type": "string", "required": True,
+                    "enum": ["published_events_upcoming", "published_events_past", "published_blogs"],
+                },  # fmt: skip
+                "sort": {"type": "string", "required": False, "max_length": 40},
+                "limit": {"type": "int", "required": False},
+                "empty_label": {"type": "string", "required": False, "max_length": 120},
             }
         },
         "allowed_parent_keys": [],

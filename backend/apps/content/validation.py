@@ -97,6 +97,14 @@ def _validate_image(value, path: str) -> None:
 def _validate_prop(spec: dict, value, path: str, *, depth: int = 0) -> None:
     if depth > _MAX_PROP_DEPTH:
         raise ValidationError({path: ["Prop nesting is too deep."]})
+    if value is None:
+        # An explicit null is meaningfully different from omitting the key
+        # (e.g. Stat.count: number | null in the source data — "no count",
+        # not "unset") — valid wherever the field isn't required; a
+        # required field must still carry a real value.
+        if spec.get("required"):
+            raise ValidationError({path: ["This prop is required and cannot be null."]})
+        return
     prop_type = spec.get("type", "string")
     if prop_type == "string":
         if not isinstance(value, str):

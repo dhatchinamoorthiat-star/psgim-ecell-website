@@ -44,6 +44,18 @@ def test_missing_required_prop_rejected(hero_type):
         validate_blocks_document(_doc([{"id": "h1", "type": "hero", "props": {}}]), {"hero": hero_type})
 
 
+def test_null_value_accepted_for_optional_prop(hero_type):
+    # image is not required on the hero fixture's schema — an explicit null
+    # (Stat.count: number | null in the real source data) must be distinct
+    # from an invalid value, not rejected.
+    validate_blocks_document(_doc([{"id": "h1", "type": "hero", "props": {"heading": "Hi", "image": None}}]), {"hero": hero_type})
+
+
+def test_null_value_rejected_for_required_prop(hero_type):
+    with pytest.raises(ValidationError):
+        validate_blocks_document(_doc([{"id": "h1", "type": "hero", "props": {"heading": None}}]), {"hero": hero_type})
+
+
 def test_unknown_prop_rejected(hero_type):
     with pytest.raises(ValidationError):
         validate_blocks_document(

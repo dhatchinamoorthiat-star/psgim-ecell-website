@@ -176,17 +176,27 @@ class NECDetail(TimeStampedModel):
 
 
 class BlogDetail(TimeStampedModel):
-    """Authored post (docs/05_DATA_MODEL.md: "Blog: 1:1 extension of ContentItem")."""
+    """
+    Authored post (docs/05_DATA_MODEL.md: "Blog: 1:1 extension of
+    ContentItem"). `author` is a platform User FK for when the writer has a
+    real account; `author_name` (Phase 2B) is a free-text byline for the
+    common case in the source data ("E-Cell writing team") where it isn't
+    one specific registered user — never invents an account to satisfy the
+    FK. `external_url`/`pending` carry `BlogPost`'s remaining fields.
+    """
 
     content_item = models.OneToOneField(ContentItem, on_delete=models.CASCADE, related_name="blog_detail")
     title = models.CharField(max_length=200)
     author = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    author_name = models.CharField(max_length=120, blank=True)
     author_vertical = models.ForeignKey(
         "verticals.Vertical", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     cover = models.URLField(blank=True)
     excerpt = models.CharField(max_length=400, blank=True)
     category = models.CharField(max_length=80, blank=True)
+    external_url = models.URLField(blank=True)
+    pending = models.BooleanField(default=False)
     seo_title = models.CharField(max_length=200, blank=True)
     seo_description = models.CharField(max_length=300, blank=True)
     og_image = models.URLField(blank=True)
@@ -199,7 +209,12 @@ class EventDetail(TimeStampedModel):
     """
     Event's public content face only (docs/23_OPERATIONS_MODEL.md,
     ADR-012). Registration/check-in/certificates are Phase 3 operational
-    objects, explicitly not modeled here.
+    objects, explicitly not modeled here. `summary`/`time_label`/`audience`/
+    `registration_status`/`turnout`/`pending` (Phase 2B) carry the fields
+    `EventItem` (web/src/app/core/models/models.ts) has that plain
+    date/venue can't: `time_label` is a free display string
+    ("6:00 PM", "Fri – Sun"), not a parseable time, matching the source
+    exactly rather than forcing it into a second `DateTimeField`.
     """
 
     content_item = models.OneToOneField(ContentItem, on_delete=models.CASCADE, related_name="event_detail")
@@ -208,6 +223,12 @@ class EventDetail(TimeStampedModel):
     starts_at = models.DateTimeField(null=True, blank=True)
     ends_at = models.DateTimeField(null=True, blank=True)
     venue = models.CharField(max_length=200, blank=True)
+    summary = models.CharField(max_length=600, blank=True)
+    time_label = models.CharField(max_length=60, blank=True)
+    audience = models.CharField(max_length=120, blank=True)
+    registration_status = models.CharField(max_length=40, blank=True)
+    turnout = models.CharField(max_length=120, blank=True)
+    pending = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title
