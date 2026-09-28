@@ -10,6 +10,7 @@ api_v1 = [
     path("", include("apps.memberships.urls")),
     path("audit", include("apps.audit.urls")),
     path("settings", include("apps.core.urls")),
+    path("content", include("apps.content.urls")),
     path("schema", SchemaView.as_view(), name="schema"),
     path("docs", SwaggerView.as_view(url_name="schema"), name="swagger"),
 ]
