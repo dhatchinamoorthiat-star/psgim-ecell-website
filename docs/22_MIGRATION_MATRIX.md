@@ -46,6 +46,138 @@ constraint.
 | Event-day sessions | `ecell/src/lib/sessions.ts`, kiosk display, session token API | Event operational object (sessions) | 3 | Not started | Event operational object | Session display/token parity | — | — | Out of Phase 2 scope; grouped with registration/check-in |
 | Control Room retirement | N/A (currently the system of record for all of the above) | N/A | Explicitly out of scope for Phase 2 and this audit | Not started | Every row above reaching parity + pilot + cutover approval | Full functional parity across all migrated capabilities | Institution-wide pilot period | Explicit written cutover approval from leadership, per capability or in full | See `23_OPERATIONS_MODEL.md` and `24_SUCCESSION_GOVERNANCE.md` for the operational/governance context this depends on |
 
+## Phase 2B — Public Angular route migration status (completion pass)
+
+Separate from the Control Room capability matrix above: this section is the
+**authoritative, definitive** status of all 18 existing public Angular
+routes (`web/src/app/features/*`, `web/src/app/app.routes.ts`) against the
+CMS/block-renderer pipeline (`docs/25_VISUAL_EDITOR_ARCHITECTURE.md`). None
+of the 18 legacy routes or their `*.data.ts` files were modified, removed,
+or replaced — every one still renders exactly as before, verified by `ng
+build` reporting the same prerendered route count before and after this
+pass. Migrated content is additionally reachable, unchanged, at
+`/content/<content_type>/<slug>` (SSR'd per request — see doc 25
+"SSR/prerender").
+
+A first Phase 2B pass migrated only 5 of these routes and was correctly
+sent back as incomplete: the task requires every CMS-representable route to
+actually be representable, not a partial slice. This revision closes that
+gap — **16 of 18 routes are now `CMS_PAGE`/`CMS_LISTING` and migrated**;
+the remaining 2 are genuinely not page content (classified and justified
+below, not deferred).
+
+### Classification
+
+`CMS_PAGE` (a single document), `CMS_DETAIL` (an individual typed content
+item), `CMS_LISTING` (a page whose body is one or more `dynamic_query`
+blocks resolving a set of `CMS_DETAIL` items), `GLOBAL_SYSTEM` (site-wide
+configuration/navigation, not page content), `NON_CMS_SYSTEM` (an internal
+tool, not content at all).
+
+| Route | Classification | Current source | CMS representation | Status |
+|---|---|---|---|---|
+| `/` (Home) | CMS_PAGE | `home.data.ts`, `about.data.ts` hero, `stats.data.ts` | `page:home` — hero, rich_text, card_grid ×2, stats, cta | **MIGRATED** |
+| `/about` | CMS_PAGE | `about.data.ts` (14 sections) | `page:about` — hero + 13 rich_text/timeline blocks | **MIGRATED** |
+| `/origin` | CMS_PAGE | `about.data.ts` (`story`) | `page:origin` — rich_text | **MIGRATED** |
+| `/vision-mission` | CMS_PAGE | `about.data.ts` (`vision`) | `page:vision-mission` — rich_text (with `pending`) | **MIGRATED** |
+| `/reach` | CMS_PAGE | `about.data.ts` (`reach`) | `page:reach` — rich_text | **MIGRATED** |
+| `/spotlight` | CMS_PAGE | `about.data.ts` (`spotlight`) | `page:spotlight` — rich_text | **MIGRATED** |
+| `/history` | CMS_PAGE | `about.data.ts` (`timeline`) | `page:history` — timeline (with `pending`) | **MIGRATED** |
+| `/initiatives` | CMS_PAGE | `initiatives.data.ts` | `page:initiatives` — card_grid ×3 (what-we-create, stages, initiatives) | **MIGRATED** |
+| `/podcast` | CMS_PAGE | `about.data.ts` (`podcast`) | `page:podcast` — rich_text | **MIGRATED** |
+| `/website-av` | CMS_PAGE | `about.data.ts` (`websiteAv`) | `page:website-av` — rich_text | **MIGRATED** |
+| `/team` | CMS_PAGE | `team.data.ts` | `page:team` — team_grid ×2 | **MIGRATED** |
+| `/gallery` | CMS_PAGE | `gallery.data.ts` | `page:gallery` — gallery | **MIGRATED** |
+| `/nec` | CMS_PAGE | `nec.data.ts` | `nec:nec` — hero, rich_text ×2, stats, card_grid ×3, timeline, rich_text | **MIGRATED** (10 blocks, individually addressable — not one rich_text dump) |
+| `/soon` | CMS_PAGE | `roadmap.data.ts` | `page:soon` — rich_text, card_grid | **MIGRATED** |
+| `/events` | CMS_LISTING | `events.data.ts` | `page:events` (2 `dynamic_query` blocks: `published_events_upcoming`/`published_events_past`) + 5 `event:*` CMS_DETAIL items with real `EventDetail` rows | **MIGRATED** |
+| `/blogs` | CMS_LISTING | `blogs.data.ts` | `page:blogs` (1 `dynamic_query` block: `published_blogs`) + 1 `blog:*` CMS_DETAIL item with a real `BlogDetail` row | **MIGRATED** |
+| `/contact` | GLOBAL_SYSTEM | `site.data.ts` only | Not a page document — reads `site.data.ts`'s address/contact/social fields directly, same as `NavbarComponent`/`FooterComponent`. There is no page-specific content on this route at all (confirmed by reading `contact.component.ts`: it imports only `site`) | **INTENTIONALLY NON-CMS** — migrating it would mean inventing a page wrapper around what is already global configuration |
+| `/control` | NON_CMS_SYSTEM | none (`QrGeneratorComponent`) | An internal QR-poster generator tool, `noindex,nofollow`, no content import of any kind (confirmed by reading `control.component.ts`) | **INTENTIONALLY NON-CMS** — this is a utility, not content, by construction |
+
+**Route total:** 18. **CMS_PAGE/CMS_LISTING, migrated: 16. GLOBAL_SYSTEM: 1
+(`/contact`). NON_CMS_SYSTEM: 1 (`/control`). Not started / blocked: 0.**
+
+Also not a route (feeds the navbar's search widget, no page of its own):
+`search.data.ts` → `SearchEntry[]` → **GLOBAL_SYSTEM**, same reasoning as
+nav/footer.
+
+### Verification
+
+Every `CMS_PAGE`/`CMS_LISTING` row above was checked by actually fetching
+it, not inferred from the migration script's exit code: `manage.py
+migrate_legacy_content` run twice in sequence against a real Postgres
+database reports `20 created` then `0 created, ..., 20 unchanged`
+(idempotent, no duplicates — later extended to 22 with the Events/Blogs
+listing pages, same result pattern), and `curl` against the running `ng
+serve` + Django backend confirms real server-rendered HTML for `/about`,
+`/origin`, `/events` (showing the correct upcoming/past split against the
+actual current date), `/blogs` (showing the real sample post), and `/nec`
+(showing all 10 structured sections) — see "SSR/prerender" in doc 25 for
+the exact commands and output.
+
+## Global elements (nav, footer, notice banner, search, contact) — not part of this migration
+
+`site.data.ts`'s `nav`, `notice`, `social`, `contact`, `primaryCta`, and
+`search.data.ts`'s search index back `NavbarComponent`/`FooterComponent`/
+`PageShellComponent`/the search widget, which remain plain Angular
+components reading those files directly, unchanged. Per task §9/§8, these
+are deliberately not modeled as page-document blocks — duplicating global
+navigation into every `ContentItem` would let a single page edit break the
+whole site's navigation, and `/contact` is classified `GLOBAL_SYSTEM`
+above for the same reason (it has no content beyond that global
+configuration). A dedicated global-content model (its own `ContentItem`
+scope, edited by design/system-level permissions only) remains Phase
+2C/2D work.
+
+## Media resolution (Phase 2B completion pass)
+
+`apps.content.media_resolution.resolve_blocks_media` closes the gap the
+prior pass left open: `source: "media"` image props are now resolved to a
+real `MediaAsset.delivery_url`/`alt_text` server-side, inline in
+`PublicContentDetailView`'s response, before Angular ever sees them — see
+doc 25 "Media reference resolution" for the full pipeline and its test
+coverage (7 backend tests: resolution, alt-text override, dangling-asset
+fail-safe, document non-mutation, end-to-end published-content resolution,
+and confirmation that draft content's media is never reachable at all).
+No Phase 2B-migrated page currently uses `source: "media"` (all use
+`source: "external"` or omit the image, matching what the legacy pages
+actually do today), but the pipeline is real, tested, and ready for the
+first page that does.
+
+## Pending<T> (Phase 2B completion pass)
+
+Closed: `pending`/`pending_label` are now real optional props on
+`rich_text`, `stats`, `timeline`, and `card_grid`'s cards (see
+`block_catalogue.py`'s `_PENDING_PROPS`), rendered by the existing
+`ui-pending-flag` component — the exact same visual treatment the legacy
+pages already use for this marker, not a new one. Migrated and verified
+live: About's "vision" (rich_text) and "timeline" blocks carry
+`vision.data.ts`'s real `pending`/`note` values and render the flag in
+server-rendered HTML; every migrated Event carries its real `pending: true`
+from `events.data.ts`.
+
+## Known gaps (named, not silently dropped)
+
+- **Initiative's full narrative `body`** (vs. the shorter `summary` that
+  was migrated for the listing cards) still has no block type — the
+  listing/summary view is complete; a full initiative detail page (if ever
+  wanted) is unbuilt.
+- **NEC's `join` CTA has no real destination URL** — `site.data.ts`'s
+  `contact.interestForm` is still `Pending<null>` in the source itself, so
+  the migrated NEC page renders the join text as `rich_text`, not a `cta`
+  block with an invented link.
+- **The video hero, Home's scroll-driven journey rail, and Home's live
+  upcoming-events/gallery-preview strips** are page-specific interactive
+  presentations, not generic content — intentionally not modeled as
+  blocks; Home's CMS document covers its structured *content* sections
+  only (see the Home row above), not full visual parity with the legacy
+  route's bespoke interactions.
+- **Gallery/Team photos** — no real image files exist for either in
+  `web/public` today (confirmed directly), and neither legacy page renders
+  one; migration preserves that reality (`file` kept as metadata, no
+  invented URL) rather than fabricating a media reference.
+
 ## What this matrix does not do
 
 It does not commit the project to migrating Committees, Creators, Ventures,

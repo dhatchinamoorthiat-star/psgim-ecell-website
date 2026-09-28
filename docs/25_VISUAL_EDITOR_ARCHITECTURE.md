@@ -1,7 +1,17 @@
 # 25 — Visual Editor Architecture
 
-- **Date:** 2026-09-28 (revised same day — Phase 2A gate-review remediation)
-- **Status:** Phase 2A **IMPLEMENTED**; Phases 2B–2E **NOT BUILT** (see phased plan below)
+- **Date:** 2026-09-28 (revised three times same day — Phase 2A gate-review
+  remediation; Phase 2B shared renderer + representative migration;
+  Phase 2B completion pass — full-site migration, media resolution,
+  Pending<T>, real Events/Blogs content)
+- **Status:** Phase 2A **IMPLEMENTED**; Phase 2B **IMPLEMENTED AND
+  COMPLETE** (shared Angular renderer, 9-block component set, allowlisted
+  dynamic content with real Events/Blogs data, media reference resolution,
+  Pending<T> editorial marker, 16 of 18 public routes migrated — the
+  remaining 2 are classified non-CMS, not deferred — see
+  `docs/22_MIGRATION_MATRIX.md` "Phase 2B — Public Angular route migration
+  status (completion pass)"); Phases 2C–2E **NOT BUILT** (see phased plan
+  below)
 - **Extends:** `ADR-013-VISUAL-PAGE-BUILDER.md`, `ADR-011-CMS-CONTENT-MODEL.md`
 
 > **Revision note:** an independent gate review of the first Phase 2A pass
@@ -100,13 +110,16 @@ Derived from what the 17 existing public page components genuinely render
 `timeline` (maps to `TimelineEntry{year,what}`), `card_grid` (maps to
 `ActionCard{title,body}`), `gallery` (maps to
 `GalleryItem{file,caption,album,ratio}`), `team_grid` (maps to the
-`FacultyMember`/`TeamRole`/NEC-team person shape in `team.data.ts` — seeded
-with an empty catalogue entry only, to prove the `object_list` pattern
-generalizes to people records without inventing any real member data), and
-`cta`. All structured list props now use `list` + `item_type: "object"` +
-`item_schema` (the fix above) instead of the earlier bare-string lists, so
-every field these types are named for is actually representable. Seeded via
-`manage.py seed_content_block_types` (idempotent, mirrors `seed_rbac`).
+`FacultyMember`/`TeamRole`/NEC-team person shape in `team.data.ts`; `name`
+is not required, matching real rows where a role is defined but not yet
+filled), `cta`, and `dynamic_query` (Phase 2B — see "Dynamic content"
+below). All structured list props use `list` + `item_type: "object"` +
+`item_schema` instead of bare-string lists, so every field these types are
+named for is actually representable. Seeded via `manage.py
+seed_content_block_types` (idempotent, mirrors `seed_rbac`); 10 types as of
+Phase 2B (9 registered with an Angular component — see "Shared renderer
+invariant" — plus `section_heading`, catalogued but not yet given its own
+component).
 
 ## Image props and media references
 
@@ -151,6 +164,55 @@ decorative-image use case shows up later, it needs its own explicit
 `decorative: true` field and a product decision, not a quiet default added
 to this validator.
 
+## Media reference resolution — implemented (Phase 2B completion pass)
+
+`source: "media"` values are resolved server-side before they ever reach
+Angular:
+
+```text
+MediaAsset (uploaded, scoped)
+    -> block image prop {"source": "media", "asset_id": "<uuid>"}
+    -> published ContentVersion.blocks (stored as authored, unresolved)
+    -> apps.content.media_resolution.resolve_blocks_media()
+    -> {"source": "media", "asset_id": ..., "url": <delivery_url>, "alt": <resolved alt>, "width": ..., "height": ...}
+    -> PublicContentDetailView response
+    -> BlockImageComponent renders <img [src]="url">
+```
+
+`PublicContentDetailView.get()` calls `resolve_blocks_media` on
+`item.published_version.blocks` before returning — walking the document via
+the same `iter_image_props` helper the accessibility gate already uses
+(`apps/content/validation.py`), so every `image` prop is found regardless
+of nesting depth. A dangling/deleted `asset_id` resolves to `None` (the
+prop is dropped), which `BlockImageComponent` already renders as "no
+image" rather than a broken `<img>` request — no code path exists that
+could 404 or 500 on a stale reference. `source: "external"` values pass
+through byte-for-byte unchanged; the function never mutates its input
+(deep-copies first), so the stored, authored document is untouched.
+
+**No new authorization surface.** `MediaAsset` upload/listing scope
+(`apps.content.views`, media authorization) still governs who can *attach*
+an asset to a document. Resolution only ever runs on a `ContentItem`'s
+`published_version` — a document that is, by definition, already public —
+so whatever media it references is exactly as public as the rest of that
+page's content, the same as any other published field. Draft content is
+never reachable through `PublicContentDetailView` at all (unchanged from
+Phase 2A), so its media references, resolved or not, never leave the
+server. No Cloudinary credential or client-controlled URL is involved
+anywhere in this path — `resolve_blocks_media` only ever reads
+`MediaAsset.delivery_url`, a value the server itself wrote when the asset
+was uploaded (`apps.content.media`).
+
+`BlockImageComponent`, `BlockGalleryComponent`, and `BlockTeamGridComponent`
+were updated to render from a resolved `url` regardless of `source` (they
+previously special-cased `source: "external"` only, which was the actual
+Phase 2A-era gap) — delegated through the one shared `BlockImageComponent`
+in all three places rather than duplicating the check. Tested: 7 backend
+tests (`apps/content/tests/test_media_resolution.py`) cover resolution,
+alt-text override, dangling-asset fail-safe, non-mutation of the source
+document, end-to-end resolution through the public API for published
+content, and confirmation that a draft's media is never reachable at all.
+
 ## Security boundary
 
 No block type accepts raw HTML, inline scripts, or `javascript:`/`data:`
@@ -163,22 +225,84 @@ direct search) — this schema keeps it that way. Rich text stays a bounded
 string prop, not an HTML blob, until a dedicated allowlist HTML sanitizer
 is deliberately introduced for a future phase.
 
-## Shared renderer invariant (not yet built)
+## Shared renderer invariant (Phase 2B — implemented)
 
-Editor canvas and public rendering must consume the same `blocks` document
-through the same Angular block-component registry — there must never be
-"editor rendering ≠ public rendering." Phase 2A ships the document format
-and server-side validation only; the Angular side (block components,
-registry, and the switch that makes existing pages read from CMS data
-instead of `*.data.ts`) is Phase 2B.
+Built as `web/src/app/shared/blocks/`:
 
-## Responsive model (not yet built)
+```text
+ContentDocument.blocks
+        ↓
+BlockRendererComponent (block-renderer.component.ts)
+        ↓  Map.get(block.type)
+BLOCK_REGISTRY (block-registry.ts)
+        ↓
+one of 9 statically-imported Angular components (components/block-*.component.ts)
+```
 
-Each block type will eventually declare its own responsive behavior
-(e.g. `card_grid.columns` per breakpoint) rather than exposing arbitrary
-absolute positioning — this is a Phase 2C editor concern; the schema format
-above already supports adding a `responsive` prop-group per type without a
-breaking change when that phase starts.
+`BlockRendererComponent` is used by exactly one consumer today
+(`CmsPageComponent`, `web/src/app/features/cms-page/`), and is architected
+to be the Phase 2C editor preview's renderer too — the editor will wrap the
+same `<block-renderer [blocks]="...">` around a draft document instead of a
+published one; nothing about the renderer itself needs to change. There is
+only one renderer implementation in the codebase.
+
+**Safety, concretely:** `block.type` is looked up as a key in a
+`ReadonlyMap<string, Type<unknown>>` built from static imports
+(`block-registry.ts`) — there is no string-to-class resolution beyond a
+`Map.get`, no `eval`, no `Function(...)`, no dynamic template compilation,
+and an unregistered key renders nothing (dev-mode console warning only).
+`NgComponentOutlet`'s `inputs` binding passes `block.props` straight into
+the resolved component's typed `@Input() props`, which every block
+component destructures into ordinary Angular interpolation — never
+`[innerHTML]`. Verified by `block-renderer.component.spec.ts`, including a
+test that a `<script>`/`onerror=` payload inside a `rich_text` paragraph
+renders as literal escaped text, not a DOM element.
+
+**Design-system reuse, not a second one:** every block component's
+template reuses the site's existing CSS classes/tokens verbatim
+(`.section`/`.wrap`/`.section-heading`/`.kicker`/`.card`/`.grid.grid-N`/
+`.btn`/`.gallery-grid`/`.gallery-tile.ratio-*`/`.avatar-initials`/
+`.stats-band`, and the existing `ui-stat-tile` component is reused
+directly by `BlockStatsComponent`) — confirmed by reading the actual
+legacy templates first (`home.component.html`, `gallery.component.html`,
+`team.component.html`) rather than guessing. The one new primitive added,
+`.sr-only` (`web/src/styles/base.css`), is a standard visually-hidden
+utility, added to the canonical stylesheet, not a page-specific hack.
+
+**9 registered block types:** `hero`, `rich_text`, `stats`, `timeline`,
+`card_grid`, `gallery`, `team_grid`, `cta`, `dynamic_query`. `image` is not
+a block type — it's a prop type (`{"type": "image"}`) resolved by the
+shared `BlockImageComponent`, used inside `hero`/`gallery`/`team_grid`.
+`section_heading` (a Phase 2A catalogue entry) has no dedicated component
+yet — every other block already renders its own optional heading, and no
+Phase 2B page needs a bare standalone heading block.
+
+## Responsive model
+
+Per-block editor-controlled responsive overrides (e.g. `card_grid.columns`
+varying by breakpoint) are still **not built** — that remains a Phase 2C
+editor concern; the schema format already supports adding a `responsive`
+prop-group per type without a breaking change.
+
+Responsive *parity* with the legacy pages, however, is a direct consequence
+of block-component reuse, not a separate thing to build: every block
+component's template uses the exact same CSS classes
+(`.grid.grid-2`/`.grid.grid-3`, `.stats-band`, `.gallery-grid`, `.card`)
+that the legacy pages use, and those classes' breakpoint behavior lives in
+`web/src/styles/layout.css`/`sections.css` — untouched by this phase. A
+`card_grid` block therefore reflows at the same breakpoints as the legacy
+`home.component.html` "what happens" grid, by construction, without any
+block-specific responsive code. This was not independently verified with a
+real-device/viewport testing tool in this phase (no such tool was
+available); it is a structural guarantee from shared-CSS reuse, and should
+be spot-checked visually before any of these 5 pages is treated as a full
+replacement for its legacy route.
+
+## Global elements
+
+Not modeled as blocks — see `docs/22_MIGRATION_MATRIX.md` "Global elements
+(nav, footer, notice banner) — not part of this migration" for the
+reasoning and what's deferred to Phase 2C/2D.
 
 ## Versioning, preview, publishing
 
@@ -248,92 +372,130 @@ and hitting `unique_version_number_per_item` as an unhandled error. `revert`
 and the "new draft from an old version" endpoint both call `create_draft`
 internally, so the fix covers every version-creating path with one change.
 
-## Dynamic content (design only — not implemented in Phase 2A)
+## Dynamic content — implemented (Phase 2B)
 
-The gate review found that Events and Blogs listing pages (and similar
-"show N recently published items of a type" pages) cannot be represented
-by the static-props block model above — every current block type holds
-values the editor explicitly set, never a live query result. This section
-records the smallest viable design for Phase 2B to build against; **no
-code for it exists yet**, and none of the block types seeded in Phase 2A
-declare this type.
-
-### `dynamic_query` block (proposed shape, not seeded)
+Built as designed in the Phase 2A remediation, with one simplification: no
+per-query `filters` object exists yet (neither Events nor Blogs needed one
+to prove the mechanism) — `query`/`sort`/`limit` are implemented exactly as
+designed; `filters` is deferred until a concrete need names what should be
+filterable, rather than building an unused allowlist now.
 
 ```json
 {"id": "recent-events", "type": "dynamic_query", "props": {
-  "query": "published_events",
-  "filters": {"content_type": "event"},
-  "sort": "starts_at_desc",
-  "limit": 6
+  "query": "published_events_upcoming",
+  "sort": "starts_at_asc",
+  "limit": 6,
+  "empty_label": "No upcoming events right now."
 }}
 ```
 
-- **`query`** — one of a fixed, server-defined allowlist of identifiers,
-  e.g. `published_events`, `published_blogs`. Never a free string
-  interpreted as SQL, an ORM expression, or any executable code — each
-  identifier maps to one hand-written, reviewed query function in Django
-  (the same trust posture as `apps.content.views.PublicContentDetailView`:
-  the server decides what's queryable, the document only selects among
-  pre-approved options).
-- **`filters`** — a small, per-query allowlisted set of fields (e.g.
-  `owner_vertical`, `content_type` sub-kind), validated the same way a
-  block's other props are (`validate_props` against a declared schema
-  specific to each `query` identifier) — not an arbitrary filter DSL.
-- **`sort`** — an enum of pre-defined orderings per query (e.g.
-  `starts_at_desc`, `published_at_desc`), not an arbitrary field+direction
-  pair, so no query can be coerced into sorting by an unindexed or
-  sensitive column.
-- **`limit`** — bounded (e.g. max 24) to keep the public endpoint's
-  response size and query cost predictable.
-- **Public rendering behavior** — resolved server-side at read time by the
-  public content endpoint (`PublicContentDetailView`'s eventual 2B
-  successor), never client-side and never at authoring/draft time; a draft
-  previewing a `dynamic_query` block would need its own preview-time
-  resolution path that still only reads *published* items unless the
-  previewer holds `content.view` (matching the existing published-content
-  isolation invariant — a dynamic block must not become a side channel for
-  draft/unpublished content).
-- **Authorization model** — the query functions themselves only ever touch
-  published content for anonymous/public rendering; an authenticated
-  preview context would pass the requester through so scope-filtered
-  results are possible later, but Phase 2A/2B need only the public case.
-- **Caching implications** — because the public site stays static
-  prerendered (ADR-002, unchanged), a `dynamic_query` block's result is
-  resolved once at *build/prerender* time, not per-visitor-request — it is
-  not a runtime API dependency for the public page. This preserves the
-  "no runtime dependency for public rendering" invariant already committed
-  to in `docs/20_CMS_CONTENT_MODEL.md`.
+- **`apps.content.dynamic_queries.QUERY_REGISTRY`** (backend) is the
+  allowlist: `published_events_upcoming`, `published_events_past`,
+  `published_blogs`, each a `DynamicQuery` with its own `allowed_sorts`
+  tuple and `max_limit`. `resolve(query_id, sort, limit)` is the only
+  function that ever runs a query; an unknown `query_id` raises `NotFound`
+  (404, not a 500 or a silent empty result — this is an allowlist, not a
+  generic query API with an error path), an out-of-range `sort`/`limit`
+  raises `ValidationError` (400). Events is split into two identifiers
+  (upcoming/past) rather than one query with a client-supplied "when"
+  filter, replicating `events.data.ts`'s `splitEvents()` exactly: the
+  effective end (`ends_at` if set, else `starts_at`) compared to `now()`.
+- **`GET /api/v1/content/public/dynamic/<query_id>`**
+  (`PublicDynamicQueryView`) is the only HTTP entry point, unauthenticated,
+  `public = True`. All three resolvers filter on
+  `published_version__isnull=False` only — draft/unpublished
+  `EventDetail`/`BlogDetail` rows are structurally unreachable through this
+  endpoint, same invariant as `PublicContentDetailView`.
+- **`BlockDynamicQueryComponent`** (Angular) calls
+  `ContentApiService.getDynamic(props.query, {sort, limit})` — it passes
+  through exactly the identifier and options already validated when the
+  document was saved; it does not and cannot construct a different query.
+  Rendering branches on `props.query`, reusing `.events-list`/`.event-row`/
+  `.meta` for both events queries and blogs (blogs use the same row layout
+  as the legacy `blogs.component.html`, including the title-as-external-link
+  and inline author byline — not the `.grid`/`.card` layout an earlier
+  draft of this component used, which didn't match the real legacy markup).
+- **Caching / SSR reality (revised from the 2A design note):** the
+  original design assumed prerender-time resolution keeps this out of the
+  public runtime request path. In practice, the only route that currently
+  renders any block (including `dynamic_query`) is the Phase 2B cutover
+  route (`/content/**`), which is **`RenderMode.Server`** (SSR per
+  request), not build-time `Prerender` — see "SSR/prerender behavior"
+  below. So today a `dynamic_query` block *is* resolved on each request to
+  that route, same as the rest of its document. Once Phase 2E wires actual
+  published pages into the prerender pipeline, resolution genuinely moves
+  to build time as originally designed; this note exists so the two
+  documents don't quietly disagree about when it happens right now.
+- **Not built:** an authenticated/preview-scoped variant (draft-content
+  dynamic listings) — out of scope until Phase 2C's editor preview needs
+  it, per the original design note.
 
-**Why this is stopped here rather than implemented:** the query allowlist,
-per-query filter schemas, and the preview-time draft-isolation rule above
-are exactly the kind of concrete, reviewable design decisions this
-remediation pass should surface, not silently build past. Implementing it
-belongs in Phase 2B, alongside the renderer component that would actually
-consume its output — building the backend half alone here would commit to
-an API shape before the consuming side exists to validate it against.
+## SSR/prerender behavior
+
+The public site's existing 17 routes are **untouched** — still
+`RenderMode.Prerender` (build-time static HTML, `app.routes.server.ts`
+`'**'` wildcard, unchanged), still importing `*.data.ts` directly, still
+producing the same prerendered output (verified: `ng build` before and
+after this phase both report "Prerendered 18 static routes"; the new CMS
+route does not appear in that count or in `dist/web/browser/`, confirming
+it correctly stayed out of the prerender pass).
+
+The new `/content/:contentType/:slug` cutover route is `RenderMode.Server`
+— server-rendered per request (`app.routes.server.ts`), not prerendered.
+This was a deliberate choice, not an oversight: build-time prerendering of
+CMS-backed content requires the Django backend reachable during `ng
+build`, which is real build/deploy-pipeline wiring appropriately deferred
+to Phase 2E, not something to smuggle into Phase 2B's build config. SSR
+was verified directly (not just unit-tested): with the Django dev server
+and `ng serve` both running, `curl http://localhost:4200/content/page/home`
+returns real backend-sourced HTML — `<h1>Creating founders on campus</h1>`
+present in the raw server response, before any browser JS runs — proving
+the fetch-and-render pipeline is genuinely server-side, not a client-only
+fetch disguised by SSR shell HTML. A nonexistent slug
+(`/content/page/does-not-exist`) correctly server-renders the "Not found"
+state rather than leaking an error page or empty shell. `HttpClient` is
+configured with `withFetch()` (`app.config.ts`), which uses the platform
+fetch API identically in Node (SSR) and the browser — no browser-only API
+(`window`, `document`, `localStorage`, etc.) is used anywhere in the
+renderer or its block components; confirmed by code review of every
+`components/block-*.component.ts` file, none of which reference any such
+global.
+
+**Not verified:** production SSR (`npm run serve:ssr:web`) against a
+reverse-proxied backend the way Cloudflare would front it in production —
+`web/src/server.ts` has no `/api` proxy today (by design; that role
+belongs to the Cloudflare Pages Function in production, per ADR-004), so
+exercising that exact topology locally would mean modifying deployment
+plumbing, which is out of scope here. The `ng serve` + proxy.conf.json
+verification above exercises the identical Angular-side SSR/fetch code
+path; only the reverse-proxy hop is untested locally.
 
 ## Migration impact
 
-No existing Angular page, component, or `*.data.ts` file is touched by
-Phase 2A. The old renderer stays the only renderer in production until
-Phase 2B builds the shared block-renderer and a migration adapter, and
-parity is verified per-page before any cutover (per the task's "PARITY
-before editing freedom" requirement). The object/object_list schema fix
-above is a prerequisite for that migration to be lossless — the earlier
-bare-string-list schema could not have represented `stats.data.ts`,
-`nec.data.ts`'s tracks/incentives, `team.data.ts`, or `gallery.data.ts`
-without dropping fields.
+Phase 2A touched no existing Angular file. **Phase 2B also touches no
+existing route, component, or `*.data.ts` file** — every one of the 18
+legacy routes still renders exactly as before (verified: `ng build`
+reports the same prerendered route count before and after this phase).
+Migration is purely additive: new files under `web/src/app/shared/blocks/`,
+`web/src/app/features/cms-page/`, `web/src/app/core/services/
+content-api.service.ts`, one new route, one new CSS utility class, the
+backend `legacy_migration.py`/`migrate_legacy_content` management command,
+and `media_resolution.py`. See `docs/22_MIGRATION_MATRIX.md` "Phase 2B —
+Public Angular route migration status (completion pass)" for the full
+per-route classification and parity table — **16 of 18 routes now have a
+CMS-backed equivalent**; the remaining 2 (`/contact`, `/control`) are
+classified `GLOBAL_SYSTEM`/`NON_CMS_SYSTEM` with a documented reason, not
+left "not started."
 
 ## Phased plan
 
 | Phase | Scope | Status |
 |---|---|---|
 | 2A | Content model, workflow engine, block schema + registry, API (`backend/apps/content`) | **Done, gate-reviewed, remediated** (object/object_list schema, media scope enforcement, version-numbering lock, publish-time accessibility gate, approval-stage snapshot, audit completeness, own-content/approval-history read paths) |
-| 2B | Angular block-renderer components, block registry, existing-page migration adapter, public rendering parity | Not started |
+| 2B | Angular block-renderer components, block registry, full existing-page migration, public rendering parity, media resolution | **Done and complete** — shared renderer (9 block types), `ContentApiService`, one SSR cutover route, 16/18 routes migrated (22 `ContentItem`s, idempotent), allowlisted dynamic content with real Events/Blogs data, media reference resolution, Pending<T> editorial marker, backend+frontend tests, no legacy route touched |
 | 2C | Editor canvas, selection, inline text editing, media replacement, block manipulation, responsive preview, undo/redo | Not started |
 | 2D | Approval/publish UI, scheduled publication UI, deployment-job abstraction (no real Cloudflare call) | Not started |
-| 2E | Build/prerender/validate pipeline integration (still no production deploy) | Not started |
+| 2E | Build/prerender/validate pipeline integration (real prerender-time content resolution for CMS-backed routes, production SSR+proxy topology) | Not started |
 
 Each remaining phase gets its own plan and PR — see task instruction
 §31/§36 ("do not implement everything in one giant change", "make logical
