@@ -25,5 +25,6 @@ urlpatterns = [
     path("/block-types", views.ContentBlockTypeListView.as_view(), name="content-block-type-list"),
     path("/media", views.MediaAssetListView.as_view(), name="media-asset-list"),
     path("/media/upload-params", views.MediaUploadParamsView.as_view(), name="media-upload-params"),
+    path("/public/dynamic/<str:query_id>", views.PublicDynamicQueryView.as_view(), name="public-dynamic-query"),
     path("/public/<str:content_type>/<slug:slug>", views.PublicContentDetailView.as_view(), name="public-content-detail"),
 ]
