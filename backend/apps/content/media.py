@@ -21,12 +21,23 @@ class CloudinaryNotConfigured(APIException):
     default_code = "cloudinary_not_configured"
 
 
-def signed_upload_params(*, folder: str) -> dict:
+def folder_for_scope(*, owner_vertical_id) -> str:
+    """
+    The Cloudinary folder is derived from the actor's *verified* upload
+    scope, never taken from client input (a gate-review finding: an
+    arbitrary client-supplied folder let any uploader write into any
+    vertical's folder, or a reserved one). Callers must verify
+    `media.upload` for this exact scope before calling this.
+    """
+    return f"vertical/{owner_vertical_id}" if owner_vertical_id else "global"
+
+
+def signed_upload_params(*, owner_vertical_id) -> dict:
     if not (settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET):
         raise CloudinaryNotConfigured()
 
     timestamp = int(time.time())
-    scoped_folder = f"ecell/{folder}"
+    scoped_folder = f"ecell/{folder_for_scope(owner_vertical_id=owner_vertical_id)}"
     params = {"folder": scoped_folder, "timestamp": timestamp}
     to_sign = "&".join(f"{k}={params[k]}" for k in sorted(params))
     signature = hashlib.sha1((to_sign + settings.CLOUDINARY_API_SECRET).encode()).hexdigest()

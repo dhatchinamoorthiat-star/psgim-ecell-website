@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.ContentItemListView.as_view(), name="content-item-list"),
+    path("/mine", views.MyContentVersionsListView.as_view(), name="content-version-mine"),
     path("/<uuid:pk>", views.ContentItemDetailView.as_view(), name="content-item-detail"),
     path("/<uuid:pk>/unpublish", views.ContentItemUnpublishView.as_view(), name="content-item-unpublish"),
     path("/<uuid:pk>/revert", views.ContentItemRevertView.as_view(), name="content-item-revert"),
@@ -19,6 +20,7 @@ urlpatterns = [
     path("/versions/<uuid:pk>/approve", views.ContentVersionApproveView.as_view(), name="content-version-approve"),
     path("/versions/<uuid:pk>/schedule", views.ContentVersionScheduleView.as_view(), name="content-version-schedule"),
     path("/versions/<uuid:pk>/publish", views.ContentVersionPublishView.as_view(), name="content-version-publish"),
+    path("/versions/<uuid:pk>/approvals", views.ApprovalHistoryView.as_view(), name="content-version-approvals"),
     path("/approval-rules", views.ApprovalRuleListView.as_view(), name="approval-rule-list"),
     path("/block-types", views.ContentBlockTypeListView.as_view(), name="content-block-type-list"),
     path("/media", views.MediaAssetListView.as_view(), name="media-asset-list"),

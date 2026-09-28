@@ -1,7 +1,9 @@
+import uuid
+
 from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,14 +12,15 @@ from apps.audit import service as audit
 from apps.core.exceptions import Conflict
 from apps.rbac import catalogue as P
 from apps.rbac import policy
-from apps.rbac.api import PermissionedAPIView
+from apps.rbac.api import AUTHENTICATED, PermissionedAPIView
 from apps.rbac.models import ScopeType
 from apps.rbac.policy import ScopeTarget
 
 from . import media, workflow
-from .models import ApprovalRule, ContentBlockType, ContentItem, ContentVersion, MediaAsset
+from .models import Approval, ApprovalRule, ContentBlockType, ContentItem, ContentVersion, MediaAsset
 from .serializers import (
     ApprovalRuleSerializer,
+    ApprovalSerializer,
     ApproveSerializer,
     ContentBlockTypeSerializer,
     ContentItemCreateSerializer,
@@ -86,6 +89,23 @@ class ContentItemDetailView(PermissionedAPIView):
         return Response(ContentItemSerializer(self.get_item(pk)).data)
 
 
+class MyContentVersionsListView(PermissionedAPIView):
+    """
+    Every signed-in user's own authored versions, regardless of whether they
+    hold `content.view` anywhere. Closes the gap where an own_only
+    `content.submit` holder (e.g. MEMBER) could PATCH a draft they authored
+    but had no way to discover or read it (gate-review finding). Scope is
+    author identity, not vertical — a member never sees anyone else's drafts
+    through this endpoint, in or out of their vertical.
+    """
+
+    required_perms = {"GET": AUTHENTICATED}
+
+    def get(self, request):
+        qs = ContentVersion.objects.filter(author=request.user).select_related("content_item")
+        return self.paginated(qs, ContentVersionSerializer)
+
+
 class ContentItemUnpublishView(PermissionedAPIView):
     required_perms = {"POST": P.CONTENT_PUBLISH}
 
@@ -110,11 +130,21 @@ class ContentItemRevertView(PermissionedAPIView):
 
 
 class ContentVersionDetailView(PermissionedAPIView):
-    required_perms = {"GET": P.CONTENT_VIEW, "PATCH": P.CONTENT_SUBMIT}
+    # GET's coarse gate is only "signed in" — the real check is object-level in
+    # get_version() (content.view OR own-authored), because an own_only
+    # content.submit holder (MEMBER) may hold no content.view grant anywhere
+    # and would otherwise be blocked before that object-level check ever runs.
+    required_perms = {"GET": AUTHENTICATED, "PATCH": P.CONTENT_SUBMIT}
 
     def get_version(self, pk) -> ContentVersion:
         version = get_object_or_404(ContentVersion.objects.select_related("content_item"), pk=pk)
-        if not policy.has_perm(self.request.user, P.CONTENT_VIEW, version):
+        # An own_only content.submit holder (e.g. MEMBER) has no content.view
+        # grant at all but must still be able to read a draft they authored,
+        # to discover its current state before editing/resubmitting it —
+        # this mirrors the own_only check PATCH already applies, it doesn't
+        # add a new permission.
+        is_own = version.author_id == self.request.user.id
+        if not is_own and not policy.has_perm(self.request.user, P.CONTENT_VIEW, version):
             raise NotFound()
         return version
 
@@ -242,6 +272,28 @@ class ContentVersionPublishView(_VersionActionView):
         return Response(ContentVersionSerializer(workflow.publish(request, version=version)).data)
 
 
+class ApprovalHistoryView(PermissionedAPIView):
+    """
+    Read-only approval trail for a version — stage, approver, decision,
+    comment, timestamp — so a reviewer/editor UI can show why a version is
+    or isn't approved yet. Scoped exactly like the version itself: the
+    author may read their own version's history (own_only content.submit),
+    everyone else needs content.view at the version's scope. Never exposes
+    approvals outside that scope (gate-review finding: this existed as an
+    unused serializer with no endpoint at all).
+    """
+
+    required_perms = {"GET": AUTHENTICATED}
+
+    def get(self, request, pk):
+        version = get_object_or_404(ContentVersion.objects.select_related("content_item"), pk=pk)
+        is_own = version.author_id == request.user.id
+        if not is_own and not policy.has_perm(request.user, P.CONTENT_VIEW, version):
+            raise NotFound()
+        qs = Approval.objects.filter(content_version=version).select_related("approver")
+        return self.paginated(qs, ApprovalSerializer)
+
+
 class PublicContentDetailView(APIView):
     """
     Unauthenticated, read-only. Exposes only `published_version` — drafts,
@@ -296,24 +348,48 @@ class ContentBlockTypeListView(PermissionedAPIView):
         return Response(ContentBlockTypeSerializer(block_type).data, status=status.HTTP_201_CREATED)
 
 
+def _upload_target(owner_vertical_id) -> ScopeTarget:
+    return ScopeTarget(ScopeType.VERTICAL, owner_vertical_id) if owner_vertical_id else ScopeTarget(ScopeType.GLOBAL)
+
+
+def _visible_media(request):
+    """Mirrors `_visible_items`: a vertically-scoped viewer sees only their vertical's
+    media, never org-wide media (gate-review finding — this previously had no filter at all)."""
+    scopes = policy.scopes_for(request.user, P.CONTENT_VIEW)
+    qs = MediaAsset.objects.all()
+    if not scopes.is_global:
+        qs = qs.filter(owner_vertical_id__in=scopes.ids_for(ScopeType.VERTICAL))
+    return qs
+
+
 class MediaUploadParamsView(PermissionedAPIView):
     required_perms = {"GET": P.MEDIA_UPLOAD}
 
     def get(self, request):
-        folder = request.query_params.get("folder", "content")
-        return Response(media.signed_upload_params(folder=folder))
+        raw = request.query_params.get("owner_vertical_id") or None
+        try:
+            owner_vertical_id = uuid.UUID(raw) if raw else None
+        except ValueError as exc:
+            raise ValidationError({"owner_vertical_id": ["Must be a valid UUID."]}) from exc
+        self.require(P.MEDIA_UPLOAD, _upload_target(owner_vertical_id))
+        return Response(media.signed_upload_params(owner_vertical_id=owner_vertical_id))
 
 
 class MediaAssetListView(PermissionedAPIView):
     required_perms = {"GET": P.CONTENT_VIEW, "POST": P.MEDIA_UPLOAD}
 
     def get(self, request):
-        return self.paginated(MediaAsset.objects.all(), MediaAssetSerializer)
+        return self.paginated(_visible_media(request), MediaAssetSerializer)
 
     def post(self, request):
         s = MediaAssetCreateSerializer(data=request.data)
         s.is_valid(raise_exception=True)
         d = s.validated_data
+        owner_vertical_id = d.get("owner_vertical_id")
+        # Never trust the client's owner_vertical_id — verify the actor actually
+        # holds media.upload for that exact scope before creating anything
+        # (gate-review finding: this was previously unchecked).
+        self.require(P.MEDIA_UPLOAD, _upload_target(owner_vertical_id))
         asset = MediaAsset.objects.create(uploaded_by=request.user, **d)
         audit.record(request, "media.uploaded", summary=f"Uploaded media {asset.cloudinary_public_id}", target=asset)
         return Response(MediaAssetSerializer(asset).data, status=status.HTTP_201_CREATED)
