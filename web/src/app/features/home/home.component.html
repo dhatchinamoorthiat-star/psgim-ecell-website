@@ -1,32 +1,22 @@
-<section class="hero-video">
-  <video
-    #heroVideo
-    class="hero-video-el"
-    poster="/videos/meet-the-team-poster.jpg"
-    autoplay
-    muted
-    loop
-    playsinline
-    preload="auto"
-  >
-    <source src="/videos/meet-the-team.mp4" type="video/mp4" />
-  </video>
-  <div class="hero-video-scrim" aria-hidden="true"></div>
-
-  <div class="hero-video-content wrap">
+<section class="hero-plain">
+  <div class="wrap">
     <span class="kicker">{{ hero.kicker }}</span>
-    <h1>{{ hero.headline }}</h1>
+    <h1>Creating <span class="highlight">founders</span> on campus</h1>
     <p class="lede">{{ hero.lede }}</p>
     <div class="hero-actions">
       <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
-      <a routerLink="/team/" class="btn btn-ghost">Meet the team</a>
+      <a routerLink="/initiatives/" class="btn btn-ghost">What we run</a>
     </div>
   </div>
 
-  <button type="button" class="hero-sound-toggle" (click)="toggleSound()">
-    {{ muted() ? 'Sound off' : 'Sound on' }}
-  </button>
-  <span class="hero-scroll-cue">Scroll</span>
+  @if (upcoming[0]; as next) {
+    <a routerLink="/events/" class="hero-ticker wrap">
+      <span class="hero-ticker-dot" aria-hidden="true"></span>
+      <span class="hero-ticker-label">Next up</span>
+      <span class="hero-ticker-title">{{ next.title }}</span>
+      <span class="hero-ticker-date">{{ next.date | date: 'd MMM' }}@if (next.time) { · {{ next.time }} }</span>
+    </a>
+  }
 </section>
 
 <section class="section section-band">

@@ -62,6 +62,43 @@
 }
 .kicker::before { content: ''; display: block; width: 1.5rem; height: 2px; background: var(--accent); flex-shrink: 0; }
 
+/* Homepage hero — the reference deploy's own front door: always dark
+   (like the video hero it replaces), full viewport height, the grid
+   texture at full strength (not faded — there's no video image to
+   compete with), and a slim "next up" ticker riding the bottom edge. */
+.hero-plain {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--band);
+  color: var(--on-ink);
+  background-image:
+    linear-gradient(var(--on-ink-rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--on-ink-rule) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+}
+.hero-plain .kicker { color: var(--on-ink-3); }
+.hero-plain h1 { font-size: var(--t-display); max-width: 20ch; color: var(--on-ink); margin-top: var(--s-4); }
+.hero-plain .lede { font-size: var(--t-lede); color: var(--on-ink-2); max-width: 42ch; margin-top: var(--s-5); }
+.hero-plain .hero-actions { margin-top: var(--s-7); }
+
+.hero-ticker {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-top: clamp(3rem, 2rem + 4vw, 5rem);
+  padding-block: var(--s-4);
+  border-top: 1px solid var(--on-ink-rule);
+  color: var(--on-ink-2);
+  font-size: var(--t-sm);
+}
+.hero-ticker-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.hero-ticker-label { font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-wide); text-transform: uppercase; color: var(--on-ink-3); }
+.hero-ticker-title { font-weight: 600; color: var(--on-ink); flex: 1; }
+.hero-ticker-date { color: var(--on-ink-3); font-size: var(--t-xs); }
+@media (max-width: 36rem) { .hero-ticker-date { display: none; } }
+
 /* Underline highlight — a keyword picked out with a solid rule beneath it,
    the reference deploy's headline treatment ("Creating [founders] on
    campus"). Apply to a <span> inside an h1/h2. */
