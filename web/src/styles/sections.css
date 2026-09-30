@@ -44,6 +44,12 @@
 }
 .hero h1 { font-size: var(--t-h1); max-width: 22ch; margin-top: var(--s-3); }
 .hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 46ch; margin-top: var(--s-4); }
+/* The hero's own bottom padding plus a full .section top padding stacked
+   on top of it (up to ~11rem combined) reads as a huge dead gap on pages
+   whose hero is just a kicker + h1 with nothing else to fill that space —
+   Origin, Vision & Mission, and similar. Tighten the section that comes
+   right after a hero specifically, without touching .section generally. */
+.hero + .section { padding-top: var(--s-7); }
 
 /* Dash-kicker — a short accent rule before the label, the reference
    deploy's own kicker shape (a 2px line, not just spaced-out caps). */
