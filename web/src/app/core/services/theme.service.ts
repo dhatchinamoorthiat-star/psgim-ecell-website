@@ -8,12 +8,12 @@ const STORAGE_KEY = 'ecell-theme';
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   private platformId = inject(PLATFORM_ID);
-  readonly mode = signal<ThemeMode>('system');
+  readonly mode = signal<ThemeMode>('dark');
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       const stored = localStorage.getItem(STORAGE_KEY) as ThemeMode | null;
-      this.mode.set(stored ?? 'system');
+      this.mode.set(stored ?? 'dark');
       this.apply(this.mode());
     }
   }

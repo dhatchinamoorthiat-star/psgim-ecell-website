@@ -31,21 +31,28 @@
   </div>
 </section>
 
-<section class="section wrap" revealOnScroll>
-  <div class="initiatives-grid">
+<section class="wrap">
+  <nav class="initiatives-jump" aria-label="Jump to an initiative">
     @for (item of initiatives; track item.id) {
-      <article class="initiative-card">
+      <a [href]="'#' + item.id" class="chip">{{ item.index }} · {{ item.title }}</a>
+    }
+  </nav>
+</section>
+
+<section class="wrap" revealOnScroll>
+  <div class="initiatives-list">
+    @for (item of initiatives; track item.id) {
+      <article class="initiative-row" [id]="item.id">
         <span class="index">{{ item.index }}</span>
-        <span class="tag">{{ item.tag }} · {{ stageFor(item.stage)?.label }}</span>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.body }}</p>
-        <div class="meta">
-          <span>{{ item.cadence }}</span>
-          @if (item.venue) { <span>{{ item.venue }}</span> }
+        <div>
+          <span class="kicker">{{ item.tag }} · {{ item.cadence }}{{ item.venue ? ' · ' + item.venue : '' }} · {{ stageFor(item.stage)?.label }}</span>
+          <h3>{{ item.title }}</h3>
+          <p class="summary">{{ item.summary }}</p>
+          <p class="body">{{ item.body }}</p>
+          @if (item.href) {
+            <a [routerLink]="item.href" class="btn btn-ghost">Learn more →</a>
+          }
         </div>
-        @if (item.href) {
-          <a [routerLink]="item.href" class="btn btn-ghost" style="width:fit-content">Learn more</a>
-        }
       </article>
     }
   </div>

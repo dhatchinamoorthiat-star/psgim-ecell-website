@@ -51,16 +51,13 @@
 .awaiting-panel h3 { margin-bottom: var(--s-2); color: var(--ink); }
 
 /* Section heading */
-.section-heading .kicker {
-  display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker);
-  text-transform: uppercase; color: var(--accent-ink); margin-bottom: var(--s-3);
-}
+.section-heading .kicker { margin-bottom: var(--s-3); }
 /* The white→accent gradient text from the old NEC reference page's
    .nec-lead (main.psgim-ecell.pages.dev/assets/nec.css), rebuilt to fit
    this system: built from --ink/--accent-ink instead of hard-coded white/
    blue, so it adapts per theme automatically rather than needing separate
    light/dark rules — in dark mode --ink is white (matching the source
-   exactly), in light mode it's navy, fading into the same teal either way.
+   exactly), in light mode it's navy, fading into the same gold either way.
    Falls back to solid --ink wherever background-clip: text isn't supported
    (older WebKit/Firefox) — the @supports guard, not the property itself,
    carries that fallback. */
@@ -114,7 +111,7 @@
   box-shadow: var(--shadow-lg);
 }
 .navbar-logo { display: flex; align-items: center; gap: var(--s-2); font-weight: 800; font-family: var(--font-display); flex-shrink: 0; min-width: 0; padding-inline-start: var(--s-2); }
-.navbar-logo img { height: 28px; width: auto; flex-shrink: 0; border-radius: 50%; }
+.navbar-logo img { height: 28px; width: auto; flex-shrink: 0; }
 .navbar-logo span { white-space: nowrap; }
 .navbar-links {
   display: flex; align-items: center; gap: var(--s-1);

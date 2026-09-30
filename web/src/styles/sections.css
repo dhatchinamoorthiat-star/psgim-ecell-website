@@ -33,6 +33,41 @@
 .hero-video-content .lede { font-size: var(--t-lede); color: var(--on-ink-2); max-width: 42ch; margin-top: var(--s-5); }
 .hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
 
+/* Plain (non-video) page hero — every inner page's top banner (Initiatives,
+   About, Events, Team, Gallery, …). A faint fixed-size grid of hairlines
+   behind the copy, the same texture the reference deploy uses on its own
+   hero, built from --rule so it's barely-there in light mode and just
+   visible in dark. */
+.hero {
+  position: relative;
+  padding-block: clamp(4rem, 2.5rem + 6vw, 7rem) clamp(2.5rem, 1.5rem + 3vw, 4rem);
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: center top;
+  -webkit-mask-image: linear-gradient(180deg, black, transparent);
+  mask-image: linear-gradient(180deg, black, transparent);
+}
+.hero > * { position: relative; }
+.hero h1 { font-size: var(--t-h1); max-width: 22ch; margin-top: var(--s-3); }
+.hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 46ch; margin-top: var(--s-4); }
+
+/* Dash-kicker — a short accent rule before the label, the reference
+   deploy's own kicker shape (a 2px line, not just spaced-out caps). */
+.kicker {
+  display: inline-flex; align-items: center; gap: var(--s-3);
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker);
+  text-transform: uppercase; color: var(--ink-3);
+}
+.kicker::before { content: ''; display: block; width: 1.5rem; height: 2px; background: var(--accent); flex-shrink: 0; }
+
+/* Underline highlight — a keyword picked out with a solid rule beneath it,
+   the reference deploy's headline treatment ("Creating [founders] on
+   campus"). Apply to a <span> inside an h1/h2. */
+.highlight { position: relative; color: var(--accent-ink); }
+.highlight::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 3px; background: var(--accent); border-radius: var(--r-pill); }
+
 .hero-sound-toggle {
   position: absolute;
   right: var(--gutter);
@@ -78,17 +113,26 @@
 .journey-stage p { color: var(--ink-2); margin-top: var(--s-2); font-size: var(--t-sm); }
 
 /* Initiatives editorial grid */
-.initiatives-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--s-5); }
-@media (max-width: 62rem) { .initiatives-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 36rem) { .initiatives-grid { grid-template-columns: 1fr; } }
-.initiative-card { grid-column: span 3; display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-6); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--rule); }
-.initiative-card:nth-child(3n+1) { grid-column: span 4; background: var(--surface-2); }
-.initiative-card:nth-child(3n+2) { grid-column: span 2; }
-@media (max-width: 62rem) { .initiative-card, .initiative-card:nth-child(3n+1), .initiative-card:nth-child(3n+2) { grid-column: span 1; } }
-.initiative-card .index { font-size: var(--t-xs); color: var(--ink-3); font-weight: 700; }
-.initiative-card h3 { font-size: var(--t-h3); }
-.initiative-card .tag { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: var(--track-wide); color: var(--accent-ink); }
-.initiative-card .meta { font-size: var(--t-xs); color: var(--ink-3); display: flex; gap: var(--s-3); flex-wrap: wrap; }
+/* Quick-jump pills — one per initiative, anchor-linking down to its row. */
+.initiatives-jump { display: flex; flex-wrap: wrap; gap: var(--s-2); padding-block: var(--s-5); border-top: 1px solid var(--rule); }
+.initiatives-jump a { font-size: var(--t-micro); }
+
+/* Numbered list, each row divided by a hairline — the reference deploy's
+   own initiatives layout, replacing the old asymmetric card grid. */
+.initiatives-list { border-top: 1px solid var(--rule); }
+.initiative-row {
+  display: grid; grid-template-columns: 2.5rem 1fr; gap: var(--s-5);
+  padding-block: var(--s-7);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: calc(var(--header-h) + var(--s-4));
+}
+.initiative-row .index { font-size: var(--t-sm); color: var(--ink-3); font-weight: 700; font-family: var(--font-display); }
+.initiative-row .kicker { margin-bottom: var(--s-3); }
+.initiative-row h3 { font-size: var(--t-h2); }
+.initiative-row .summary { font-size: var(--t-lede); color: var(--ink); margin-top: var(--s-3); max-width: 60ch; }
+.initiative-row .body { color: var(--ink-2); margin-top: var(--s-3); max-width: 60ch; }
+.initiative-row .btn-ghost { margin-top: var(--s-5); }
+@media (max-width: 36rem) { .initiative-row { grid-template-columns: 1fr; gap: var(--s-2); } }
 
 /* Events */
 .events-list { display: flex; flex-direction: column; gap: var(--s-4); }
@@ -104,6 +148,24 @@
 .avatar-initials { width: 84px; height: 84px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: var(--t-h3); margin: 0 auto var(--s-3); }
 .team-card .name { font-weight: 600; font-size: var(--t-sm); }
 .team-card .role { font-size: var(--t-xs); color: var(--ink-3); }
+
+/* Role list — a label/value row per divider, the reference deploy's own
+   "Core team" layout (role on the left, name + remit on the right),
+   replacing a card grid for what is really a two-column table. */
+.role-list { border-top: 1px solid var(--rule); }
+.role-row {
+  display: grid; grid-template-columns: 12rem 1fr; gap: var(--s-5);
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+  align-items: baseline;
+}
+.role-row .role {
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-wide);
+  text-transform: uppercase; color: var(--ink-3);
+}
+.role-row .name { font-size: var(--t-h3); font-weight: 700; color: var(--ink); }
+.role-row .remit { color: var(--ink-2); margin-top: var(--s-1); }
+@media (max-width: 36rem) { .role-row { grid-template-columns: 1fr; gap: var(--s-2); } }
 
 /* Gallery */
 .gallery-filters { display: flex; gap: var(--s-2); flex-wrap: wrap; margin-bottom: var(--s-6); }
@@ -124,8 +186,8 @@ dialog.lightbox::backdrop { background: rgba(5,10,20,.85); }
 .drive-target .row { display: flex; justify-content: space-between; font-size: var(--t-sm); }
 
 /* Timeline */
-.timeline-list { display: flex; flex-direction: column; gap: var(--s-4); }
-.timeline-row { display: grid; grid-template-columns: 5rem 1fr; gap: var(--s-5); }
+.timeline-list { border-top: 1px solid var(--rule); }
+.timeline-row { display: grid; grid-template-columns: 5rem 1fr; gap: var(--s-5); padding-block: var(--s-4); border-bottom: 1px solid var(--rule); }
 .timeline-row .year { font-weight: 800; color: var(--accent-ink); }
 
 /* FAQ */
