@@ -1,18 +1,22 @@
-/* Buttons */
+/* Buttons — structure lifted exactly from the reference deploy's .btn /
+   .btn--primary / .btn--ghost: a rounded-rect (--r-md, not a pill), a
+   theme-adaptive ink-coloured primary (dark-on-light, light-on-dark) that
+   only turns accent on hover, not a permanently accent-filled button. */
 .btn {
-  display: inline-flex; align-items: center; gap: var(--s-2);
-  padding: var(--s-3) var(--s-5);
-  border-radius: var(--r-pill);
-  font-size: var(--t-sm); font-weight: 600; letter-spacing: var(--track-head);
-  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  padding: 0.8125rem 1.25rem; min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-size: var(--t-sm); font-weight: 600; letter-spacing: -0.006em;
+  transition: background var(--dur-normal) var(--ease-out), color var(--dur-normal) var(--ease-out), border-color var(--dur-normal) var(--ease-out), transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
   white-space: nowrap;
 }
-.btn-primary { background: var(--accent); color: var(--on-accent); box-shadow: var(--shadow-sm); }
-/* The reference page's own touch: a soft blue glow on hover, not just a
+.btn-primary { background: var(--ink); color: var(--ink-inverse); }
+/* The reference page's own touch: a soft accent glow on hover, not just a
    depth shadow. --glow is the exact shadow value lifted from its CSS. */
-.btn-primary:hover { background: var(--accent-ink); transform: translateY(-1px); box-shadow: var(--shadow-md), var(--glow); }
-.btn-ghost { border: 1px solid var(--rule-strong); color: var(--ink); }
-.btn-ghost:hover { border-color: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { background: var(--accent); color: var(--on-accent); transform: translateY(-1px); box-shadow: var(--shadow-md), var(--glow); }
+.btn-ghost { border-color: var(--rule-strong); color: var(--ink); }
+.btn-ghost:hover { background: var(--surface-2); border-color: var(--ink); }
 .btn-inverse { background: var(--on-ink); color: var(--band); }
 .btn-inverse:hover { background: var(--accent); color: var(--on-accent); }
 
@@ -127,7 +131,7 @@
 .navbar-links a.active { color: var(--ink-inverse); background: var(--ink); }
 .navbar-links a.highlight { color: var(--accent-ink); }
 .navbar-actions { display: flex; align-items: center; gap: var(--s-2); flex-shrink: 1; min-width: 0; }
-.navbar-actions .btn-primary { border-radius: var(--r-pill); flex-shrink: 0; }
+.navbar-actions .btn-primary { flex-shrink: 0; }
 .navbar-actions .search-bar { min-width: 5rem; max-width: 9rem; }
 .nav-toggle { display: none; border-radius: var(--r-pill); }
 @media (max-width: 78rem) {
@@ -140,7 +144,7 @@
   .navbar-logo span { display: none; }
 }
 
-.theme-toggle { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--rule-strong); }
+.theme-toggle { width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--r-md); }
 
 /* Navbar dropdown */
 .navbar-nav-item { position: relative; flex-shrink: 0; }

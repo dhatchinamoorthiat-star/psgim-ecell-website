@@ -34,76 +34,74 @@
 .hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
 
 /* Plain (non-video) page hero — every inner page's top banner (Initiatives,
-   About, Events, Team, Gallery, …). A faint fixed-size grid of hairlines
-   behind the copy, the same texture the reference deploy uses on its own
-   hero, built from --rule so it's barely-there in light mode and just
-   visible in dark. */
+   About, Events, Team, Gallery, …). No grid texture here — the reference
+   deploy's own .page-hero doesn't have one either; that pattern is reserved
+   for the homepage hero (.hero-plain) alone. Just generous padding and a
+   closing rule, values lifted from the reference's .page-hero exactly. */
 .hero {
-  position: relative;
-  padding-block: clamp(4rem, 2.5rem + 6vw, 7rem) clamp(2.5rem, 1.5rem + 3vw, 4rem);
-  background-image:
-    linear-gradient(var(--rule) 1px, transparent 1px),
-    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
-  background-size: 64px 64px;
-  background-position: center top;
-  -webkit-mask-image: linear-gradient(180deg, black, transparent);
-  mask-image: linear-gradient(180deg, black, transparent);
+  padding-block: clamp(2.5rem, 1rem + 6vw, 5rem) clamp(2rem, 1rem + 4vw, 3.5rem);
+  border-bottom: 1px solid var(--rule);
 }
-.hero > * { position: relative; }
 .hero h1 { font-size: var(--t-h1); max-width: 22ch; margin-top: var(--s-3); }
 .hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 46ch; margin-top: var(--s-4); }
 
 /* Dash-kicker — a short accent rule before the label, the reference
    deploy's own kicker shape (a 2px line, not just spaced-out caps). */
 .kicker {
-  display: inline-flex; align-items: center; gap: var(--s-3);
-  font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-kicker);
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  font-size: var(--t-micro); font-weight: 600; letter-spacing: var(--track-kicker);
   text-transform: uppercase; color: var(--ink-3);
 }
-.kicker::before { content: ''; display: block; width: 1.5rem; height: 2px; background: var(--accent); flex-shrink: 0; }
+.kicker::before { content: ''; width: 1.5rem; height: 1px; background: var(--accent); flex-shrink: 0; }
+.kicker--plain::before { display: none; }
 
-/* Homepage hero — the reference deploy's own front door: always dark
-   (like the video hero it replaces), full viewport height, the grid
-   texture at full strength (not faded — there's no video image to
-   compete with), and a slim "next up" ticker riding the bottom edge. */
+/* Homepage hero — values lifted from the reference deploy's own .hero /
+   .hero__grid / .hero__strip. Theme-adaptive like the source (not forced
+   dark) — its dark look comes from the site defaulting to dark mode, not
+   from the hero overriding colours itself. The grid is a radial-masked
+   texture anchored top-right, not a uniform fade. */
 .hero-plain {
   position: relative;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  background: var(--band);
-  color: var(--on-ink);
-  background-image:
-    linear-gradient(var(--on-ink-rule) 1px, transparent 1px),
-    linear-gradient(90deg, var(--on-ink-rule) 1px, transparent 1px);
-  background-size: 64px 64px;
-  background-position: center top;
+  overflow: hidden;
+  isolation: isolate;
+  padding-top: clamp(3rem, 1rem + 8vw, 7rem);
 }
-.hero-plain .kicker { color: var(--on-ink-3); }
-.hero-plain h1 { font-size: var(--t-display); max-width: 20ch; color: var(--on-ink); margin-top: var(--s-4); }
-.hero-plain .lede { font-size: var(--t-lede); color: var(--on-ink-2); max-width: 42ch; margin-top: var(--s-5); }
-.hero-plain .hero-actions { margin-top: var(--s-7); }
+.hero-plain::before {
+  content: '';
+  position: absolute; inset: 0; z-index: -1;
+  background-image:
+    linear-gradient(to right, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
+  background-size: clamp(48px, 7vw, 88px) clamp(48px, 7vw, 88px);
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+  mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
+}
+.hero-plain h1 { font-size: var(--t-display); font-weight: 800; max-width: 20ch; margin-top: var(--s-4); }
+.hero-plain .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 42ch; margin-top: var(--s-5); line-height: 1.55; }
+.hero-plain .hero-actions { margin-top: var(--s-5); }
 
 .hero-ticker {
-  display: flex; align-items: center; gap: var(--s-3);
-  margin-top: clamp(3rem, 2rem + 4vw, 5rem);
+  margin-top: clamp(2.5rem, 1.5rem + 4vw, 5rem);
   padding-block: var(--s-4);
-  border-top: 1px solid var(--on-ink-rule);
-  color: var(--on-ink-2);
-  font-size: var(--t-sm);
+  border-top: 1px solid var(--rule);
+  display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap;
 }
-.hero-ticker-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-.hero-ticker-label { font-size: var(--t-xs); font-weight: 700; letter-spacing: var(--track-wide); text-transform: uppercase; color: var(--on-ink-3); }
-.hero-ticker-title { font-weight: 600; color: var(--on-ink); flex: 1; }
-.hero-ticker-date { color: var(--on-ink-3); font-size: var(--t-xs); }
+.hero-ticker-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--ok); flex-shrink: 0;
+  animation: hero-ticker-pulse 2.4s var(--ease-in-out) infinite;
+}
+@keyframes hero-ticker-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.82); } }
+.hero-ticker-label { font-size: var(--t-micro); letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--ink-3); }
+.hero-ticker-title { font-weight: 600; color: var(--ink); flex: 1; }
+.hero-ticker-date { color: var(--ink-3); font-size: var(--t-xs); }
 @media (max-width: 36rem) { .hero-ticker-date { display: none; } }
 
 /* Underline highlight — a keyword picked out with a solid rule beneath it,
-   the reference deploy's headline treatment ("Creating [founders] on
-   campus"). Apply to a <span> inside an h1/h2. */
-.highlight { position: relative; color: var(--accent-ink); }
-.highlight::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0.06em; height: 3px; background: var(--accent); border-radius: var(--r-pill); }
+   the reference deploy's own headline treatment ("Creating [founders] on
+   campus"), exact sizing from its .hero__title em::after. */
+.highlight { position: relative; color: var(--accent-ink); white-space: nowrap; }
+.highlight::after { content: ''; position: absolute; left: 0.04em; right: 0.04em; bottom: 0.03em; height: 0.055em; background: var(--accent); border-radius: var(--r-pill); }
 
 .hero-sound-toggle {
   position: absolute;

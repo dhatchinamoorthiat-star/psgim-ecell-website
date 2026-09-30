@@ -93,3 +93,19 @@
 }
 
 :root[data-theme="light"] { --band: #0a1b33; }
+
+/* NEC page — scoped to blue instead of the site's gold, exact values lifted
+   from the reference deploy's own site.css (its whole site is this blue;
+   here it's deliberately confined to just the NEC page). app-nec is the
+   component's host element, so this cascades to everything inside without
+   needing a template change. */
+app-nec {
+  --navy: #0d3b8e; --accent: #0077ff; --accent-ink: #0060d1; --accent-soft: #e6f4ff; --on-accent: #ffffff;
+  --ocean: #00b4ff; --sky: #4fc3f7;
+  --glow: 0 0 60px -12px rgba(0,119,255,.5);
+}
+:root[data-theme="dark"] app-nec {
+  --navy: #4b8ae8; --accent: #3d9bff; --accent-ink: #79baff; --accent-soft: #0c2340; --on-accent: #041428;
+  --ocean: #33c4ff; --sky: #7fd4fa;
+  --glow: 0 0 60px -12px rgba(61,155,255,.5);
+}
