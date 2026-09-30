@@ -120,7 +120,7 @@
    institute subtitle is baked into the splash/story image but would be
    illegible shrunk to nav size, so it's a live caption line under the
    image instead, same as the reference lockup's stacked layout. */
-.navbar-logo { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; flex-shrink: 0; min-width: 0; padding-inline-start: var(--s-2); }
+.navbar-logo { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; flex-shrink: 0; min-width: 0; padding-inline-start: var(--s-5); }
 .navbar-logo img { height: 38px; width: auto; flex-shrink: 0; }
 .navbar-logo-sub {
   font-size: 9px; font-weight: 600; letter-spacing: var(--track-wide); text-transform: uppercase;
@@ -149,10 +149,8 @@
   .navbar-actions .btn-primary { display: none; }
   .navbar-actions .search-bar { display: none; }
 }
-@media (max-width: 34rem) {
+@media (max-width: 20rem) {
   .navbar-logo-sub { display: none; }
-}
-@media (max-width: 23rem) {
   .navbar-logo img { height: 30px; }
 }
 
