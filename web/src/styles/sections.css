@@ -282,3 +282,8 @@ dialog.lightbox::backdrop { background: rgba(5,10,20,.85); }
    of Management wordmark baked into the image, not a fresh instance of
    it in live type. */
 .story-logo { display: block; width: min(40vw, 220px); height: auto; margin-bottom: var(--s-6); }
+
+/* Origin page story text — a distinct serif, bold, deliberately different
+   from the site's Montserrat body copy elsewhere, to read as a told story
+   rather than another spec sheet. */
+.origin-story p { font-family: 'Lora', Georgia, serif; font-weight: 700; }
