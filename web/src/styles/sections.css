@@ -236,3 +236,43 @@ dialog.lightbox::backdrop { background: rgba(5,10,20,.85); }
 .qr-canvas-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--s-4); }
 .qr-canvas-wrap canvas { border-radius: var(--r-md); box-shadow: var(--shadow-md); }
 .qr-field { width: 100%; padding: var(--s-3); border-radius: var(--r-md); border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink); font-size: var(--t-sm); }
+
+/* Splash screen — a diagonal navy/black split with the full logo lockup
+   centred on it, matching the reference brand-splash composition. Sits
+   above everything (including the navbar) and fades once, first load of
+   a browser session only. Fixed dark colours by design — a brand moment,
+   not a themed surface, so it doesn't follow light/dark mode. */
+.splash {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(128deg, #0a1b3a 0%, #0a1b3a 52%, #000000 52%, #000000 100%);
+  opacity: 1;
+  transition: opacity 500ms var(--ease-out);
+}
+.splash.is-leaving { opacity: 0; pointer-events: none; }
+.splash-stars {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(255,255,255,.55) 1px, transparent 1.5px);
+  background-size: 48px 48px;
+  background-position: 12px 30px;
+  opacity: .35;
+}
+.splash-logo {
+  position: relative;
+  width: min(60vw, 320px);
+  height: auto;
+  filter: drop-shadow(0 12px 40px rgba(0,0,0,.5));
+  animation: splash-rise 700ms var(--ease-out);
+}
+@keyframes splash-rise {
+  from { opacity: 0; transform: translateY(12px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo { animation: none; }
+}
+
+/* Full logo lockup on the About page's story section — the PSG Institute
+   of Management wordmark baked into the image, not a fresh instance of
+   it in live type. */
+.story-logo { display: block; width: min(40vw, 220px); height: auto; margin-bottom: var(--s-6); }

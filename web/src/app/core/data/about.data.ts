@@ -37,9 +37,10 @@ export const hero: HeroContent = {
 export const story: StoryContent = {
   kicker: 'The story',
   paragraphs: [
-    'PSGIM E-Cell started in 2019 as a handful of students who wanted the same thing the older IITs and NITs had — a room where you could bring a half-formed idea and leave with a next step.',
-    'Seven years on, the Cell runs a repeating calendar of speaker sessions, build weekends and an annual Ideathon, and it represents PSGIM in the National Entrepreneurship Challenge run by E-Cell, IIT Bombay.',
-    'This year the team is building its first proper website and a serious social-media presence.',
+    `In 2019, a bunch of students at PSGIM started E-Cell. No one assigned them to it, and no one handed them a plan. They were MBA students like everyone else, with the same lectures, assignments and placement season. But they kept noticing the same thing. Classmates kept talking about ideas: a product they wished existed, a gap in a local market, a business they'd start "someday." Then the idea went nowhere, because there was no place on campus to take it. Placements had a process. Academics had a process. A half-formed idea had nothing.`,
+    `So they built the place themselves. They gave it one line, We Turn Students into Founders, and set out to make it true.`,
+    `The early days were scrappy. There was no big budget and no playbook, just a few classmates who cared enough to organise something and see who turned up. Every session taught them what to do better the next time. It caught on because it was useful. Students came with rough ideas and left with better questions. Classmates challenged each other, mentors sharpened the thinking, and a few ideas started turning into real attempts.`,
+    `Seven years on, the setup hasn't changed. E-Cell is still built by students, for students, and the line is still the same. The ideas have gotten sharper, and the community around them has grown.`,
   ],
 };
 
