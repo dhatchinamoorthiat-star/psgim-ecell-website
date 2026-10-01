@@ -113,6 +113,37 @@ export const platformRoutes: Routes = [
               },
             ],
           },
+          {
+            // Phase 2D approval inbox — any signed-in user may reach it
+            // (an own_only content.submit holder still needs "Submitted by
+            // me"); server-side scoping decides what each tab actually
+            // returns (GET /content/inbox, GET /content/mine).
+            path: 'approvals',
+            title: 'Approvals — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./approvals/approval-inbox.component').then((m) => m.ApprovalInboxComponent),
+          },
+          {
+            path: 'approvals/:versionId',
+            title: 'Review — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./approvals/approval-review.component').then(
+                (m) => m.ApprovalReviewComponent,
+              ),
+          },
+          {
+            // Phase 2C visual editor — never publicly reachable (only
+            // registered under the authenticated /platform tree, itself
+            // RenderMode.Client / never prerendered, app.routes.server.ts).
+            // Route-level content.view is UX-in-depth only; the actual
+            // scope check happens server-side on every request this page
+            // makes (ContentItemBySlugView, ContentVersionDetailView, PATCH).
+            path: 'editor/:contentType/:slug',
+            canActivate: [permissionGuard('content.view')],
+            title: 'Editor — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./editor/editor-page.component').then((m) => m.EditorPageComponent),
+          },
           { path: '**', redirectTo: 'dashboard' },
         ],
       },

@@ -18,6 +18,7 @@ import {
   PodcastContent,
   WebsiteAvContent,
 } from '../models/models';
+import type { EditorialRowItem } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
 
 export const intro: IntroContent = {
   kicker: 'What is PSGIM E-Cell?',
@@ -58,6 +59,15 @@ export const vision: VisionContent = {
     'Publish what happened — numbers, photos, outcomes — after every event.',
   ],
 };
+
+/** `vision.mission` as numbered rows for the editorial row list, shared by the About page's inline section and the dedicated /vision-mission/ page. */
+export function toMissionRows(): EditorialRowItem[] {
+  return vision.mission.map((m, i) => ({
+    id: `mission-${i}`,
+    index: String(i + 1).padStart(2, '0'),
+    title: m,
+  }));
+}
 
 export const timeline: TimelineContent = {
   kicker: 'Timeline',

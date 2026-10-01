@@ -4,8 +4,29 @@
     {
       "name": "psgim-ecell-web",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "cd web && npx ng serve --port 4200"],
+      "runtimeArgs": [
+        "-c",
+        "cd web && npx ng serve --port 4200"
+      ],
       "port": 4200
+    },
+    {
+      "name": "ecell-nextjs",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd ecell && npm run dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "platform-api",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd backend && DATABASE_URL=${DATABASE_URL:-postgres://ecell:ecell@localhost:5432/ecell} .venv/bin/python manage.py runserver 8000"
+      ],
+      "port": 8000
     }
   ]
 }

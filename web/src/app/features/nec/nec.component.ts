@@ -13,6 +13,7 @@ import { QrGeneratorComponent } from '../../shared/ui/qr-generator.component';
   standalone: true,
   imports: [CommonModule, RevealOnScrollDirective, StatTileComponent, PendingFlagComponent, QrGeneratorComponent],
   templateUrl: './nec.component.html',
+  styleUrl: './nec.component.css',
 })
 export class NecComponent implements OnInit {
   nec = nec;

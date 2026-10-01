@@ -83,4 +83,70 @@ describe('BlockRendererComponent', () => {
     expect(el.querySelector('h3')?.textContent).toBe('Build');
     expect(el.textContent).toContain('Turn an idea into something real.');
   });
+
+  // --- editorHost (Phase 2C) --------------------------------------------
+
+  function renderWithHost(
+    blocks: BlockNode[],
+    host: Partial<import('./block-editor-host').BlockEditorHost>,
+  ) {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+    });
+    const fixture = TestBed.createComponent(BlockRendererComponent);
+    fixture.componentRef.setInput('blocks', blocks);
+    fixture.componentRef.setInput('editorHost', host);
+    fixture.detectChanges();
+    return { fixture, el: fixture.nativeElement as HTMLElement };
+  }
+
+  it('adds no editor chrome at all when editorHost is absent (public rendering)', () => {
+    const { el } = render([{ id: 'h1', type: 'hero', props: { heading: 'Hi' } }]);
+    expect(el.querySelector('.be-block')).toBeNull();
+  });
+
+  it('wraps each block and reflects selected/hovered state via the editorHost', () => {
+    const { el } = renderWithHost(
+      [
+        { id: 'h1', type: 'hero', props: { heading: 'One' } },
+        { id: 'h2', type: 'hero', props: { heading: 'Two' } },
+      ],
+      { selectedId: () => 'h1', hoveredId: () => 'h2', select: () => {}, hover: () => {} },
+    );
+    const wraps = el.querySelectorAll('.be-block');
+    expect(wraps.length).toBe(2);
+    expect(wraps[0].classList.contains('is-selected')).toBe(true);
+    expect(wraps[1].classList.contains('is-hovered')).toBe(true);
+  });
+
+  it('clicking a block calls editorHost.select with its id', () => {
+    const selected: string[] = [];
+    const { el } = renderWithHost([{ id: 'h1', type: 'hero', props: { heading: 'Hi' } }], {
+      selectedId: () => null,
+      hoveredId: () => null,
+      select: (id) => selected.push(id),
+      hover: () => {},
+    });
+    (el.querySelector('.be-block') as HTMLElement).click();
+    expect(selected).toEqual(['h1']);
+  });
+
+  it('only shows duplicate/delete/move actions when the host provides them, and only for the selected block', () => {
+    const calls: string[] = [];
+    const { el } = renderWithHost([{ id: 'h1', type: 'hero', props: { heading: 'Hi' } }], {
+      selectedId: () => 'h1',
+      hoveredId: () => null,
+      select: () => {},
+      hover: () => {},
+      duplicate: (id) => calls.push('dup:' + id),
+      remove: (id) => calls.push('del:' + id),
+    });
+    const buttons = [...el.querySelectorAll('.be-block-actions button')];
+    expect(buttons.length).toBe(2); // duplicate + delete only — no moveUp/moveDown provided
+    (
+      buttons.find((b) => b.getAttribute('aria-label') === 'Duplicate block') as HTMLElement
+    ).click();
+    (buttons.find((b) => b.getAttribute('aria-label') === 'Delete block') as HTMLElement).click();
+    expect(calls).toEqual(['dup:h1', 'del:h1']);
+  });
 });

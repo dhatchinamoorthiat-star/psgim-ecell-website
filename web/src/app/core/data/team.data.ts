@@ -1,8 +1,9 @@
 import { FacultyMember, Patron, TeamRole, NecTeam } from '../models/models';
 
 export const faculty: FacultyMember[] = [
-  { name: 'Dr. Venketalakshmi', role: 'Faculty Coordinator', org: 'PSGIM E-Cell', photo: 'venketalakshmi.jpg' },
+  { name: 'Dr. Uma Maheswari', role: 'Dean Academic', org: 'PSGIM E-Cell', photo: 'uma-maheswari.jpg' },
   { name: 'Dr. Vijay Vardhan', role: 'Faculty Coordinator', org: 'PSGIM E-Cell', photo: 'vijay-vardhan.jpg' },
+  { name: 'Dr. Venketalakshmi', role: 'Faculty Coordinator', org: 'PSGIM E-Cell', photo: 'venketalakshmi.jpg' },
 ];
 
 export const patron: Patron = { name: 'Dr. Srividya', role: 'Director, PSG Institute of Management' };

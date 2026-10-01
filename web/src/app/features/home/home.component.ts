@@ -4,7 +4,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { hero, intro } from '../../core/data/about.data';
 import { why, whatHappens, ecellWay } from '../../core/data/home.data';
-import { initiatives, stages } from '../../core/data/initiatives.data';
+import { initiatives, stages, toInitiativeRows } from '../../core/data/initiatives.data';
 import { events, splitEvents } from '../../core/data/events.data';
 import { stats, drive } from '../../core/data/stats.data';
 import { gallery } from '../../core/data/gallery.data';
@@ -14,6 +14,8 @@ import { RevealOnScrollDirective } from '../../core/directives/reveal.directive'
 import { StatTileComponent } from '../../shared/ui/stat-tile.component';
 import { ProgressBarComponent } from '../../shared/ui/progress-bar.component';
 import { PendingFlagComponent } from '../../shared/ui/pending-flag.component';
+import { AnimatedBackgroundComponent } from '../../shared/ui/animated-background/animated-background.component';
+import { EditorialRowListComponent } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
 
 @Component({
   selector: 'app-home',
@@ -25,6 +27,8 @@ import { PendingFlagComponent } from '../../shared/ui/pending-flag.component';
     StatTileComponent,
     ProgressBarComponent,
     PendingFlagComponent,
+    AnimatedBackgroundComponent,
+    EditorialRowListComponent,
   ],
   templateUrl: './home.component.html',
 })
@@ -35,6 +39,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   whatHappens = whatHappens;
   ecellWay = ecellWay;
   initiatives = initiatives;
+  initiativeRows = toInitiativeRows('route');
   stages = stages;
   stats = stats;
   drive = drive;

@@ -1,0 +1,53 @@
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout style paint;
+}
+
+.bg-field {
+  position: absolute;
+  inset: -15%;
+  background-image:
+    radial-gradient(38rem 28rem at 85% -10%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(34rem 30rem at 4% 105%, color-mix(in srgb, var(--navy) 22%, transparent), transparent 72%),
+    radial-gradient(26rem 22rem at 50% 45%, color-mix(in srgb, var(--ocean) 8%, transparent), transparent 75%);
+  animation: bg-orbit 46s var(--ease-in-out) infinite alternate;
+  will-change: transform;
+}
+
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
+  background-size: clamp(40px, 6vw, 72px) clamp(40px, 6vw, 72px);
+  opacity: .35;
+  mask-image: radial-gradient(120% 100% at 50% 20%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 20%, #000 0%, transparent 75%);
+}
+
+.bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes bg-orbit {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-2%, 2.5%) rotate(.5deg); }
+  100% { transform: translate(2.5%, -2%) rotate(-.5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-field { animation: none; }
+}
+
+@media (max-width: 640px) {
+  .bg-field { animation-duration: 64s; }
+}

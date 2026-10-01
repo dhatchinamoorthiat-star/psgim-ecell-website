@@ -1,0 +1,92 @@
+/*
+ * Decorative background for the NEC page only — an original CSS
+ * interpretation of the "folded diamond over a starfield" banner style
+ * used on the real NEC portal, built from gradients/clip-path rather than
+ * their image assets. Scoped to this component so the rest of the site
+ * (light/dark toggle, other pages) is untouched.
+ */
+
+.nec-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: none;
+  color: var(--on-ink);
+  background: var(--band);
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(1px 1px at 65% 45%, rgba(255,255,255,.4), transparent 60%),
+    radial-gradient(1px 1px at 90% 80%, rgba(255,255,255,.5), transparent 60%),
+    radial-gradient(1.5px 1.5px at 50% 90%, rgba(255,255,255,.35), transparent 60%);
+  background-repeat: repeat;
+  background-size: 220px 220px;
+  animation: nec-stars-drift 60s linear infinite alternate;
+}
+
+@keyframes nec-stars-drift {
+  0% { background-position: 0 0; }
+  100% { background-position: 110px 90px; }
+}
+
+@keyframes nec-diamond-float {
+  0% { transform: var(--nec-diamond-base) translateY(0); }
+  100% { transform: var(--nec-diamond-base) translateY(-14px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nec-hero, .nec-diamond--back, .nec-diamond--front { animation: none; }
+}
+
+.nec-hero h1 { color: var(--on-ink); }
+.nec-hero .kicker { color: var(--on-ink-2); }
+.nec-hero .kicker::before { background: var(--accent); }
+.nec-hero .lede { color: var(--on-ink-2); }
+
+.nec-hero-shapes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.nec-diamond {
+  position: absolute;
+  top: -15rem;
+  right: -9rem;
+  left: auto;
+  width: 24rem;
+  height: 24rem;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+.nec-diamond--back {
+  --nec-diamond-base: rotate(6deg);
+  transform: var(--nec-diamond-base);
+  background: linear-gradient(135deg, var(--sky), var(--ocean) 55%, var(--navy));
+  opacity: .55;
+  filter: blur(2px);
+  animation: nec-diamond-float 7s var(--ease-in-out) infinite alternate;
+}
+
+.nec-diamond--front {
+  --nec-diamond-base: translateX(4%) rotate(-4deg) scale(.86);
+  transform: var(--nec-diamond-base);
+  background: linear-gradient(150deg, var(--accent), var(--ocean) 60%, var(--navy) 100%);
+  box-shadow: 0 40px 120px -20px var(--accent);
+  animation: nec-diamond-float 8s var(--ease-in-out) infinite alternate-reverse;
+}
+
+@media (max-width: 64rem) {
+  .nec-diamond { right: -11rem; opacity: .6; }
+}
+
+@media (max-width: 40rem) {
+  .nec-hero-shapes { display: none; }
+}
+
+.nec-band {
+  position: relative;
+  overflow: hidden;
+  background-image: radial-gradient(60% 120% at 50% 0%, rgba(255,255,255,.08), transparent 70%);
+}

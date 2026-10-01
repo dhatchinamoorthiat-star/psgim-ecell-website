@@ -6,9 +6,12 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">Upcoming</span><h2>What's next</h2></div>
+  @if (upcomingRows.length) {
+    <app-editorial-row-list [items]="upcomingRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  }
   <div class="events-list" style="margin-top: var(--s-6)">
     @for (ev of split.upcoming; track ev.id) {
-      <div class="event-row">
+      <div class="event-row" [id]="ev.id">
         <span class="date">{{ ev.date | date: 'MMM d, y' }}<ng-container *ngIf="ev.endDate"> – {{ ev.endDate | date: 'MMM d' }}</ng-container></span>
         <div>
           <h3>{{ ev.title }}</h3>
@@ -30,9 +33,12 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">Past</span><h2>What happened</h2></div>
+  @if (pastRows.length) {
+    <app-editorial-row-list [items]="pastRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  }
   <div class="events-list" style="margin-top: var(--s-6)">
     @for (ev of split.past; track ev.id) {
-      <div class="event-row">
+      <div class="event-row" [id]="ev.id">
         <span class="date">{{ ev.date | date: 'MMM d, y' }}</span>
         <div>
           <h3>{{ ev.title }}</h3>

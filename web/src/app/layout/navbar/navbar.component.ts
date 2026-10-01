@@ -53,6 +53,10 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
     return this.theme.mode();
   }
 
+  get effectiveTheme() {
+    return this.theme.effective();
+  }
+
   toggleTheme(): void {
     this.theme.toggle();
   }
@@ -60,6 +64,10 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   themeLabel(): string {
     const eff = this.theme.effective();
     return eff === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+  }
+
+  get logoSrc(): string {
+    return this.theme.effective() === 'dark' ? '/logo-lockup-compact-dark.png' : '/logo-lockup-compact.png';
   }
 
   ngAfterViewInit(): void {

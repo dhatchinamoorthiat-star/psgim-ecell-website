@@ -304,6 +304,12 @@ export interface NecFaq {
   a: string;
 }
 
+export interface NecTaskProgress {
+  title: string;
+  points: number;
+  maxPoints: number;
+}
+
 export interface NecData {
   year: number;
   portal: string;
@@ -314,6 +320,7 @@ export interface NecData {
   stats: Stat[];
   tracks: NecTrack[];
   incentives: NecIncentive[];
+  progress: { heading: string; lead: string; tasks: NecTaskProgress[] };
   timeline: { note: string; pending: boolean; entries: NecTimelineEntry[] };
   guidelines: string[];
   faq: NecFaq[];

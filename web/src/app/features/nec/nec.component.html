@@ -1,11 +1,17 @@
-<section class="hero wrap" revealOnScroll>
-  <span class="kicker">{{ nec.hero.eyebrow }}</span>
-  <h1>{{ nec.hero.title }}</h1>
-  <p class="lede">{{ nec.hero.lede }}</p>
+<section class="hero nec-hero">
+  <div class="nec-hero-shapes" aria-hidden="true">
+    <span class="nec-diamond nec-diamond--back"></span>
+    <span class="nec-diamond nec-diamond--front"></span>
+  </div>
+  <div class="wrap" revealOnScroll style="position: relative; z-index: 1">
+    <span class="kicker">{{ nec.hero.eyebrow }}</span>
+    <h1>{{ nec.hero.title }}</h1>
+    <p class="lede">{{ nec.hero.lede }}</p>
+  </div>
 </section>
 
-<section class="section section-band">
-  <div class="wrap stats-band">
+<section class="section section-band nec-band">
+  <div class="wrap stats-band" style="position: relative; z-index: 1">
     @for (s of nec.stats; track s.label) {
       <ui-stat-tile [value]="s.value" [label]="s.label" [count]="s.count" [suffix]="s.suffix ?? ''"></ui-stat-tile>
     }
@@ -46,6 +52,18 @@
       <div class="card">
         <h3 style="font-size: var(--t-body)">{{ i.title }}</h3>
         <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ i.body }}</p>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ nec.progress.heading }}</span><h2>{{ nec.progress.lead }}</h2></div>
+  <div class="grid grid-3" style="margin-top: var(--s-6)">
+    @for (t of nec.progress.tasks; track t.title) {
+      <div class="card">
+        <h3 style="font-size: var(--t-body)">{{ t.title }}</h3>
+        <p style="color: var(--accent-ink); font-weight: 600; margin-top: var(--s-2)">{{ t.points }} / {{ t.maxPoints }}</p>
       </div>
     }
   </div>

@@ -1,4 +1,5 @@
 <section class="hero-plain">
+  <app-animated-background variant="hero"></app-animated-background>
   <div class="wrap">
     <span class="kicker">{{ hero.kicker }}</span>
     <h1>Creating <span class="highlight">founders</span> on campus</h1>
@@ -77,19 +78,12 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
-    <span class="kicker">What we run</span>
-    <h2>Seven ways in</h2>
+    <span class="kicker">Our initiatives</span>
+    <h2>What we run, every year</h2>
   </div>
-  <div class="initiatives-grid" style="margin-top: var(--s-7)">
-    @for (item of initiatives; track item.id) {
-      <a [routerLink]="item.href ?? '/initiatives/'" class="initiative-card">
-        <span class="index">{{ item.index }}</span>
-        <span class="tag">{{ item.tag }}</span>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.summary }}</p>
-      </a>
-    }
-  </div>
+  <p class="lede" style="margin-top: var(--s-4); max-width: var(--wrap-narrow)">Programmes repeat each academic year, so a first-year can follow the whole arc before they graduate.</p>
+  <a routerLink="/initiatives/" class="btn btn-ghost" style="margin-top: var(--s-4)">All initiatives →</a>
+  <app-editorial-row-list [items]="initiativeRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>
 
 <section class="section wrap" revealOnScroll>

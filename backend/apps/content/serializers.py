@@ -5,28 +5,48 @@ from .models import Approval, ApprovalRule, ContentBlockType, ContentItem, Conte
 
 class ContentVersionSerializer(serializers.ModelSerializer):
     author_email = serializers.EmailField(source="author.email", read_only=True)
+    # Read-only passthrough of the parent item's identity — lets a list view
+    # (e.g. "My submissions", Phase 2D) show what a version belongs to
+    # without a second round-trip per row. Requires the caller's queryset to
+    # `select_related("content_item")`; every current call site already does.
+    content_type = serializers.CharField(source="content_item.content_type", read_only=True)
+    slug = serializers.CharField(source="content_item.slug", read_only=True)
 
     class Meta:
         model = ContentVersion
         fields = [
-            "id", "content_item", "number", "state", "blocks", "seo", "author_email", "change_note",
-            "approval_stages_snapshot", "created_at",
+            "id", "content_item", "content_type", "slug", "number", "state", "blocks", "seo", "author_email",
+            "change_note", "approval_stages_snapshot", "created_at", "updated_at",
         ]  # fmt: skip
-        read_only_fields = ["id", "content_item", "number", "state", "author_email", "approval_stages_snapshot", "created_at"]
+        read_only_fields = [
+            "id", "content_item", "number", "state", "author_email", "approval_stages_snapshot", "created_at", "updated_at",
+        ]  # fmt: skip
 
 
 class ContentItemSerializer(serializers.ModelSerializer):
     owner_vertical = serializers.UUIDField(source="owner_vertical_id", read_only=True)
     published_version_number = serializers.IntegerField(source="published_version.number", read_only=True, default=None)
     draft_version_number = serializers.IntegerField(source="draft_version.number", read_only=True, default=None)
+    # Version ids (not just numbers) — this serializer is only ever used
+    # behind authenticated, scope-checked views (never the public endpoint,
+    # which builds its own plain dict response), so exposing the id here
+    # is safe and is exactly what the Phase 2C editor needs to know which
+    # version to fetch/PATCH (docs/25_VISUAL_EDITOR_ARCHITECTURE.md
+    # "Editor routing").
+    published_version_id = serializers.UUIDField(read_only=True, default=None)
+    draft_version_id = serializers.UUIDField(read_only=True, default=None)
 
     class Meta:
         model = ContentItem
         fields = [
             "id", "content_type", "slug", "owner_vertical", "state", "published_version_number",
-            "draft_version_number", "publish_at", "unpublish_at", "is_verified", "created_at",
+            "draft_version_number", "published_version_id", "draft_version_id",
+            "publish_at", "unpublish_at", "is_verified", "created_at",
         ]  # fmt: skip
-        read_only_fields = ["id", "state", "published_version_number", "draft_version_number", "created_at"]
+        read_only_fields = [
+            "id", "state", "published_version_number", "draft_version_number",
+            "published_version_id", "draft_version_id", "created_at",
+        ]  # fmt: skip
 
 
 class ContentItemCreateSerializer(serializers.Serializer):
@@ -41,6 +61,9 @@ class DraftUpdateSerializer(serializers.Serializer):
     blocks = serializers.JSONField()
     seo = serializers.JSONField(required=False)
     change_note = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    # Optimistic concurrency (Phase 2C): the `updated_at` the editor last
+    # saw for this version. Omit it to skip the check (non-editor callers).
+    expected_updated_at = serializers.DateTimeField(required=False, allow_null=True)
 
 
 class ChangeNoteSerializer(serializers.Serializer):
@@ -61,6 +84,28 @@ class ScheduleSerializer(serializers.Serializer):
 
 class RevertSerializer(serializers.Serializer):
     source_version_id = serializers.UUIDField()
+
+
+class ReviewInboxItemSerializer(serializers.Serializer):
+    """
+    One `ContentVersion` awaiting the requesting user's action (Phase 2D
+    reviewer inbox). `pending_action` is computed per-request against the
+    viewer (never stored) — "open_review" for a SUBMITTED version the
+    viewer may open, "approve" for an IN_REVIEW version whose next
+    unsatisfied stage the viewer may satisfy. See views.ReviewInboxView.
+    """
+
+    id = serializers.UUIDField()
+    number = serializers.IntegerField()
+    state = serializers.CharField()
+    content_item_id = serializers.UUIDField()
+    content_type = serializers.CharField(source="content_item.content_type")
+    slug = serializers.CharField(source="content_item.slug")
+    owner_vertical = serializers.UUIDField(source="content_item.owner_vertical_id", allow_null=True)
+    author_email = serializers.EmailField(source="author.email")
+    change_note = serializers.CharField()
+    updated_at = serializers.DateTimeField()
+    pending_action = serializers.CharField()
 
 
 class ApprovalSerializer(serializers.ModelSerializer):

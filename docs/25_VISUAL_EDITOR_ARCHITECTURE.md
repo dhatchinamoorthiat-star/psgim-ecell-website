@@ -1,17 +1,17 @@
 # 25 — Visual Editor Architecture
 
-- **Date:** 2026-09-28 (revised three times same day — Phase 2A gate-review
+- **Date:** 2026-09-28 (revised four times same day — Phase 2A gate-review
   remediation; Phase 2B shared renderer + representative migration;
   Phase 2B completion pass — full-site migration, media resolution,
-  Pending<T>, real Events/Blogs content)
+  Pending<T>, real Events/Blogs content; Phase 2C — visual editor)
 - **Status:** Phase 2A **IMPLEMENTED**; Phase 2B **IMPLEMENTED AND
-  COMPLETE** (shared Angular renderer, 9-block component set, allowlisted
-  dynamic content with real Events/Blogs data, media reference resolution,
-  Pending<T> editorial marker, 16 of 18 public routes migrated — the
-  remaining 2 are classified non-CMS, not deferred — see
-  `docs/22_MIGRATION_MATRIX.md` "Phase 2B — Public Angular route migration
-  status (completion pass)"); Phases 2C–2E **NOT BUILT** (see phased plan
-  below)
+  COMPLETE** (16 of 18 public routes migrated, remaining 2 classified
+  non-CMS — see `docs/22_MIGRATION_MATRIX.md`); Phase 2C **IMPLEMENTED**
+  (visual editor: canvas, selection, layers, schema-driven inspector,
+  add/duplicate/delete/reorder, media picker, undo/redo, autosave, local
+  recovery, optimistic concurrency with a real conflict UI, preview mode —
+  see "Phase 2C — Visual editor" below); Phases 2D–2E **NOT BUILT** (see
+  phased plan below)
 - **Extends:** `ADR-013-VISUAL-PAGE-BUILDER.md`, `ADR-011-CMS-CONTENT-MODEL.md`
 
 > **Revision note:** an independent gate review of the first Phase 2A pass
@@ -487,13 +487,260 @@ CMS-backed equivalent**; the remaining 2 (`/contact`, `/control`) are
 classified `GLOBAL_SYSTEM`/`NON_CMS_SYSTEM` with a documented reason, not
 left "not started."
 
+## Phase 2C — Visual editor
+
+Built at `web/src/app/platform/editor/`, behind `/platform/editor/:contentType/:slug`
+(`authGuard` + `permissionGuard('content.view')`, same pattern as every
+other `/platform` screen — UX-in-depth only, the API enforces).
+
+### Editor routing and RBAC
+
+`EditorPageComponent.ngOnInit` resolves `(contentType, slug) ->
+GET /content/by-slug/<type>/<slug>` (new: `ContentItemBySlugView`,
+scope-checked exactly like the existing by-id lookup — 404, not a leak,
+outside scope), then opens `draft_version_id` if one exists, else calls
+`POST /content/versions/<published_id>/new-draft` to start one. Both the
+lookup and every subsequent read/write go through the same
+`apps.rbac.policy` checks every other content endpoint already used — no
+new authorization code path was introduced. The editor deliberately uses
+`content.submit` (not a new `content.edit` permission) for mutation, same
+permission `PATCH` already required in Phase 2A — introducing a parallel
+permission with no concrete forcing requirement would fragment the RBAC
+model for no benefit; `content.view` gates read/route access as the task
+specified.
+
+### Document state model
+
+`EditorDocumentService` (route-scoped, not `providedIn: 'root'` — two open
+editor tabs never share state): `blocks` (the working document, a plain
+signal), `selectedId`/`hoveredId`, and a bounded (`MAX_HISTORY = 50`)
+undo/redo stack of **immutable snapshots** of the whole `blocks` array —
+not DOM state, not a diff/patch format. `structuredClone` on every
+mutation keeps this cheap and trivially correct at this document size.
+`isDirty()` is a structural comparison against a `baselineBlocks` signal
+set on `load()`/`markSaved()`.
+
+Block ids are assigned once, at creation/duplication
+(`block_<12 random hex chars>`), and never regenerated — `addBlock`,
+`duplicateBlock`, undo, redo, and autosave all preserve them, satisfying
+task §4 ("IDs survive reorder/duplication/autosave... not random IDs that
+change every render").
+
+### Selection model
+
+`selectedId`/`hoveredId` are plain signals, read by three places that all
+agree because there is exactly one source of truth: the layers panel
+(`EditorLayersComponent`), the canvas overlay (via `BlockEditorHost`,
+below), and the inspector (`selectedBlock` computed signal). No DOM node is
+ever stored as application state.
+
+### Block registry integration — the shared renderer, extended, not replaced
+
+`BlockRendererComponent` gained one new optional input,
+`editorHost?: BlockEditorHost`
+(`web/src/app/shared/blocks/block-editor-host.ts`):
+
+```ts
+interface BlockEditorHost {
+  selectedId(): string | null;
+  hoveredId(): string | null;
+  select(id: string): void;
+  hover(id: string | null): void;
+  duplicate?(id: string): void;
+  remove?(id: string): void;
+  moveUp?(id: string): void;
+  moveDown?(id: string): void;
+}
+```
+
+When `editorHost` is present, each top-level block renders inside a
+`.be-block` wrapper (selection outline, hover state, a small contextual
+action bar for whichever of duplicate/remove/moveUp/moveDown the host
+actually provides). When absent — **every public render, always** — the
+template emits the bare `ngComponentOutlet` with zero extra DOM. This is
+the literal mechanism behind "EDITOR OVERLAY ≠ PUBLIC CONTENT": it isn't a
+policy note, it's `@if (editorHost) { ... } @else { ... }` in one template,
+verified by a passing test (`renders no editor chrome at all when
+editorHost is absent`) and by live inspection of `/content/page/home` vs.
+the editor canvas. `EditorCanvasComponent` is the only place that
+constructs an `editorHost` object, delegating every method straight to
+`EditorDocumentService`.
+
+There is still exactly one renderer, one `BLOCK_REGISTRY`, one place
+`block.type` is ever looked up as a `Map` key. Nothing new introduces
+`eval`, `Function(...)`, dynamic template compilation, or a CMS-supplied
+component selector.
+
+### Inspector — schema-driven, not per-block hardcoded
+
+`EditorInspectorComponent` + `PropFieldComponent` read the selected block's
+`ContentBlockType.json_schema` (fetched once from `GET /content/block-types`
+— the same canonical catalogue the backend validates against, never a
+second copy) and render controls accordingly: `string`/`url`/`int`/`bool`
+scalars, `enum` selects, `object` and `list` (both scalar-item and
+object-item, covering every real block type — `stats.items`,
+`timeline.entries`, `card_grid.cards`, `gallery.images`, `team_grid.members`
+are all `list[object]`) via recursive composition of `PropFieldComponent`,
+and `image` via a structured `{source, asset_id|url, alt}` control that
+opens the media picker for `source: "media"`. Props are split into
+"Content" and "Layout" sections by a small fixed name list
+(`columns`/`alignment`/`sort`/`limit`/`ratio` → Layout, everything else →
+Content) — the schema doesn't yet tag a prop's category explicitly, so
+this is a pragmatic grouping, not a schema feature. **There is no raw
+CSS/HTML/JS field anywhere in the inspector** — every control's possible
+output is exactly what the corresponding schema type already constrains.
+
+### Add / duplicate / delete / reorder
+
+`EditorAddBlockComponent` lists every row from the same `GET
+/content/block-types` response — there is no second, hardcoded block-type
+list in the editor, so a new type appearing server-side shows up in the
+palette automatically and nothing here can ever offer a type the backend
+would reject. New blocks get schema-valid defaults from
+`defaultPropsFor()` (only *required* props get a default; every schema
+already tolerates an empty list for its list props, so "safe defaults"
+means "the minimum that passes validation," not invented content).
+Duplicate deep-clones props and assigns a fresh id (task §11: "not
+duplicate MediaAsset ownership records" — duplicating a block only copies
+the `{source, asset_id, alt}` reference, never touches `MediaAsset` rows
+themselves, so there's nothing to duplicate-own). Delete removes the block
+from the working document only — `MediaAsset` rows are never deleted as a
+side effect of a block referencing one going away (task §12), and version
+history is untouched since this only ever mutates the current DRAFT.
+Reorder: move-up/move-down buttons (keyboard/button-accessible, no
+drag-and-drop dependency, per task §27) plus `EditorDocumentService.reorder`
+for index-based moves.
+
+### Media library
+
+`EditorMediaPickerComponent` lists `GET /content/media` (scoped
+server-side by `_visible_media` — Phase 2A/2B's fix, unchanged: a Vertical
+Head never sees another vertical's assets here) and uploads via the
+existing Phase 2A signed-upload flow: `GET /content/media/upload-params`
+(server-issued, short-lived Cloudinary signature) → direct browser POST to
+Cloudinary → `POST /content/media` records the result. **The Cloudinary
+API secret never reaches any Angular code, ever** — only a per-upload
+signature does, and that signature is scoped to the folder derived from
+the actor's verified vertical (Phase 2B's media-authorization fix,
+unchanged). Selecting existing server-stored `alt_text` pre-fills the
+image field's alt text (task §14: "use it as the initial value") while
+remaining editable; picking a different image never copies alt text from
+an unrelated one.
+
+### Responsive preview
+
+One `viewport` signal (`desktop`/`tablet`/`mobile`) drives a CSS `width`
+on the canvas frame (`100%`/`48rem`/`24rem`) — the exact same
+`BlockRendererComponent` output at a narrower container width, so
+responsive behavior is whatever the public site's own CSS
+(`layout.css`/`sections.css`) already does at that width. There is no
+second, editor-specific responsive renderer.
+
+### Undo / redo
+
+`Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` (`@HostListener('window:keydown')`) and
+toolbar buttons, both calling `EditorDocumentService.undo()`/`redo()`.
+Covers every mutation path (prop edit, add, delete, duplicate, reorder,
+media replacement — media replacement is just a prop edit) because they
+all funnel through the same `commit()` method that pushes history.
+Verified with 14 dedicated unit tests, including "a new edit after undo
+clears the redo stack."
+
+### Autosave and local recovery
+
+Every mutation calls `scheduleAutosave()`: sets `saveStatus = 'dirty'`,
+writes an immediate local-recovery snapshot
+(`web/src/app/platform/editor/editor-local-recovery.ts`, keyed by `user +
+content item + draft version id` — never leaks across users/items, holds
+only the block document, no auth/session data), and debounces the actual
+`PATCH` by 2 seconds (`AUTOSAVE_DEBOUNCE_MS`) so rapid edits coalesce into
+one request rather than one per keystroke. On reopening a draft with a
+mismatched local-recovery record, a banner offers **Restore**/**Discard**
+— never a silent overwrite of the server draft with stale local state, and
+never the reverse.
+
+### Optimistic concurrency
+
+`ContentVersion` gained no new field for this — `updated_at` (already
+existing, already exposed by `ContentVersionSerializer`) is the revision
+marker. `PATCH /content/versions/<id>` now accepts an optional
+`expected_updated_at`; `workflow.update_draft` locks the row
+(`select_for_update`) and re-checks *inside* the transaction (not just
+against the possibly-stale in-memory object the view fetched at request
+start — a genuine two-concurrent-request race would otherwise slip past an
+outside-the-transaction check) before writing, raising a new `StaleVersion`
+(409, `code: "stale_version"`) if the timestamps don't match. The editor
+shows a dedicated conflict banner — "This draft changed elsewhere," **Reload
+latest (discard my changes)** / **Keep my changes** — never a silent
+overwrite either direction.
+
+This was verified live against a real race, not just unit-tested: a second
+"editor" (a Django shell session) saved a change to the same draft while
+the browser held a stale `updated_at`; saving from the browser correctly
+surfaced the conflict banner with the local edit still visible in the
+canvas (not lost), and **the first attempt at "Keep my changes" silently
+failed to actually persist** — `keepLocalAndRetry()` had reused
+`EditorDocumentService.load()`, which resets the dirty baseline to match
+the just-loaded content, so the retried save's `isDirty()` check returned
+false and no-op'd. Fixed with a dedicated
+`restoreLocalOverBaseline(serverBaseline, localBlocks)` method that sets
+the baseline to the server's latest content while keeping the working
+blocks as the local edit, so `isDirty()` stays true and the retry actually
+sends the PATCH — re-verified live (the local edit persisted server-side,
+confirmed by reading the row directly), and covered by a regression test
+(`restoreLocalOverBaseline keeps the local blocks but is dirty against the
+new server baseline`) describing exactly the bug it fixes.
+
+### Preview mode
+
+Toggling preview swaps to a chrome-free render of the current **draft**
+document through the same `BlockRendererComponent`, `editorHost` omitted —
+verified live: `hasEditorChrome: false`, `hasSelectionOverlay: false` in
+the DOM while previewing. This is authenticated (same `/platform` session,
+same RBAC), never a public URL — there is no tokenized/public preview
+mechanism, and none was needed, since preview only ever runs inside the
+already-authenticated editor page.
+
+### Editor / public separation
+
+Three distinct data paths, never conflated: the **public API**
+(`GET /content/public/<type>/<slug>`) returns only `published_version`,
+unauthenticated, unchanged since Phase 2A/2B. The **editor API**
+(`GET/PATCH /content/versions/<id>`, `by-slug`, `new-draft`) requires
+`content.view`/`content.submit` and is scope-checked per request. **Preview**
+reuses the editor API and session — there is no third, separate preview
+endpoint, because nothing about preview needs to be reachable outside an
+authenticated editor session. A signed-in Vertical Head cannot reach
+another vertical's draft through any of these paths (unchanged Phase
+2A/2B scope enforcement — `ContentItemBySlugView`/`ContentVersionDetailView`
+apply the identical `has_perm`/404-not-403 pattern).
+
+### Known simplifications (honest, not hidden)
+
+- The inspector groups "Layout" props by a fixed name list, not a schema
+  field — adding a genuinely schema-driven category tag is a small,
+  low-risk follow-up, not attempted here to avoid a backend schema change
+  mid-editor-build.
+- No drag handle exists for canvas reordering yet — move-up/move-down
+  buttons satisfy the keyboard/button-alternative requirement (task §27)
+  but a literal drag gesture (`EditorDocumentService.reorder` already
+  supports arbitrary index moves; only the drag *input* is missing) is
+  deferred.
+- `platform.css`'s build-time size budget (8 KB) is now exceeded by ~3.8 KB
+  after the editor's styles — a non-fatal build warning, not an error;
+  trimming/splitting the CSS is a housekeeping item, not a functional gap.
+- Mobile editing was not attempted beyond CSS-hiding the side panels below
+  1024px (task §28 explicitly allows deprioritizing this) — the content
+  preview itself still supports mobile *viewport simulation* via the
+  desktop/tablet/mobile toggle, which is what §28 actually requires.
+
 ## Phased plan
 
 | Phase | Scope | Status |
 |---|---|---|
 | 2A | Content model, workflow engine, block schema + registry, API (`backend/apps/content`) | **Done, gate-reviewed, remediated** (object/object_list schema, media scope enforcement, version-numbering lock, publish-time accessibility gate, approval-stage snapshot, audit completeness, own-content/approval-history read paths) |
 | 2B | Angular block-renderer components, block registry, full existing-page migration, public rendering parity, media resolution | **Done and complete** — shared renderer (9 block types), `ContentApiService`, one SSR cutover route, 16/18 routes migrated (22 `ContentItem`s, idempotent), allowlisted dynamic content with real Events/Blogs data, media reference resolution, Pending<T> editorial marker, backend+frontend tests, no legacy route touched |
-| 2C | Editor canvas, selection, inline text editing, media replacement, block manipulation, responsive preview, undo/redo | Not started |
+| 2C | Editor canvas, selection, inline text editing, media replacement, block manipulation, responsive preview, undo/redo | **Done** — see "Phase 2C — Visual editor" above; live-verified against a real backend, including a real optimistic-concurrency conflict and its fix |
 | 2D | Approval/publish UI, scheduled publication UI, deployment-job abstraction (no real Cloudflare call) | Not started |
 | 2E | Build/prerender/validate pipeline integration (real prerender-time content resolution for CMS-backed routes, production SSR+proxy topology) | Not started |
 

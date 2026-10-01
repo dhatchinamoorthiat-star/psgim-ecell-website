@@ -49,6 +49,7 @@ def _protected_routes():
         if cls is None or getattr(cls, "public", False):
             continue
         url = "/" + route.replace("<uuid:pk>", str(uuid.uuid4()))
+        url = url.replace("<str:content_type>", "page").replace("<slug:slug>", "x").replace("<str:query_id>", "x")
         for method in cls.required_perms:
             routes.append((method.lower(), url))
     return routes

@@ -14,12 +14,14 @@
  * That's the whole app's accent identity now: gold as the primary
  * interactive colour (buttons, links, active nav, focus), navy as the
  * secondary structural tone — both literally the two colours in the mark,
- * not an invented pairing. (Previously this was navy + turquoise, sampled
- * from the prior logo; the turquoise family below is gone.)
+ * not an invented pairing.
  *
- * The neutral/ground system (--paper, --surface, --ink, --band) is a
- * separate decision made earlier (a near-black cinematic dark mode) and is
- * untouched by this pass — this is specifically the brand-colour swap.
+ * Light is the default theme again (the toggle switches to dark via
+ * data-theme, same as it did before the poster-style redesign pass) —
+ * --ambient-* below is 0 in light and 1 in dark, and is what gates the
+ * animated glow/wavy-line backdrop in base.css/sections.css/layout.css so
+ * that decoration only shows up in dark mode; light mode stays the plain
+ * white look.
  */
 
 :root {
@@ -41,6 +43,7 @@
   --shadow-md: 0 2px 4px rgba(10,27,51,.04), 0 12px 28px -18px rgba(10,27,51,.32);
   --shadow-lg: 0 2px 6px rgba(10,27,51,.05), 0 28px 60px -30px rgba(10,27,51,.4);
   --glow: 0 0 60px -12px rgba(236,153,0,.5);
+  --ambient: 0;
   color-scheme: light;
   --font-display: "Montserrat", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: var(--font-display); --font-meta: var(--font-display); --font-mono: var(--font-display);
@@ -76,6 +79,7 @@
     --shadow-sm:0 1px 2px rgba(0,0,0,.5); --shadow-md:0 2px 4px rgba(0,0,0,.4),0 12px 28px -18px rgba(0,0,0,.8);
     --shadow-lg:0 2px 6px rgba(0,0,0,.45),0 28px 60px -30px rgba(0,0,0,.9);
     --glow: 0 0 60px -12px rgba(236,153,0,.5);
+    --ambient: 1;
     color-scheme: dark; --band:#000000;
   }
 }
@@ -89,10 +93,11 @@
   --shadow-sm:0 1px 2px rgba(0,0,0,.5); --shadow-md:0 2px 4px rgba(0,0,0,.4),0 12px 28px -18px rgba(0,0,0,.8);
   --shadow-lg:0 2px 6px rgba(0,0,0,.45),0 28px 60px -30px rgba(0,0,0,.9);
   --glow: 0 0 60px -12px rgba(236,153,0,.5);
+  --ambient: 1;
   color-scheme: dark; --band:#000000;
 }
 
-:root[data-theme="light"] { --band: #0a1b33; }
+:root[data-theme="light"] { --band: #0a1b33; --ambient: 0; }
 
 /* NEC page — scoped to blue instead of the site's gold, exact values lifted
    from the reference deploy's own site.css (its whole site is this blue;

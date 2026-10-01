@@ -28,16 +28,21 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
+    <span class="kicker">What we do</span>
+    <h2>Programmes that move an idea forward</h2>
+  </div>
+  <app-editorial-row-list [items]="initiativeRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  <a routerLink="/initiatives/" class="btn btn-ghost" style="margin-top: var(--s-5)">All initiatives in detail →</a>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
     <span class="kicker">{{ vision.kicker }}</span>
     <h2>{{ vision.heading }}</h2>
   </div>
   <ui-pending-flag *ngIf="vision.pending" [label]="vision.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
   <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ vision.statement }}</p>
-  <ul class="grid grid-2" style="margin-top: var(--s-6)">
-    @for (m of vision.mission; track m) {
-      <li class="card">{{ m }}</li>
-    }
-  </ul>
+  <app-editorial-row-list [items]="missionRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>
 
 <section class="section wrap" revealOnScroll>

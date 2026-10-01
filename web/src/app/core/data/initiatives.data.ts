@@ -1,4 +1,5 @@
 import { Initiative, JourneyStage, WhatWeCreateContent } from '../models/models';
+import type { EditorialRowItem } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
 
 export const initiatives: Initiative[] = [
   {
@@ -100,3 +101,24 @@ export const stages: JourneyStage[] = [
   { id: 'build', index: '03', label: 'Build', note: 'A weekend to turn the idea into something you can demo.' },
   { id: 'back', index: '04', label: 'Back', note: 'Take it to a national stage, with the Cell behind it.' },
 ];
+
+/**
+ * Shared `initiatives` → `EditorialRowItem[]` mapping, used by every page that
+ * shows the numbered initiatives row list (Home teaser, the Initiatives page's
+ * own jump list, About's "What we do"). 'route' links to /initiatives/ (with
+ * a fragment, or the initiative's own href if it has one); 'anchor' is for
+ * use on the Initiatives page itself, linking to the in-page detail section.
+ */
+export function toInitiativeRows(linkMode: 'route' | 'anchor' = 'route'): EditorialRowItem[] {
+  return initiatives.map((item) => ({
+    id: item.id,
+    index: item.index,
+    title: item.title,
+    summary: item.summary,
+    tag: item.tag,
+    when: item.venue ? `${item.cadence} · ${item.venue}` : item.cadence,
+    ...(linkMode === 'anchor'
+      ? { anchor: `/initiatives/#${item.id}` }
+      : { href: item.href ?? '/initiatives/', fragment: item.href ? undefined : item.id }),
+  }));
+}

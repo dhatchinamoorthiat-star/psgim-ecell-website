@@ -5,7 +5,24 @@
 }
 .wrap-narrow { max-width: var(--wrap-narrow); margin-inline: auto; padding-inline: var(--gutter); }
 .section { padding-block: var(--section-y); }
-.section-band { background: var(--band); color: var(--on-ink); }
+.section-band {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--band);
+  color: var(--on-ink);
+  background-image: radial-gradient(46rem 18rem at 50% 130%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 75%);
+  --ink: var(--on-ink); --ink-2: var(--on-ink-2); --ink-3: var(--on-ink-3);
+  --rule: var(--on-ink-rule); --rule-strong: var(--on-ink-2); --accent-ink: var(--accent);
+  animation: bg-pan-1 40s var(--ease-in-out) infinite alternate;
+}
+@keyframes bg-pan-1 {
+  0% { background-position: 50% 130%; }
+  50% { background-position: 42% 122%; }
+  100% { background-position: 58% 128%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .section-band { animation: none; }
+}
 .grid { display: grid; gap: var(--s-6); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }

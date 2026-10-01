@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 
 from apps.audit import service as audit
 from apps.core.exceptions import Conflict
+from apps.core.pagination import PagePagination
 from apps.rbac import catalogue as P
 from apps.rbac import policy
 from apps.rbac.api import AUTHENTICATED, PermissionedAPIView
@@ -17,7 +18,7 @@ from apps.rbac.models import ScopeType
 from apps.rbac.policy import ScopeTarget
 
 from . import dynamic_queries, media, media_resolution, workflow
-from .models import Approval, ApprovalRule, ContentBlockType, ContentItem, ContentVersion, MediaAsset
+from .models import Approval, ApprovalRule, ContentBlockType, ContentItem, ContentVersion, MediaAsset, WorkflowState
 from .serializers import (
     ApprovalRuleSerializer,
     ApprovalSerializer,
@@ -31,6 +32,7 @@ from .serializers import (
     MediaAssetSerializer,
     RevertSerializer,
     ReviewCommentSerializer,
+    ReviewInboxItemSerializer,
     ScheduleSerializer,
 )
 
@@ -89,6 +91,28 @@ class ContentItemDetailView(PermissionedAPIView):
         return Response(ContentItemSerializer(self.get_item(pk)).data)
 
 
+class ContentItemBySlugView(PermissionedAPIView):
+    """
+    Authenticated lookup by (content_type, slug) — what the Phase 2C editor
+    route (`/platform/editor/:contentType/:slug`) resolves against, since
+    the editor is addressed by the same human-readable identity as the
+    public route, not a UUID. Same scope enforcement as
+    `ContentItemDetailView` (404, not 403, outside scope — no existence
+    leak). Never returns draft/version *content* itself — callers still
+    fetch `GET /content/versions/<id>` for that, so this endpoint alone
+    can't be used to read draft blocks, only to discover the item's
+    draft/published version ids.
+    """
+
+    required_perms = {"GET": P.CONTENT_VIEW}
+
+    def get(self, request, content_type, slug):
+        item = get_object_or_404(ContentItem, content_type=content_type, slug=slug)
+        if not policy.has_perm(request.user, P.CONTENT_VIEW, item):
+            raise NotFound()
+        return Response(ContentItemSerializer(item).data)
+
+
 class MyContentVersionsListView(PermissionedAPIView):
     """
     Every signed-in user's own authored versions, regardless of whether they
@@ -104,6 +128,61 @@ class MyContentVersionsListView(PermissionedAPIView):
     def get(self, request):
         qs = ContentVersion.objects.filter(author=request.user).select_related("content_item")
         return self.paginated(qs, ContentVersionSerializer)
+
+
+def _pending_action_for(user, version: ContentVersion) -> str | None:
+    """
+    What (if anything) `user` may do next on `version`, for the reviewer
+    inbox (Phase 2D). Mirrors the exact gates `workflow.open_review`/
+    `workflow.approve` enforce — this only decides whether to *list* the
+    version, never whether the action itself is allowed; the real
+    enforcement still happens in `apps.content.workflow` when the action is
+    actually taken.
+    """
+    if version.state == WorkflowState.SUBMITTED:
+        return "open_review" if policy.has_perm(user, P.CONTENT_REVIEW, version) else None
+    if version.state == WorkflowState.IN_REVIEW:
+        stages = version.approval_stages_snapshot or workflow._DEFAULT_RULE_STAGES
+        satisfied = Approval.objects.filter(
+            content_version=version, decision=Approval.Decision.APPROVED
+        ).count()  # fmt: skip
+        if satisfied >= len(stages):
+            return None
+        stage = stages[satisfied]
+        return "approve" if policy.has_perm(user, stage["permission"], version) else None
+    return None
+
+
+class ReviewInboxView(PermissionedAPIView):
+    """
+    "Pending my review" (Phase 2D approval inbox): every SUBMITTED/IN_REVIEW
+    version the requesting user may act on next, excluding their own
+    authored content (an author can never review/approve their own
+    submission — see `apps.rbac.approvals.SelfApprovalDenied`, enforced
+    again at the actual approve/open_review call). Scope is derived
+    per-version via the same `policy.has_perm` object-level check every
+    other endpoint uses, never a role-name comparison or a client-supplied
+    vertical filter.
+    """
+
+    required_perms = {"GET": AUTHENTICATED}
+
+    def get(self, request):
+        candidates = (
+            ContentVersion.objects.filter(state__in=[WorkflowState.SUBMITTED, WorkflowState.IN_REVIEW])
+            .exclude(author=request.user)
+            .select_related("content_item", "author")
+            .order_by("-updated_at")
+        )
+        pending = []
+        for version in candidates:
+            action = _pending_action_for(request.user, version)
+            if action:
+                version.pending_action = action
+                pending.append(version)
+        paginator = PagePagination()
+        page = paginator.paginate_queryset(pending, request, view=self)
+        return paginator.get_paginated_response(ReviewInboxItemSerializer(page, many=True).data)
 
 
 class ContentItemUnpublishView(PermissionedAPIView):
@@ -158,8 +237,9 @@ class ContentVersionDetailView(PermissionedAPIView):
         s.is_valid(raise_exception=True)
         d = s.validated_data
         version = workflow.update_draft(
-            request, version=version, blocks=d["blocks"], seo=d.get("seo"), change_note=d.get("change_note", "")
-        )
+            request, version=version, blocks=d["blocks"], seo=d.get("seo"), change_note=d.get("change_note", ""),
+            expected_updated_at=d.get("expected_updated_at"),
+        )  # fmt: skip
         return Response(ContentVersionSerializer(version).data)
 
 

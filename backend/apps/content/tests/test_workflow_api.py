@@ -101,6 +101,41 @@ def test_draft_immutable_after_submit(org):
     assert r.status_code == 409
 
 
+def test_stale_expected_updated_at_is_rejected_without_overwriting(org):
+    head = client_for(org["head_a"])
+    r = _create_item(head, owner_vertical=org["vertical_a"], slug="concurrency-page")
+    item = ContentItem.objects.get(pk=r.data["id"])
+    draft = item.draft_version
+    stale_timestamp = draft.updated_at
+
+    ok = head.patch(
+        f"/api/v1/content/versions/{draft.id}", {"blocks": _valid_blocks(), "expected_updated_at": stale_timestamp.isoformat()},
+        format="json",
+    )  # fmt: skip
+    assert ok.status_code == 200
+
+    # A second writer still holding the original (now stale) timestamp gets 409, not a silent overwrite.
+    r2 = head.patch(
+        f"/api/v1/content/versions/{draft.id}",
+        {"blocks": {"schema_version": 1, "blocks": [{"id": "h2", "type": "hero", "props": {"heading": "Overwrite attempt"}}]}, "expected_updated_at": stale_timestamp.isoformat()},
+        format="json",
+    )  # fmt: skip
+    assert r2.status_code == 409
+    assert r2.data["error"]["code"] == "stale_version"
+
+    draft.refresh_from_db()
+    assert draft.blocks["blocks"][0]["props"]["heading"] == "Hello"  # the first writer's change, not overwritten
+
+
+def test_omitting_expected_updated_at_skips_the_concurrency_check(org):
+    head = client_for(org["head_a"])
+    r = _create_item(head, owner_vertical=org["vertical_a"], slug="no-concurrency-check-page")
+    item = ContentItem.objects.get(pk=r.data["id"])
+    draft = item.draft_version
+    r2 = head.patch(f"/api/v1/content/versions/{draft.id}", {"blocks": _valid_blocks()}, format="json")
+    assert r2.status_code == 200
+
+
 def test_cross_vertical_editing_is_refused(org):
     r = _create_item(client_for(org["head_a"]), owner_vertical=org["vertical_a"], slug="a-only")
     item_id = r.data["id"]
@@ -113,6 +148,22 @@ def test_cross_vertical_editing_is_refused(org):
     head_of_b = client_for(org["member_b"])
     r = head_of_b.get(f"/api/v1/content/{item_id}")
     assert r.status_code == 404  # no existence leak outside scope
+
+
+def test_content_item_by_slug_lookup_respects_scope(org):
+    """The Phase 2C editor route resolves by (content_type, slug) — same
+    scope enforcement as the by-id lookup, no existence leak."""
+    _create_item(client_for(org["head_a"]), owner_vertical=org["vertical_a"], slug="editor-lookup-page")
+
+    r = client_for(org["head_a"]).get("/api/v1/content/by-slug/page/editor-lookup-page")
+    assert r.status_code == 200 and r.data["slug"] == "editor-lookup-page"
+
+    grant(org["member_b"], "VERTICAL_HEAD", org["vertical_b"])
+    r = client_for(org["member_b"]).get("/api/v1/content/by-slug/page/editor-lookup-page")
+    assert r.status_code == 404
+
+    r = client_for(org["head_a"]).get("/api/v1/content/by-slug/page/does-not-exist")
+    assert r.status_code == 404
 
 
 def test_invalid_block_document_rejected(org):
@@ -476,3 +527,77 @@ def test_approval_history_visible_to_authorized_scope_only(org):
     grant(org["member_b"], "VERTICAL_HEAD", org["vertical_b"])
     r = client_for(org["member_b"]).get(f"/api/v1/content/versions/{draft.id}/approvals")
     assert r.status_code == 404
+
+
+# --- reviewer inbox (Phase 2D) --------------------------------------------------------
+
+
+def test_inbox_shows_submitted_version_to_a_reviewer_and_hides_it_from_the_author(org):
+    r = _create_item(client_for(org["head_a"]), owner_vertical=org["vertical_a"], slug="inbox-submitted")
+    item = ContentItem.objects.get(pk=r.data["id"])
+    draft = item.draft_version
+    head = client_for(org["head_a"])
+    head.post(f"/api/v1/content/versions/{draft.id}/submit", {}, format="json")
+
+    # head_a authored it and is also the reviewer (VERTICAL_HEAD holds content.review
+    # at vertical A) — must never see their own submission in their own inbox.
+    r = head.get("/api/v1/content/inbox")
+    assert r.status_code == 200
+    assert not any(v["id"] == str(draft.id) for v in r.data["results"])
+
+    admin = client_for(org["admin_head"])
+    r = admin.get("/api/v1/content/inbox")
+    assert r.status_code == 200
+    entry = next(v for v in r.data["results"] if v["id"] == str(draft.id))
+    assert entry["pending_action"] == "open_review"
+    assert entry["state"] == WorkflowState.SUBMITTED
+    assert entry["content_type"] == "page" and entry["slug"] == "inbox-submitted"
+    assert entry["author_email"] == org["head_a"].email
+
+    # A scope-outsider (no content.review anywhere over vertical A) sees nothing.
+    grant(org["member_b"], "VERTICAL_HEAD", org["vertical_b"])
+    r = client_for(org["member_b"]).get("/api/v1/content/inbox")
+    assert r.status_code == 200
+    assert not any(v["id"] == str(draft.id) for v in r.data["results"])
+
+
+def test_inbox_shows_in_review_version_only_to_holder_of_the_next_stage_permission(org):
+    ApprovalRule.objects.create(
+        name="Pages need faculty approval", content_type="page",
+        stages=[
+            {"kind": "ORGANIZATIONAL", "permission": "content.approve", "scope": "GLOBAL", "min_approvers": 1},
+            {"kind": "FACULTY", "permission": "content.approve_faculty", "scope": "GLOBAL", "min_approvers": 1},
+        ],
+    )  # fmt: skip
+    r = _create_item(client_for(org["head_a"]), owner_vertical=org["vertical_a"], slug="inbox-in-review")
+    item = ContentItem.objects.get(pk=r.data["id"])
+    draft = item.draft_version
+    head = client_for(org["head_a"])
+    head.post(f"/api/v1/content/versions/{draft.id}/submit", {}, format="json")
+    head.post(f"/api/v1/content/versions/{draft.id}/review", {}, format="json")
+
+    admin = client_for(org["admin_head"])
+    r = admin.get("/api/v1/content/inbox")
+    entry = next(v for v in r.data["results"] if v["id"] == str(draft.id))
+    assert entry["pending_action"] == "approve"
+
+    faculty_user = org["outsider"]
+    grant(faculty_user, "FACULTY_ADVISOR")
+    # Before the ORGANIZATIONAL stage is satisfied, the faculty approver has nothing to do yet.
+    r = client_for(faculty_user).get("/api/v1/content/inbox")
+    assert not any(v["id"] == str(draft.id) for v in r.data["results"])
+
+    admin.post(f"/api/v1/content/versions/{draft.id}/approve", {}, format="json")
+
+    # Now the ORGANIZATIONAL stage is satisfied: admin_head has nothing further to do,
+    # but the faculty approver's turn has arrived.
+    r = admin.get("/api/v1/content/inbox")
+    assert not any(v["id"] == str(draft.id) for v in r.data["results"])
+    r = client_for(faculty_user).get("/api/v1/content/inbox")
+    entry = next(v for v in r.data["results"] if v["id"] == str(draft.id))
+    assert entry["pending_action"] == "approve"
+
+
+def test_inbox_requires_authentication(org):
+    r = client_for(None).get("/api/v1/content/inbox")
+    assert r.status_code in (401, 403)

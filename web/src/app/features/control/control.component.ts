@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SeoService } from '../../core/services/seo.service';
-import { QrGeneratorComponent } from '../../shared/ui/qr-generator.component';
+import { site } from '../../core/data/site.data';
+import { QrGeneratorComponent, QrPreset } from '../../shared/ui/qr-generator.component';
 
 @Component({
   selector: 'app-control',
@@ -12,6 +13,13 @@ import { QrGeneratorComponent } from '../../shared/ui/qr-generator.component';
 })
 export class ControlComponent implements OnInit {
   prefill = '';
+
+  readonly presets: QrPreset[] = [
+    { label: 'Website', value: site.url + '/' },
+    { label: 'Events', value: site.url + '/events/' },
+    { label: 'NEC 2026', value: site.url + '/nec/' },
+    { label: 'Join the Cell', value: site.url + '/contact/' },
+  ];
 
   private seo = inject(SeoService);
   private route = inject(ActivatedRoute);

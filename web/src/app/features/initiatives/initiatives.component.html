@@ -31,12 +31,9 @@
   </div>
 </section>
 
-<section class="wrap">
-  <nav class="initiatives-jump" aria-label="Jump to an initiative">
-    @for (item of initiatives; track item.id) {
-      <a [href]="'#' + item.id" class="chip">{{ item.index }} · {{ item.title }}</a>
-    }
-  </nav>
+<section class="wrap" revealOnScroll>
+  <h2 class="sr-only">Jump to an initiative</h2>
+  <app-editorial-row-list [items]="initiativeRows"></app-editorial-row-list>
 </section>
 
 <section class="wrap" revealOnScroll>

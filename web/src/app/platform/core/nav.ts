@@ -14,7 +14,13 @@ export interface NavSection {
 }
 
 export const PLATFORM_NAV: NavSection[] = [
-  { label: 'Workspace', items: [{ label: 'Dashboard', path: '/platform/dashboard', anyOf: [] }] },
+  {
+    label: 'Workspace',
+    items: [
+      { label: 'Dashboard', path: '/platform/dashboard', anyOf: [] },
+      { label: 'Approvals', path: '/platform/approvals', anyOf: [] },
+    ],
+  },
   {
     label: 'Administration',
     items: [

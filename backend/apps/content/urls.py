@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     path("", views.ContentItemListView.as_view(), name="content-item-list"),
     path("/mine", views.MyContentVersionsListView.as_view(), name="content-version-mine"),
+    path("/inbox", views.ReviewInboxView.as_view(), name="content-review-inbox"),
+    path("/by-slug/<str:content_type>/<slug:slug>", views.ContentItemBySlugView.as_view(), name="content-item-by-slug"),
     path("/<uuid:pk>", views.ContentItemDetailView.as_view(), name="content-item-detail"),
     path("/<uuid:pk>/unpublish", views.ContentItemUnpublishView.as_view(), name="content-item-unpublish"),
     path("/<uuid:pk>/revert", views.ContentItemRevertView.as_view(), name="content-item-revert"),

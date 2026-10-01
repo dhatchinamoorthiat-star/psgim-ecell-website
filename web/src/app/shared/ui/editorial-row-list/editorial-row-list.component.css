@@ -1,0 +1,138 @@
+.editorial-row-list {
+  border-top: 1px solid var(--rule);
+}
+
+.editorial-row {
+  position: relative;
+  border-bottom: 1px solid var(--rule);
+}
+
+.editorial-row__link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-5) 0;
+  transition: padding var(--dur-normal) var(--ease-out);
+}
+
+.editorial-row__link--static {
+  cursor: default;
+}
+
+.editorial-row__index {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  transition: color var(--dur-normal) var(--ease-out);
+}
+
+.editorial-row__main {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.editorial-row__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.05rem + 1vw, 1.875rem);
+  font-weight: 600;
+  letter-spacing: var(--track-head);
+  line-height: 1.12;
+  transition: color var(--dur-normal) var(--ease-out);
+}
+
+.editorial-row__summary {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+  max-width: 62ch;
+  padding-top: 0.5rem;
+}
+
+.editorial-row__meta {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: end;
+  text-align: right;
+}
+
+.editorial-row__tag {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.editorial-row__when {
+  font-size: var(--t-micro);
+  color: var(--ink-3);
+}
+
+.editorial-row__arr {
+  display: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--accent-ink);
+  transition: transform var(--dur-normal) var(--ease-spring), opacity var(--dur-normal) var(--ease-out);
+}
+.editorial-row__arr svg { width: 100%; height: 100%; }
+
+.editorial-row__rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-slow) var(--ease-out);
+  pointer-events: none;
+}
+
+/* Expand-on-hover/focus is desktop-only: below this or on touch devices the
+   summary stays permanently visible, so the content never depends on hover
+   to be reachable. */
+@media (hover: hover) and (min-width: 48rem) {
+  .editorial-row__summary {
+    display: grid;
+    grid-template-rows: 0fr;
+    padding-top: 0;
+    opacity: 0;
+    transition: grid-template-rows var(--dur-slow) var(--ease-out), opacity var(--dur-normal) var(--ease-out), padding-top var(--dur-slow) var(--ease-out);
+  }
+  .editorial-row__summary > * { overflow: hidden; min-height: 0; }
+  .editorial-row__arr { display: inline-flex; opacity: 0; transform: translateX(-6px); }
+
+  .editorial-row__link:hover .editorial-row__summary,
+  .editorial-row:focus-within .editorial-row__summary {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    padding-top: 0.5rem;
+  }
+  .editorial-row__link:hover .editorial-row__arr,
+  .editorial-row:focus-within .editorial-row__arr {
+    opacity: 1;
+    transform: none;
+  }
+  .editorial-row__link:hover .editorial-row__index,
+  .editorial-row:focus-within .editorial-row__index {
+    color: var(--accent-ink);
+  }
+  .editorial-row:hover .editorial-row__rule,
+  .editorial-row:focus-within .editorial-row__rule {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-row__link,
+  .editorial-row__index,
+  .editorial-row__summary,
+  .editorial-row__arr,
+  .editorial-row__rule {
+    transition: none;
+  }
+}

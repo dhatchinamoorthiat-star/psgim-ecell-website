@@ -26,6 +26,19 @@ _DEFAULT_RULE_STAGES = [
 ]
 
 
+class StaleVersion(Conflict):
+    """
+    409 with a distinct `code` (`stale_version`) so the editor can tell
+    "someone else changed this draft since you loaded it" apart from every
+    other 409 and show a conflict UI instead of a generic error toast
+    (Phase 2C optimistic concurrency, docs/25_VISUAL_EDITOR_ARCHITECTURE.md
+    "Optimistic concurrency").
+    """
+
+    default_code = "stale_version"
+    default_detail = "This draft changed elsewhere since you loaded it."
+
+
 def _active_block_types() -> dict:
     return {bt.key: bt for bt in ContentBlockType.objects.filter(is_active=True)}
 
@@ -77,11 +90,31 @@ def _max_number():
     return Max("number")
 
 
-def update_draft(request, *, version: ContentVersion, blocks: dict, seo: dict | None = None, change_note: str = ""):
-    if version.state != WorkflowState.DRAFT:
-        raise Conflict("Only a DRAFT version can be edited in place.")
+def update_draft(
+    request, *, version: ContentVersion, blocks: dict, seo: dict | None = None, change_note: str = "",
+    expected_updated_at=None,
+):  # fmt: skip
+    """
+    `expected_updated_at`, when given, must match `version.updated_at`
+    exactly (to the microsecond, as returned by the last GET/PATCH) or this
+    raises `StaleVersion` (409) without writing anything — optimistic
+    concurrency for the editor. Callers that don't pass it (e.g. the
+    Phase 2B migration path, which never races itself) skip the check
+    entirely; every editor-facing call site does pass it.
+    """
     validate_blocks_document(blocks, _active_block_types())
     with transaction.atomic():
+        # Lock and re-read inside the transaction — the `version` argument
+        # may have been fetched before this call started, so checking its
+        # in-memory `updated_at` alone would leave a race window between
+        # two genuinely concurrent PATCH requests (both could read the same
+        # stale timestamp and both pass). Locking first makes the second
+        # writer see the first writer's committed change.
+        version = ContentVersion.objects.select_for_update().get(pk=version.pk)
+        if version.state != WorkflowState.DRAFT:
+            raise Conflict("Only a DRAFT version can be edited in place.")
+        if expected_updated_at is not None and version.updated_at != expected_updated_at:
+            raise StaleVersion()
         version.blocks = blocks
         if seo is not None:
             version.seo = seo

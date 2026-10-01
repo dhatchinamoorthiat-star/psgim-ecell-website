@@ -5,10 +5,11 @@ describe('visibleNav', () => {
   it('shows only what the user may open', () => {
     const labels = (perms: string[]) =>
       visibleNav((p) => perms.includes(p)).flatMap((s) => s.items.map((i) => i.label));
-    expect(labels([])).toEqual(['Dashboard']);
-    expect(labels(['vertical.view'])).toEqual(['Dashboard', 'Verticals']);
+    expect(labels([])).toEqual(['Dashboard', 'Approvals']);
+    expect(labels(['vertical.view'])).toEqual(['Dashboard', 'Approvals', 'Verticals']);
     expect(labels(['user.view', 'vertical.view', 'role.view'])).toEqual([
       'Dashboard',
+      'Approvals',
       'Users',
       'Verticals',
       'Roles',

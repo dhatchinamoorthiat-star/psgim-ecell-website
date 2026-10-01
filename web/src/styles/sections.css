@@ -34,13 +34,29 @@
 .hero-actions { display: flex; gap: var(--s-4); margin-top: var(--s-7); flex-wrap: wrap; }
 
 /* Plain (non-video) page hero — every inner page's top banner (Initiatives,
-   About, Events, Team, Gallery, …). No grid texture here — the reference
-   deploy's own .page-hero doesn't have one either; that pattern is reserved
-   for the homepage hero (.hero-plain) alone. Just generous padding and a
-   closing rule, values lifted from the reference's .page-hero exactly. */
+   About, Events, Team, Gallery, …). Theme-adaptive like it always was — the
+   poster-style accent/navy glow + wavy-line texture only shows up in dark
+   mode, gated by --ambient (0 in light, 1 in dark, set in tokens.css) so
+   light mode keeps its original plain white look. */
 .hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   padding-block: clamp(2.5rem, 1rem + 6vw, 5rem) clamp(2rem, 1rem + 4vw, 3.5rem);
   border-bottom: 1px solid var(--rule);
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0; z-index: -1;
+  opacity: var(--ambient, 0);
+  background-image:
+    radial-gradient(34rem 20rem at 88% -12%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
+    radial-gradient(28rem 22rem at 2% 116%, color-mix(in srgb, var(--navy) 65%, transparent), transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='240' viewBox='0 0 480 240'%3E%3Cpath d='M0 60 C 80 20, 160 100, 240 60 S 400 20, 480 60' stroke='rgba(255,255,255,0.10)' stroke-width='1' fill='none'/%3E%3Cpath d='M0 120 C 80 80, 160 160, 240 120 S 400 80, 480 120' stroke='rgba(255,255,255,0.08)' stroke-width='1' fill='none'/%3E%3Cpath d='M0 180 C 80 140, 160 220, 240 180 S 400 140, 480 180' stroke='rgba(255,255,255,0.06)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-position: 0 0, 0 0, center;
+  background-size: auto, auto, 480px 240px;
+  animation: bg-pan-3 40s var(--ease-in-out) infinite alternate;
 }
 .hero h1 { font-size: var(--t-h1); max-width: 22ch; margin-top: var(--s-3); }
 .hero .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 46ch; margin-top: var(--s-4); }
@@ -65,7 +81,9 @@
    .hero__grid / .hero__strip. Theme-adaptive like the source (not forced
    dark) — its dark look comes from the site defaulting to dark mode, not
    from the hero overriding colours itself. The grid is a radial-masked
-   texture anchored top-right, not a uniform fade. */
+   texture anchored top-right, not a uniform fade. The poster-style glow +
+   wavy-line layer (::after) is gated by --ambient so it only shows in dark
+   mode, same as .hero. */
 .hero-plain {
   position: relative;
   overflow: hidden;
@@ -83,6 +101,19 @@
   -webkit-mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
   mask-image: radial-gradient(120% 90% at 78% 8%, #000 0%, transparent 72%);
 }
+.hero-plain::after {
+  content: '';
+  position: absolute; inset: 0; z-index: -2;
+  opacity: var(--ambient, 0);
+  background-image:
+    radial-gradient(36rem 22rem at 90% -10%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 70%),
+    radial-gradient(30rem 24rem at 0% 118%, color-mix(in srgb, var(--navy) 65%, transparent), transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='240' viewBox='0 0 480 240'%3E%3Cpath d='M0 60 C 80 20, 160 100, 240 60 S 400 20, 480 60' stroke='rgba(255,255,255,0.10)' stroke-width='1' fill='none'/%3E%3Cpath d='M0 120 C 80 80, 160 160, 240 120 S 400 80, 480 120' stroke='rgba(255,255,255,0.08)' stroke-width='1' fill='none'/%3E%3Cpath d='M0 180 C 80 140, 160 220, 240 180 S 400 140, 480 180' stroke='rgba(255,255,255,0.06)' stroke-width='1' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-position: 0 0, 0 0, center;
+  background-size: auto, auto, 480px 240px;
+  animation: bg-pan-3 40s var(--ease-in-out) infinite alternate;
+}
 .hero-plain h1 { font-size: var(--t-display); font-weight: 800; max-width: 20ch; margin-top: var(--s-4); }
 .hero-plain .lede { font-size: var(--t-lede); color: var(--ink-2); max-width: 42ch; margin-top: var(--s-5); line-height: 1.55; }
 .hero-plain .hero-actions { margin-top: var(--s-5); }
@@ -98,6 +129,18 @@
   animation: hero-ticker-pulse 2.4s var(--ease-in-out) infinite;
 }
 @keyframes hero-ticker-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.82); } }
+
+/* Slow drift for .hero / .hero-plain's 3-layer glow background (two radial
+   gradients + the wavy-line tile) — panning background-position rather than
+   transforming the element, so the heading/lede inside stay perfectly still. */
+@keyframes bg-pan-3 {
+  0% { background-position: 0% 0%, 0% 0%, 0 0; }
+  50% { background-position: -8% 6%, 6% -5%, 40px 24px; }
+  100% { background-position: 6% -5%, -5% 6%, -32px -28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero::before, .hero-plain::after { animation: none; }
+}
 .hero-ticker-label { font-size: var(--t-micro); letter-spacing: var(--track-kicker); text-transform: uppercase; color: var(--ink-3); }
 .hero-ticker-title { font-weight: 600; color: var(--ink); flex: 1; }
 .hero-ticker-date { color: var(--ink-3); font-size: var(--t-xs); }
@@ -240,8 +283,17 @@ dialog.lightbox::backdrop { background: rgba(5,10,20,.85); }
 .qr-tool { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-7); align-items: start; }
 @media (max-width: 48rem) { .qr-tool { grid-template-columns: 1fr; } }
 .qr-canvas-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--s-4); }
-.qr-canvas-wrap canvas { border-radius: var(--r-md); box-shadow: var(--shadow-md); }
+/* The canvas is drawn at a fixed pixel resolution (qr.service.ts targetSize)
+   for a crisp download — that resolution must not dictate its on-page
+   display size, or the code renders far larger than the text column next
+   to it. Cap the display size and let width/height stay auto so it still
+   scales down on narrow columns. */
+.qr-canvas-wrap canvas { max-width: min(320px, 100%); width: 100%; height: auto; border-radius: var(--r-md); box-shadow: var(--shadow-md); }
 .qr-field { width: 100%; padding: var(--s-3); border-radius: var(--r-md); border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink); font-size: var(--t-sm); }
+.qr-options { display: flex; flex-wrap: wrap; gap: var(--s-5); margin-top: var(--s-5); }
+.qr-option { display: flex; flex-direction: column; gap: var(--s-2); align-items: flex-start; }
+.qr-select { padding: var(--s-2) var(--s-3); border-radius: var(--r-md); border: 1px solid var(--rule-strong); background: var(--surface); color: var(--ink); font-size: var(--t-sm); }
+.qr-hint { margin-top: var(--s-5); font-size: var(--t-xs); color: var(--ink-3); }
 
 /* Splash screen — a diagonal navy/black split with the full logo lockup
    centred on it, matching the reference brand-splash composition. Sits
