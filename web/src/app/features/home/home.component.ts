@@ -5,9 +5,9 @@ import { RouterLink } from '@angular/router';
 import { hero, intro } from '../../core/data/about.data';
 import { why, whatHappens, ecellWay } from '../../core/data/home.data';
 import { initiatives, stages, toInitiativeRows } from '../../core/data/initiatives.data';
-import { events, splitEvents } from '../../core/data/events.data';
+import { events, eventsNote } from '../../core/data/events.data';
+import { nec, preliminaryTotals } from '../../core/data/nec.data';
 import { stats, drive } from '../../core/data/stats.data';
-import { gallery } from '../../core/data/gallery.data';
 import { site, primaryCta } from '../../core/data/site.data';
 import { SeoService } from '../../core/services/seo.service';
 import { RevealOnScrollDirective } from '../../core/directives/reveal.directive';
@@ -39,14 +39,34 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   whatHappens = whatHappens;
   ecellWay = ecellWay;
   initiatives = initiatives;
-  initiativeRows = toInitiativeRows('route');
+  /** A curated preview — the full set lives on the Initiatives page. */
+  initiativeRows = toInitiativeRows('route').slice(0, 4);
   stages = stages;
   stats = stats;
   drive = drive;
-  gallery = gallery.slice(0, 4);
   site = site;
   primaryCta = primaryCta;
-  upcoming = splitEvents(events).upcoming.slice(0, 3);
+
+  nec = nec;
+  necTotals = preliminaryTotals();
+  ourTrack = nec.tracks.find((t) => t.ours)?.name ?? '';
+  preliminaryCleared = nec.progress.tasks.length;
+
+  /**
+   * Programme activity rather than a fixtures list. Titles and summaries are
+   * real descriptions of what the Cell runs; the dates behind them are not
+   * confirmed, which is why no date is surfaced here and `eventsNote` leads
+   * the section.
+   */
+  eventsNote = eventsNote;
+  activityRows = events.slice(0, 4).map((ev, i) => ({
+    id: `activity-${ev.id}`,
+    index: String(i + 1).padStart(2, '0'),
+    title: ev.title,
+    summary: ev.summary,
+    tag: initiatives.find((init) => init.id === ev.initiative)?.tag,
+    href: '/events/',
+  }));
 
   private seo = inject(SeoService);
   private platformId = inject(PLATFORM_ID);

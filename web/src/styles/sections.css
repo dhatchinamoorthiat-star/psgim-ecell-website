@@ -218,6 +218,36 @@
   margin-bottom: var(--s-5);
 }
 
+/* NEC teaser on the home page — three confirmed figures on a rule, carrying
+   the programme's standing without restating the NEC page. */
+.nec-teaser {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-6) var(--s-8);
+  margin: var(--s-7) 0 0;
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+}
+.nec-teaser dt {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-kicker);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.nec-teaser dd {
+  margin: var(--s-2) 0 0;
+  font-size: var(--t-h3);
+  font-weight: 700;
+  letter-spacing: var(--track-head);
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.nec-teaser dd span {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
 /* Filter bar — text set on a rule, with the active option marked by weight and
    an underline as well as colour, so the state does not rely on colour alone. */
 .filter-bar {

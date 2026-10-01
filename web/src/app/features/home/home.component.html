@@ -10,14 +10,14 @@
     </div>
   </div>
 
-  @if (upcoming[0]; as next) {
-    <a routerLink="/events/" class="hero-ticker wrap">
-      <span class="hero-ticker-dot" aria-hidden="true"></span>
-      <span class="hero-ticker-label">Next up</span>
-      <span class="hero-ticker-title">{{ next.title }}</span>
-      <span class="hero-ticker-date">{{ next.date | date: 'd MMM' }}@if (next.time) { · {{ next.time }} }</span>
-    </a>
-  }
+  <!-- Carries confirmed NEC standing rather than an event: the events data is
+       illustrative, and the hero is the last place to assert it as a fixture. -->
+  <a routerLink="/nec/" class="hero-ticker wrap">
+    <span class="hero-ticker-dot" aria-hidden="true"></span>
+    <span class="hero-ticker-label">On now</span>
+    <span class="hero-ticker-title">Competing in NEC {{ nec.year }} — {{ ourTrack }}</span>
+    <span class="hero-ticker-date">{{ preliminaryCleared }} preliminary tasks cleared</span>
+  </a>
 </section>
 
 <section class="section section-band">
@@ -82,51 +82,51 @@
     <h2>What we run, every year</h2>
   </div>
   <p class="lede" style="margin-top: var(--s-4); max-width: var(--wrap-narrow)">Programmes repeat each academic year, so a first-year can follow the whole arc before they graduate.</p>
-  <a routerLink="/initiatives/" class="btn btn-ghost" style="margin-top: var(--s-4)">All initiatives →</a>
   <app-editorial-row-list [items]="initiativeRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading">
-    <span class="kicker">Coming up</span>
-    <h2>Upcoming events</h2>
-  </div>
-  <div class="events-list" style="margin-top: var(--s-7)">
-    @for (ev of upcoming; track ev.id) {
-      <div class="event-row">
-        <span class="date">{{ ev.date | date: 'MMM d' }}</span>
-        <div>
-          <h3>{{ ev.title }}</h3>
-          <p>{{ ev.summary }}</p>
-          <div class="meta">
-            @if (ev.venue) { <span>{{ ev.venue }}</span> }
-            @if (ev.pending) { <ui-pending-flag label="Illustrative"></ui-pending-flag> }
-          </div>
-        </div>
-      </div>
-    } @empty {
-      <p>No upcoming events listed yet.</p>
-    }
-  </div>
   <div class="hero-actions" style="margin-top: var(--s-6)">
-    <a routerLink="/events/" class="btn btn-ghost">All events</a>
+    <a routerLink="/initiatives/" class="btn btn-ghost">All {{ initiatives.length }} initiatives →</a>
   </div>
 </section>
 
+<!-- NEC is the most verified programme content on the site; every figure here
+     comes from nec.data and is repeated, not restated, from the NEC page. -->
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
-    <span class="kicker">Gallery</span>
-    <h2>From the field</h2>
+    <span class="kicker">NEC {{ nec.year }}</span>
+    <h2>{{ nec.hero.title }}</h2>
   </div>
-  <div class="gallery-grid" style="margin-top: var(--s-7)">
-    @for (tile of gallery; track tile.file) {
-      <div class="gallery-tile ratio-{{ tile.ratio }}">
-        <span class="caption">{{ tile.caption }}</span>
-      </div>
-    }
-  </div>
+  <p class="lede" style="margin-top: var(--s-4); max-width: var(--wrap-narrow)">{{ nec.hero.lede }}</p>
+  <dl class="nec-teaser">
+    <div>
+      <dt>Our track</dt>
+      <dd>{{ ourTrack }}</dd>
+    </div>
+    <div>
+      <dt>Preliminary tasks cleared</dt>
+      <dd>{{ preliminaryCleared }}</dd>
+    </div>
+    <div>
+      <dt>Points scored</dt>
+      <dd>{{ necTotals.points }} <span>/ {{ necTotals.maxPoints }}</span></dd>
+    </div>
+  </dl>
   <div class="hero-actions" style="margin-top: var(--s-6)">
-    <a routerLink="/gallery/" class="btn btn-ghost">Open gallery</a>
+    <a routerLink="/nec/" class="btn btn-primary">The NEC journey →</a>
+  </div>
+</section>
+
+<!-- Framed as the shape of a term rather than a fixtures list: every entry in
+     the events data is illustrative, so the caveat leads instead of hiding in
+     a per-row flag under a heading that asserts the opposite. -->
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">What a term looks like</span>
+    <h2>The kind of thing we run</h2>
+  </div>
+  <ui-pending-flag [label]="eventsNote" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
+  <app-editorial-row-list [items]="activityRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  <div class="hero-actions" style="margin-top: var(--s-6)">
+    <a routerLink="/events/" class="btn btn-ghost">The full calendar →</a>
   </div>
 </section>
 
