@@ -162,15 +162,34 @@
   transition-delay: 80ms;
 }
 
-/* The grid's first column is the row index, so the panel aligns under the
-   title rather than the number. */
+/* Aligns the panel with the title rather than the index: the index column is
+   a two-digit mono number (1rem at this size) plus the grid's column gap. */
 .editorial-row__panel-inner > * {
   max-width: 62ch;
-  margin-left: calc(var(--s-4) + 1.5rem);
+  margin-left: calc(var(--s-4) + 1rem);
 }
 @media (max-width: 48rem) {
   .editorial-row__panel-inner > * {
     margin-left: 0;
+  }
+}
+
+/* Narrow viewports drop the metadata below the title instead of competing with
+   it for width — a long event title otherwise wraps into a ~110px column. */
+@media (max-width: 40rem) {
+  .editorial-row__link {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: var(--s-2);
+  }
+  .editorial-row__index { grid-area: 1 / 1; }
+  .editorial-row__main { grid-area: 1 / 2; }
+  .editorial-row__arr { grid-area: 1 / 3; align-self: start; margin-top: 0.3em; }
+  .editorial-row__meta {
+    grid-area: 2 / 2 / 3 / 4;
+    display: flex;
+    gap: var(--s-3);
+    justify-items: start;
+    text-align: left;
   }
 }
 
@@ -179,6 +198,27 @@
   font-size: var(--t-body);
   line-height: var(--lh-body);
   margin: 0 0 var(--s-5);
+}
+
+/* Event facts — only the fields that exist are ever passed in, so this never
+   renders an empty label. */
+.editorial-row__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-6);
+  margin: 0 0 var(--s-6);
+}
+.editorial-row__facts dt {
+  font-family: var(--font-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--track-kicker);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.editorial-row__facts dd {
+  margin: var(--s-1) 0 0;
+  font-size: var(--t-sm);
+  color: var(--ink);
 }
 
 .editorial-row__list-title {

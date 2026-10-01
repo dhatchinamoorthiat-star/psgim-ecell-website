@@ -197,26 +197,60 @@
 .journey-stage p { color: var(--ink-2); margin-top: var(--s-2); font-size: var(--t-sm); }
 
 /* Initiatives editorial grid */
-/* Quick-jump pills — one per initiative, anchor-linking down to its row. */
-.initiatives-jump { display: flex; flex-wrap: wrap; gap: var(--s-2); padding-block: var(--s-5); border-top: 1px solid var(--rule); }
-.initiatives-jump a { font-size: var(--t-micro); }
-
-/* Numbered list, each row divided by a hairline — the reference deploy's
-   own initiatives layout, replacing the old asymmetric card grid. */
-.initiatives-list { border-top: 1px solid var(--rule); }
-.initiative-row {
-  display: grid; grid-template-columns: 2.5rem 1fr; gap: var(--s-5);
-  padding-block: var(--s-7);
-  border-bottom: 1px solid var(--rule);
-  scroll-margin-top: calc(var(--header-h) + var(--s-4));
+/* Manifesto — the vision statement set as the page's largest voice, with the
+   mission carried by the editorial row list below it. */
+.manifesto__statement {
+  font-size: var(--t-h2);
+  font-weight: 600;
+  line-height: var(--lh-snug);
+  letter-spacing: var(--track-head);
+  color: var(--ink);
+  max-width: 28ch;
+  margin: var(--s-5) 0 0;
+  text-wrap: balance;
 }
-.initiative-row .index { font-size: var(--t-sm); color: var(--ink-3); font-weight: 700; font-family: var(--font-display); }
-.initiative-row .kicker { margin-bottom: var(--s-3); }
-.initiative-row h3 { font-size: var(--t-h2); }
-.initiative-row .summary { font-size: var(--t-lede); color: var(--ink); margin-top: var(--s-3); max-width: 60ch; }
-.initiative-row .body { color: var(--ink-2); margin-top: var(--s-3); max-width: 60ch; }
-.initiative-row .btn-ghost { margin-top: var(--s-5); }
-@media (max-width: 36rem) { .initiative-row { grid-template-columns: 1fr; gap: var(--s-2); } }
+.manifesto__statement::before {
+  content: '';
+  display: block;
+  width: var(--s-7);
+  height: 2px;
+  background: var(--accent);
+  margin-bottom: var(--s-5);
+}
+
+/* Filter bar — text set on a rule, with the active option marked by weight and
+   an underline as well as colour, so the state does not rely on colour alone. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: var(--s-4);
+}
+.filter-bar__option {
+  position: relative;
+  background: none;
+  border: 0;
+  padding: 0 0 var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  letter-spacing: var(--track-kicker);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.filter-bar__option:hover { color: var(--ink); }
+.filter-bar__option.is-active { color: var(--accent-ink); font-weight: 700; }
+.filter-bar__option.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(-1 * var(--s-4) - 1px);
+  height: 2px;
+  background: var(--accent);
+}
 
 /* Events */
 .events-list { display: flex; flex-direction: column; gap: var(--s-4); }

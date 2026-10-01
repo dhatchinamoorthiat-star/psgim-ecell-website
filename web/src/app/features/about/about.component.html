@@ -28,11 +28,10 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
-    <span class="kicker">What we do</span>
-    <h2>Programmes that move an idea forward</h2>
+    <span class="kicker">What we believe</span>
+    <h2>Four things we keep coming back to</h2>
   </div>
-  <app-editorial-row-list [items]="initiativeRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-  <a routerLink="/initiatives/" class="btn btn-ghost" style="margin-top: var(--s-5)">All initiatives in detail →</a>
+  <app-editorial-row-list [items]="beliefRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>
 
 <section class="section wrap" revealOnScroll>
@@ -43,6 +42,15 @@
   <ui-pending-flag *ngIf="vision.pending" [label]="vision.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
   <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ vision.statement }}</p>
   <app-editorial-row-list [items]="missionRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">What we do</span>
+    <h2>Programmes that move an idea forward</h2>
+  </div>
+  <app-editorial-row-list [items]="initiativeRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  <a routerLink="/initiatives/" class="btn btn-ghost" style="margin-top: var(--s-5)">All initiatives in detail →</a>
 </section>
 
 <section class="section wrap" revealOnScroll>
@@ -60,64 +68,12 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading">
-    <span class="kicker">{{ spotlight.kicker }}</span>
-    <h2>{{ spotlight.heading }}</h2>
-  </div>
-  <div style="margin-top: var(--s-6)">
-    <ui-awaiting-panel heading="Spotlight — awaiting confirmation" [message]="spotlight.note"></ui-awaiting-panel>
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">{{ identity.kicker }}</span><h2>{{ identity.heading }}</h2></div>
-  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of identity.paragraphs; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">{{ ecosystem.kicker }}</span><h2>{{ ecosystem.heading }}</h2></div>
-  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of ecosystem.paragraphs; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">{{ dreamEcell.kicker }}</span><h2>{{ dreamEcell.heading }}</h2></div>
-  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of dreamEcell.paragraphs; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading">
     <span class="kicker">{{ timeline.kicker }}</span>
     <h2>{{ timeline.heading }}</h2>
   </div>
   <ui-pending-flag *ngIf="timeline.pending" [label]="timeline.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
-  <div class="timeline-list" style="margin-top: var(--s-6)">
-    @for (e of timeline.entries; track e.year) {
-      <div class="timeline-row">
-        <span class="year">{{ e.year }}</span>
-        <p style="color: var(--ink-2)">{{ e.what }}</p>
-      </div>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">{{ alumni.kicker }}</span><h2>{{ alumni.heading }}</h2></div>
-  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of alumni.paragraphs; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
-  </div>
+  <app-editorial-timeline [entries]="timeline.entries" style="display:block; margin-top: var(--s-6)"></app-editorial-timeline>
+  <a routerLink="/history/" class="btn btn-ghost" style="margin-top: var(--s-5)">The full history →</a>
 </section>
 
 <section class="section wrap" revealOnScroll>
@@ -129,6 +85,24 @@
   </div>
 </section>
 
+<!-- The three things we deliberately have no content for yet, grouped so that
+     absence takes one section rather than three full-width ones. -->
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">Still to come</span>
+    <h2>What we're not claiming yet</h2>
+  </div>
+  <div style="margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+    <ui-awaiting-panel heading="Spotlight — awaiting confirmation" [message]="spotlight.note"></ui-awaiting-panel>
+    @if (mentors.length === 0) {
+      <ui-awaiting-panel heading="Mentor panel — awaiting confirmation" message="Named mentors will appear here once the panel is signed off with the faculty coordinators."></ui-awaiting-panel>
+    }
+    @if (testimonials.length === 0) {
+      <ui-awaiting-panel heading="Testimonials — awaiting collection" message="We don't have quotes we can stand behind yet — nothing here is invented."></ui-awaiting-panel>
+    }
+  </div>
+</section>
+
 <section class="section wrap" style="text-align:center" revealOnScroll>
   <span class="kicker">{{ join.kicker }}</span>
   <h2 style="margin-top: var(--s-3)">{{ join.heading }}</h2>
@@ -136,24 +110,6 @@
   <div class="hero-actions" style="justify-content:center; margin-top: var(--s-6)">
     <a routerLink="/contact/" class="btn btn-primary">Get in touch</a>
     <a routerLink="/team/" class="btn btn-ghost">Meet the team</a>
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">Mentors</span><h2>Who guides us</h2></div>
-  <div style="margin-top: var(--s-6)">
-    @if (mentors.length === 0) {
-      <ui-awaiting-panel heading="Mentor panel — awaiting confirmation" message="Named mentors will appear here once the panel is signed off with the faculty coordinators."></ui-awaiting-panel>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">Testimonials</span><h2>What people say</h2></div>
-  <div style="margin-top: var(--s-6)">
-    @if (testimonials.length === 0) {
-      <ui-awaiting-panel heading="Testimonials — awaiting collection" message="We don't have quotes we can stand behind yet — nothing here is invented."></ui-awaiting-panel>
-    }
   </div>
 </section>
 

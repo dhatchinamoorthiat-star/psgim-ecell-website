@@ -4,13 +4,6 @@
 </section>
 
 <section class="section wrap" revealOnScroll>
-  <ui-pending-flag *ngIf="timeline.pending" [label]="timeline.note" style="display:inline-block; margin-bottom: var(--s-5)"></ui-pending-flag>
-  <div class="timeline-list">
-    @for (e of timeline.entries; track e.year) {
-      <div class="timeline-row">
-        <span class="year">{{ e.year }}</span>
-        <p style="color: var(--ink-2)">{{ e.what }}</p>
-      </div>
-    }
-  </div>
+  <ui-pending-flag *ngIf="timeline.pending" [label]="timeline.note" style="display:inline-block; margin-bottom: var(--s-6)"></ui-pending-flag>
+  <app-editorial-timeline [entries]="timeline.entries"></app-editorial-timeline>
 </section>

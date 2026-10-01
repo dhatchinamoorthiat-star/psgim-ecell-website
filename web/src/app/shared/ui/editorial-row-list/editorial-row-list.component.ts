@@ -8,9 +8,12 @@ import { RouterLink } from '@angular/router';
  * panel, because a whole-row link and a click-to-expand row cannot coexist.
  */
 export interface EditorialRowDetails {
-  body?: string;
+  /** A single paragraph, or several rendered as separate <p> elements. */
+  body?: string | string[];
   listTitle?: string;
   list?: string[];
+  /** Rendered as a definition list, and only for the facts that exist. */
+  facts?: { label: string; value: string }[];
   cta?: { label: string; href: string; fragment?: string };
 }
 
@@ -98,8 +101,18 @@ export interface EditorialRowItem {
               [attr.inert]="isOpen(item.id) ? null : ''"
             >
               <div class="editorial-row__panel-inner">
-                @if (item.details.body) {
-                  <p class="editorial-row__body">{{ item.details.body }}</p>
+                @for (paragraph of paragraphs(item.details.body); track paragraph) {
+                  <p class="editorial-row__body">{{ paragraph }}</p>
+                }
+                @if (item.details.facts?.length) {
+                  <dl class="editorial-row__facts">
+                    @for (fact of item.details.facts; track fact.label) {
+                      <div>
+                        <dt>{{ fact.label }}</dt>
+                        <dd>{{ fact.value }}</dd>
+                      </div>
+                    }
+                  </dl>
                 }
                 @if (item.details.list?.length) {
                   @if (item.details.listTitle) {
@@ -155,6 +168,11 @@ export class EditorialRowListComponent {
       const id = this.initiallyOpen();
       if (id) this.open.update((current) => new Set(current).add(id));
     });
+  }
+
+  paragraphs(body: string | string[] | undefined): string[] {
+    if (!body) return [];
+    return Array.isArray(body) ? body : [body];
   }
 
   isOpen(id: string): boolean {

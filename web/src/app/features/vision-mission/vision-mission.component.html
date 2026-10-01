@@ -4,7 +4,18 @@
 </section>
 
 <section class="section wrap" revealOnScroll>
-  <ui-pending-flag *ngIf="vision.pending" [label]="vision.note" style="display:inline-block; margin-bottom: var(--s-5)"></ui-pending-flag>
-  <p class="lede" style="max-width: var(--wrap-narrow)">{{ vision.statement }}</p>
+  <ui-pending-flag *ngIf="vision.pending" [label]="vision.note" style="display:inline-block; margin-bottom: var(--s-7)"></ui-pending-flag>
+
+  <div class="manifesto">
+    <span class="kicker">Vision</span>
+    <p class="manifesto__statement">{{ vision.statement }}</p>
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">Mission</span>
+    <h2>How we intend to get there</h2>
+  </div>
   <app-editorial-row-list [items]="missionRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>

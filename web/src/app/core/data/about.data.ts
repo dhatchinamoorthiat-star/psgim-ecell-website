@@ -170,5 +170,21 @@ export const websiteAv: WebsiteAvContent = {
   note: 'A short audio-visual piece introducing the Cell on this site — script and footage still in progress, so nothing is embedded here yet.',
 };
 
+/**
+ * The four "what we believe" sections as one numbered disclosure list. Each was
+ * previously its own full-width section of heading-plus-paragraphs, which gave
+ * four near-identical blocks equal weight and buried the page's narrative. The
+ * copy is unchanged — only the hierarchy is.
+ */
+export function toBeliefRows(): EditorialRowItem[] {
+  return [identity, ecosystem, dreamEcell, alumni].map((section, i) => ({
+    id: `belief-${i}`,
+    index: String(i + 1).padStart(2, '0'),
+    title: section.heading,
+    tag: section.kicker,
+    details: { body: section.paragraphs },
+  }));
+}
+
 export const mentors: Mentor[] = []; // deliberately empty — do not invent people
 export const testimonials: Testimonial[] = []; // deliberately empty — do not invent quotes
