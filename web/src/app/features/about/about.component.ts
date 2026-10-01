@@ -50,6 +50,7 @@ export class AboutComponent implements OnInit {
   reach = reach;
   spotlight = spotlight;
   timeline = timeline;
+  timelineEntries = timeline.entries.map((e) => ({ when: e.year, what: e.what }));
   closing = closing;
   join = join;
   colophon = colophon;

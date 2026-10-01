@@ -72,7 +72,7 @@
     <h2>{{ timeline.heading }}</h2>
   </div>
   <ui-pending-flag *ngIf="timeline.pending" [label]="timeline.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
-  <app-editorial-timeline [entries]="timeline.entries" style="display:block; margin-top: var(--s-6)"></app-editorial-timeline>
+  <app-editorial-timeline [entries]="timelineEntries" style="display:block; margin-top: var(--s-6)"></app-editorial-timeline>
   <a routerLink="/history/" class="btn btn-ghost" style="margin-top: var(--s-5)">The full history →</a>
 </section>
 

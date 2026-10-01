@@ -90,3 +90,76 @@
   overflow: hidden;
   background-image: radial-gradient(60% 120% at 50% 0%, rgba(255,255,255,.08), transparent 70%);
 }
+
+/* The timeline's provenance note. It is confirmed content rather than pending,
+   so it reads as a caption instead of a pending flag — but it still has to be
+   on the page, because it is what says the later dates are tentative. */
+.nec-timeline-note {
+  margin: var(--s-4) 0 0;
+  max-width: var(--wrap-narrow);
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+
+/* Preliminary task scores. A numbered editorial list with a hairline bar, not
+   a dashboard: the bar is a secondary read under the score itself. */
+.nec-tasks {
+  list-style: none;
+  margin: var(--s-6) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+.nec-task {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-4);
+  padding-block: var(--s-5);
+  border-bottom: 1px solid var(--rule);
+}
+.nec-task__index {
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+.nec-task__title {
+  font-size: var(--t-h3);
+  font-weight: 600;
+  letter-spacing: var(--track-head);
+}
+.nec-task__score {
+  font-family: var(--font-mono);
+  font-size: var(--t-body);
+  font-weight: 700;
+  color: var(--accent-ink);
+  font-variant-numeric: tabular-nums;
+}
+.nec-task__max {
+  font-weight: 400;
+  color: var(--ink-3);
+}
+.nec-task__bar {
+  grid-column: 2 / 4;
+  display: block;
+}
+
+.nec-tasks__total {
+  margin: var(--s-5) 0 0;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+}
+.nec-tasks__total strong {
+  font-family: var(--font-mono);
+  font-size: var(--t-lede);
+  color: var(--accent-ink);
+}
+
+@media (max-width: 40rem) {
+  .nec-task {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .nec-task__title { font-size: var(--t-body); }
+  .nec-task__score { grid-column: 2; }
+  .nec-task__bar { grid-column: 2; }
+}

@@ -12,7 +12,21 @@
   padding-block: var(--s-6);
 }
 
-.editorial-timeline__year {
+/* One shared column track across every entry, so the rule stays plumb when the
+   labels differ in width ("Jun" against "Aug – Oct"). Without this each item is
+   its own grid and the markers step in and out. */
+@supports (grid-template-columns: subgrid) {
+  .editorial-timeline {
+    display: grid;
+    grid-template-columns: auto var(--s-5) minmax(0, 1fr);
+  }
+  .editorial-timeline__item {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+}
+
+.editorial-timeline__when {
   font-family: var(--font-mono);
   font-size: var(--t-h3);
   font-weight: 600;
@@ -21,7 +35,7 @@
   font-variant-numeric: tabular-nums;
   transition: color var(--dur-slow) var(--ease-out);
 }
-.editorial-timeline__item.is-revealed .editorial-timeline__year {
+.editorial-timeline__item.is-revealed .editorial-timeline__when {
   color: var(--accent-ink);
 }
 
@@ -71,7 +85,7 @@
 }
 
 @media (max-width: 40rem) {
-  /* The year leads its own line rather than squeezing the milestone into a
+  /* The label leads its own line rather than squeezing the milestone into a
      narrow column. */
   .editorial-timeline__item {
     grid-template-columns: var(--s-5) minmax(0, 1fr);
@@ -79,7 +93,15 @@
     row-gap: var(--s-2);
     padding-block: var(--s-5);
   }
-  .editorial-timeline__year {
+  @supports (grid-template-columns: subgrid) {
+    .editorial-timeline {
+      grid-template-columns: var(--s-5) minmax(0, 1fr);
+    }
+    .editorial-timeline__item {
+      grid-template-columns: subgrid;
+    }
+  }
+  .editorial-timeline__when {
     grid-column: 2;
     font-size: var(--t-body);
   }
@@ -94,7 +116,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .editorial-timeline__year,
+  .editorial-timeline__when,
   .editorial-timeline__marker::after {
     transition: none;
   }

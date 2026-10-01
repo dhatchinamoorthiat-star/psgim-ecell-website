@@ -1,4 +1,5 @@
 import { NecData } from '../models/models';
+import type { EditorialRowItem } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
 
 export const nec: NecData = {
   year: 2026,
@@ -92,3 +93,47 @@ export const nec: NecData = {
     body: 'Open to every department and both years. Fill the interest form and the team lead will be in touch before the next task.',
   },
 };
+
+/**
+ * Tracks as numbered rows. The track PSGIM actually competes on is marked from
+ * the data's own `ours` flag rather than being named again in prose.
+ */
+export function toTrackRows(): EditorialRowItem[] {
+  return nec.tracks.map((track, i) => ({
+    id: `track-${i}`,
+    index: String(i + 1).padStart(2, '0'),
+    title: track.name,
+    tag: track.ours ? 'Our track' : undefined,
+    details: { body: track.body },
+  }));
+}
+
+export function toIncentiveRows(): EditorialRowItem[] {
+  return nec.incentives.map((incentive, i) => ({
+    id: `incentive-${i}`,
+    index: String(i + 1).padStart(2, '0'),
+    title: incentive.title,
+    details: { body: incentive.body },
+  }));
+}
+
+export function toFaqRows(): EditorialRowItem[] {
+  return nec.faq.map((entry, i) => ({
+    id: `faq-${i}`,
+    index: String(i + 1).padStart(2, '0'),
+    title: entry.q,
+    details: { body: entry.a },
+  }));
+}
+
+/**
+ * Totals across the cleared preliminary tasks. Several tasks scored above their
+ * maximum (bonus points on the NEC portal), so the total can exceed the total
+ * maximum — it is not clamped, because the real figure is the point.
+ */
+export function preliminaryTotals(): { points: number; maxPoints: number } {
+  return nec.progress.tasks.reduce(
+    (total, task) => ({ points: total.points + task.points, maxPoints: total.maxPoints + task.maxPoints }),
+    { points: 0, maxPoints: 0 },
+  );
+}

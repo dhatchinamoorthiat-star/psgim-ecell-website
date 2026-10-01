@@ -14,6 +14,7 @@ import { EditorialTimelineComponent } from '../../shared/ui/editorial-timeline/e
 })
 export class HistoryComponent implements OnInit {
   timeline = timeline;
+  timelineEntries = timeline.entries.map((e) => ({ when: e.year, what: e.what }));
 
   private seo = inject(SeoService);
 

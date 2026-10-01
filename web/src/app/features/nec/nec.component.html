@@ -21,65 +21,56 @@
 <section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">{{ nec.about.heading }}</span><h2>{{ nec.about.lead }}</h2></div>
   <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of nec.about.paragraphs; track p) { <p style="color: var(--ink-2)">{{ p }}</p> }
+    @for (p of nec.about.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
+    }
   </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">The journey</span><h2>The six months</h2></div>
+  @if (nec.timeline.pending) {
+    <ui-pending-flag [label]="nec.timeline.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
+  } @else {
+    <p class="nec-timeline-note">{{ nec.timeline.note }}</p>
+  }
+  <app-editorial-timeline [entries]="nec.timeline.entries" style="display:block; margin-top: var(--s-6)"></app-editorial-timeline>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">{{ nec.progress.heading }}</span><h2>{{ nec.progress.lead }}</h2></div>
+  <ol class="nec-tasks">
+    @for (t of nec.progress.tasks; track t.title) {
+      <li class="nec-task">
+        <span class="nec-task__index" aria-hidden="true">{{ $index + 1 | number: '2.0' }}</span>
+        <span class="nec-task__title">{{ t.title }}</span>
+        <span class="nec-task__score">{{ t.points }} <span class="nec-task__max">/ {{ t.maxPoints }}</span></span>
+        <ui-progress-bar class="nec-task__bar" [now]="t.points" [target]="t.maxPoints"></ui-progress-bar>
+      </li>
+    }
+  </ol>
+  <p class="nec-tasks__total">
+    <strong>{{ totals.points }}</strong> points from a possible {{ totals.maxPoints }} across the preliminary phase.
+  </p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Tracks</span><h2>Where we compete</h2></div>
+  <app-editorial-row-list [items]="trackRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">{{ nec.goal.heading }}</span><h2>{{ nec.goal.lead }}</h2></div>
   <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of nec.goal.paragraphs; track p) { <p style="color: var(--ink-2)">{{ p }}</p> }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">Tracks</span><h2>Where we compete</h2></div>
-  <div class="grid grid-3" style="margin-top: var(--s-6)">
-    @for (t of nec.tracks; track t.name) {
-      <div class="card" [style.borderColor]="t.ours ? 'var(--accent)' : 'var(--rule)'">
-        <h3>{{ t.name }}</h3>
-        @if (t.ours) { <ui-pending-flag label="Our track" style="margin-top: var(--s-2); display:inline-block"></ui-pending-flag> }
-        <p style="color: var(--ink-2); margin-top: var(--s-3)">{{ t.body }}</p>
-      </div>
+    @for (p of nec.goal.paragraphs; track p) {
+      <p style="color: var(--ink-2)">{{ p }}</p>
     }
   </div>
 </section>
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">Why join</span><h2>Incentives</h2></div>
-  <div class="grid grid-3" style="margin-top: var(--s-6)">
-    @for (i of nec.incentives; track i.title) {
-      <div class="card">
-        <h3 style="font-size: var(--t-body)">{{ i.title }}</h3>
-        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ i.body }}</p>
-      </div>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">{{ nec.progress.heading }}</span><h2>{{ nec.progress.lead }}</h2></div>
-  <div class="grid grid-3" style="margin-top: var(--s-6)">
-    @for (t of nec.progress.tasks; track t.title) {
-      <div class="card">
-        <h3 style="font-size: var(--t-body)">{{ t.title }}</h3>
-        <p style="color: var(--accent-ink); font-weight: 600; margin-top: var(--s-2)">{{ t.points }} / {{ t.maxPoints }}</p>
-      </div>
-    }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">Timeline</span><h2>The six months</h2></div>
-  <ui-pending-flag *ngIf="nec.timeline.pending" [label]="nec.timeline.note" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
-  <div class="timeline-list" style="margin-top: var(--s-6)">
-    @for (e of nec.timeline.entries; track e.when) {
-      <div class="timeline-row">
-        <span class="year">{{ e.when }}</span>
-        <p style="color: var(--ink-2)">{{ e.what }}</p>
-      </div>
-    }
-  </div>
+  <app-editorial-row-list [items]="incentiveRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>
 
 <section class="section wrap" revealOnScroll>
@@ -93,14 +84,7 @@
 
 <section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">FAQ</span><h2>Common questions</h2></div>
-  <div style="margin-top: var(--s-4)">
-    @for (f of nec.faq; track f.q) {
-      <div class="faq-item">
-        <h3>{{ f.q }}</h3>
-        <p>{{ f.a }}</p>
-      </div>
-    }
-  </div>
+  <app-editorial-row-list [items]="faqRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>
 
 <section class="section wrap" revealOnScroll>
