@@ -1,6 +1,18 @@
-import { Component, input } from '@angular/core';
+import { Component, effect, input, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
+
+/**
+ * Rich expanded content. Supplying this switches the row from a link into a
+ * disclosure: the row header becomes a button and the CTA moves inside the
+ * panel, because a whole-row link and a click-to-expand row cannot coexist.
+ */
+export interface EditorialRowDetails {
+  body?: string;
+  listTitle?: string;
+  list?: string[];
+  cta?: { label: string; href: string; fragment?: string };
+}
 
 export interface EditorialRowItem {
   id: string;
@@ -20,15 +32,24 @@ export interface EditorialRowItem {
    * resolves against the base path and jumps to site root instead of staying on the page.
    */
   anchor?: string;
+  /** Present ⇒ the row is a disclosure, and `href`/`anchor` are ignored on the header. */
+  details?: EditorialRowDetails;
 }
 
 /**
- * Numbered editorial row list — index, title, right-aligned category/metadata,
- * and a summary that expands on hover/focus (desktop) via a 0fr→1fr grid-rows
- * transition. On touch/narrow viewports (outside the `(hover: hover)` media
- * query) the summary is simply always visible, so the interaction never
- * depends on hover to reach the content. Ported from the production
- * reference deploy's `.init-row` component (home page "What we run" teaser).
+ * Numbered editorial row list in two modes.
+ *
+ * Link mode (no `details`): index, title, right-aligned metadata and a summary
+ * that expands on hover/focus (desktop) via a 0fr→1fr grid-rows transition.
+ * Outside `(hover: hover)` the summary is simply always visible, so the
+ * content never depends on hover to be reachable. Ported from the production
+ * reference deploy's `.init-row` component.
+ *
+ * Disclosure mode (`details` supplied): the header is a button carrying
+ * aria-expanded/aria-controls over a labelled region, toggled by click or
+ * keyboard. The collapsed panel is `inert`, which keeps its links out of the
+ * tab order and the accessibility tree while still allowing the open/close
+ * transition that `hidden` would prevent.
  */
 @Component({
   selector: 'app-editorial-row-list',
@@ -49,7 +70,7 @@ export interface EditorialRowItem {
           @if (item.when) { <span class="editorial-row__when">{{ item.when }}</span> }
         </span>
       }
-      @if (item.summary || item.anchor || item.href) {
+      @if (item.details || item.summary || item.anchor || item.href) {
         <span class="editorial-row__arr" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" /></svg>
         </span>
@@ -57,8 +78,48 @@ export interface EditorialRowItem {
     </ng-template>
     <ul class="editorial-row-list">
       @for (item of items(); track item.id) {
-        <li class="editorial-row">
-          @if (item.anchor) {
+        <li class="editorial-row" [id]="item.id" [class.is-open]="isOpen(item.id)">
+          @if (item.details) {
+            <button
+              type="button"
+              class="editorial-row__link editorial-row__link--toggle"
+              [id]="item.id + '-row'"
+              [attr.aria-expanded]="isOpen(item.id)"
+              [attr.aria-controls]="item.id + '-panel'"
+              (click)="toggle(item.id)"
+            >
+              <ng-container *ngTemplateOutlet="rowContent; context: { $implicit: item }"></ng-container>
+            </button>
+            <div
+              class="editorial-row__panel"
+              role="region"
+              [id]="item.id + '-panel'"
+              [attr.aria-labelledby]="item.id + '-row'"
+              [attr.inert]="isOpen(item.id) ? null : ''"
+            >
+              <div class="editorial-row__panel-inner">
+                @if (item.details.body) {
+                  <p class="editorial-row__body">{{ item.details.body }}</p>
+                }
+                @if (item.details.list?.length) {
+                  @if (item.details.listTitle) {
+                    <p class="editorial-row__list-title">{{ item.details.listTitle }}</p>
+                  }
+                  <ul class="editorial-row__list">
+                    @for (point of item.details.list; track point) {
+                      <li>{{ point }}</li>
+                    }
+                  </ul>
+                }
+                @if (item.details.cta; as cta) {
+                  <a class="editorial-row__cta" [routerLink]="cta.href" [fragment]="cta.fragment">
+                    {{ cta.label }}
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </a>
+                }
+              </div>
+            </div>
+          } @else if (item.anchor) {
             <a class="editorial-row__link" [href]="item.anchor">
               <ng-container *ngTemplateOutlet="rowContent; context: { $implicit: item }"></ng-container>
             </a>
@@ -80,4 +141,29 @@ export interface EditorialRowItem {
 })
 export class EditorialRowListComponent {
   items = input.required<EditorialRowItem[]>();
+  /**
+   * Row to open on arrival, so a deep link like `/initiatives/#idea-clinic`
+   * lands on the open row rather than a collapsed one. Scrolling to it is the
+   * browser's own fragment handling against the `<li>` id.
+   */
+  initiallyOpen = input<string | null>(null);
+
+  private readonly open = signal<ReadonlySet<string>>(new Set());
+
+  constructor() {
+    effect(() => {
+      const id = this.initiallyOpen();
+      if (id) this.open.update((current) => new Set(current).add(id));
+    });
+  }
+
+  isOpen(id: string): boolean {
+    return this.open().has(id);
+  }
+
+  toggle(id: string): void {
+    const next = new Set(this.open());
+    if (!next.delete(id)) next.add(id);
+    this.open.set(next);
+  }
 }

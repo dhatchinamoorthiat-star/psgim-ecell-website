@@ -31,26 +31,10 @@
   </div>
 </section>
 
-<section class="wrap" revealOnScroll>
-  <h2 class="sr-only">Jump to an initiative</h2>
-  <app-editorial-row-list [items]="initiativeRows"></app-editorial-row-list>
-</section>
-
-<section class="wrap" revealOnScroll>
-  <div class="initiatives-list">
-    @for (item of initiatives; track item.id) {
-      <article class="initiative-row" [id]="item.id">
-        <span class="index">{{ item.index }}</span>
-        <div>
-          <span class="kicker">{{ item.tag }} · {{ item.cadence }}{{ item.venue ? ' · ' + item.venue : '' }} · {{ stageFor(item.stage)?.label }}</span>
-          <h3>{{ item.title }}</h3>
-          <p class="summary">{{ item.summary }}</p>
-          <p class="body">{{ item.body }}</p>
-          @if (item.href) {
-            <a [routerLink]="item.href" class="btn btn-ghost">Learn more →</a>
-          }
-        </div>
-      </article>
-    }
+<section class="section wrap" revealOnScroll>
+  <div class="section-heading">
+    <span class="kicker">The programmes</span>
+    <h2>Open any one to read how it works</h2>
   </div>
+  <app-editorial-row-list [items]="initiativeRows" [initiallyOpen]="openRow()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
 </section>

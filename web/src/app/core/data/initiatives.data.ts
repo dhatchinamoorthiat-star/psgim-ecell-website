@@ -109,6 +109,26 @@ export const stages: JourneyStage[] = [
  * a fragment, or the initiative's own href if it has one); 'anchor' is for
  * use on the Initiatives page itself, linking to the in-page detail section.
  */
+/**
+ * Disclosure variant for the Initiatives page itself, where the row expands to
+ * the initiative's full body in place rather than linking to a duplicate detail
+ * section further down. Only initiatives with their own page get a CTA.
+ */
+export function toInitiativeDisclosureRows(): EditorialRowItem[] {
+  return initiatives.map((item) => ({
+    id: item.id,
+    index: item.index,
+    title: item.title,
+    summary: item.summary,
+    tag: item.tag,
+    when: item.venue ? `${item.cadence} · ${item.venue}` : item.cadence,
+    details: {
+      body: item.body,
+      ...(item.href ? { cta: { label: 'Explore', href: item.href } } : {}),
+    },
+  }));
+}
+
 export function toInitiativeRows(linkMode: 'route' | 'anchor' = 'route'): EditorialRowItem[] {
   return initiatives.map((item) => ({
     id: item.id,
