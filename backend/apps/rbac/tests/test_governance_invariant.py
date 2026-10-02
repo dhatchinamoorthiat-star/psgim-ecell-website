@@ -366,7 +366,14 @@ def test_faculty_advisor_duplicate_is_still_a_conflict(org):
 
 def test_permission_catalogue_unchanged():
     """R7a added a scope flag only. Role permissions, own-only flags, privileged flags and assign permissions
-    are byte-for-byte what they were before (hashes taken from the catalogue before the change)."""
+    are byte-for-byte what they were before (hashes taken from the catalogue before the change).
+
+    Rebaselined once since, deliberately: `join_submission.manage` (46 -> 47
+    permissions) was added for the public membership-interest inbox and granted
+    to SUPER_ADMIN and ADMIN_HEAD only. TECHNICAL_HEAD is deliberately excluded
+    — it has no recruitment remit and the submissions carry applicants' contact
+    details. No other role's permissions changed.
+    """
     import hashlib
     import json
 
@@ -381,14 +388,14 @@ def test_permission_catalogue_unchanged():
         }
         for k, v in SYSTEM_ROLES.items()
     }
-    assert (len(PERMISSIONS), len(SYSTEM_ROLES)) == (46, 7)
+    assert (len(PERMISSIONS), len(SYSTEM_ROLES)) == (47, 7)
     assert (
         hashlib.sha256(json.dumps(snap, sort_keys=True).encode()).hexdigest()
-        == "2b75042f762e8c60ecc3a6b0ef35a65a8bcd9d2ba032eba01e39a2a8be619d5c"
+        == "c06182524b09a233b2babc24609bf6589a3cc4940682efc1adcc4cba4dcf0f67"
     )
     assert (
         hashlib.sha256(json.dumps(sorted(PERMISSIONS.items())).encode()).hexdigest()
-        == "7ac51ad7c19f4f10c5c9ef032db821e5e0ee91e7d164ee6273a5347e54d41e67"
+        == "3f4652ebcb4231fd0a70e380f74e9fc2d5342cd702bf0d0c23e81b785a8b3a3f"
     )
     assert [k for k, v in SYSTEM_ROLES.items() if v.get("global_only")] == ["FACULTY_ADVISOR"]
     assert [k for k, v in SYSTEM_ROLES.items() if v["is_privileged"]] == ["SUPER_ADMIN", "ADMIN_HEAD", "TECHNICAL_HEAD"]

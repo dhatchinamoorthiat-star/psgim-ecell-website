@@ -17,5 +17,6 @@ REST_FRAMEWORK = {
         "login_ip": "1000/min",
         "password_forgot": "1000/min",
         "password_reset": "1000/min",
+        "join_submit": "1000/min",
     },
 }

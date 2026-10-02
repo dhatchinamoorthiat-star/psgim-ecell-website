@@ -158,6 +158,60 @@ test('legitimate API paths still forward unchanged', async () => {
   }
 });
 
+// --- Phase 2 resources ----------------------------------------------------------------------------
+
+test('forwards the CMS public read API and the public join endpoint', async () => {
+  for (const path of [
+    '/api/v1/content/public/page/home',
+    '/api/v1/content/public/dynamic/published_events_upcoming',
+    '/api/v1/public/join',
+    '/api/v1/join/submissions',
+  ]) {
+    const calls = capture();
+    const res = await onRequest({ request: new Request('https://site.example' + path), env: ORIGIN });
+    assert.equal(res.status, 200, path);
+    assert.equal(calls[0].url, 'https://api.example' + path);
+  }
+});
+
+test('a join submission POST forwards method, body and CSRF header', async () => {
+  const calls = capture();
+  const request = new Request('https://site.example/api/v1/public/join?source=nec', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': 'tok' },
+    body: JSON.stringify({ name: 'A', email: 'a@test.example' }),
+  });
+  await onRequest({ request, env: ORIGIN });
+  assert.equal(calls[0].url, 'https://api.example/api/v1/public/join?source=nec');
+  assert.equal(calls[0].init.method, 'POST');
+  assert.equal(calls[0].init.headers.get('x-csrftoken'), 'tok');
+  assert.ok(calls[0].init.body);
+});
+
+test('an unknown resource is still refused after the Phase 2 additions', async () => {
+  for (const path of ['/api/v1/joinx', '/api/v1/publicx', '/api/v1/contentx', '/api/v1/internal/tick']) {
+    const res = await onRequest({ request: new Request('https://site.example' + path), env: ORIGIN });
+    assert.equal(res.status, 404, path);
+  }
+});
+
+test('the join endpoints are still inert without API_ORIGIN', async () => {
+  for (const path of ['/api/v1/public/join', '/api/v1/join/submissions']) {
+    const res = await onRequest({ request: new Request('https://site.example' + path), env: {} });
+    assert.equal(res.status, 503, path);
+  }
+});
+
+test('the proxy secret is never visible in a response to the browser', async () => {
+  capture(new Response('{}', { status: 202 }));
+  const res = await onRequest({
+    request: new Request('https://site.example/api/v1/public/join', { method: 'POST', body: '{}' }),
+    env: { API_ORIGIN: 'https://api.example', PROXY_SHARED_SECRET: 'topsecret' },
+  });
+  const serialised = [...res.headers].flat().join('|') + (await res.text());
+  assert.ok(!serialised.includes('topsecret'));
+});
+
 // --- Client-IP trust boundary (review finding F4) --------------------------------------------------
 
 test('attaches the proxy shared secret when configured', async () => {

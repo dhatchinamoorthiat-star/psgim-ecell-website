@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.verticals",
     "apps.rbac",
     "apps.content",
+    "apps.join",
 ]
 
 MIDDLEWARE = [
@@ -171,6 +172,12 @@ MAILERS = {
 }
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "PSGIM E-Cell <no-reply@localhost>")
 
+# Recipient for new membership-interest notifications. Deliberately has no
+# default: the Cell's own address is still unconfirmed, and a wrong default
+# would mail real applicants' details to an address nobody owns. Unset means
+# submissions are stored and the notification is skipped.
+JOIN_NOTIFY_EMAIL = env("JOIN_NOTIFY_EMAIL", "")
+
 # Where password-reset links point (the Angular app's origin).
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:4200")
 
@@ -211,6 +218,7 @@ REST_FRAMEWORK = {
         "login_ip": "20/min",
         "password_forgot": "5/hour",
         "password_reset": "10/hour",
+        "join_submit": "5/hour",
     },
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }

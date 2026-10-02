@@ -9,7 +9,8 @@
     "dev": "npm --prefix web start",
     "deploy": "npm --prefix web run build && npx wrangler pages deploy web/dist/web/browser --branch ECell --project-name psgim-ecell",
     "deploy:preview": "npm --prefix web run build && npx wrangler pages deploy web/dist/web/browser --branch preview --project-name psgim-ecell",
-    "test:functions": "node --test \"tools/tests/*.test.mjs\""
+    "test:functions": "node --test \"tools/tests/api-proxy.test.mjs\" \"tools/tests/preview-label.test.mjs\"",
+    "test:e2e:join": "node --test \"tools/tests/join-e2e.test.mjs\""
   },
   "engines": {
     "node": ">=20"

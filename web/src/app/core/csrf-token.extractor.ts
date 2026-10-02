@@ -7,12 +7,15 @@ export const CSRF_COOKIE = 'csrftoken'; // Django's CSRF_COOKIE_NAME (backend/co
 /**
  * Reads Django's CSRF cookie for Angular's XSRF interceptor.
  *
- * Why this exists: HttpClient is provided by the /platform route, not the
- * root injector (so the public site never loads it). Angular's built-in
- * cookie extractor is a root singleton and therefore never sees a
- * route-level `withXsrfConfiguration({ cookieName })` — it keeps looking for
- * the default `XSRF-TOKEN` cookie and sends no header. Providing the
- * extractor next to HttpClient fixes that.
+ * Why this exists: Angular's built-in cookie extractor looks for the default
+ * `XSRF-TOKEN` cookie, not Django's `csrftoken`, so without this it sends no
+ * header at all. It is also a root singleton, which means a route-level
+ * `withXsrfConfiguration({ cookieName })` — as /platform uses — would never
+ * reach it. Providing this class alongside each `provideHttpClient` fixes
+ * both halves.
+ *
+ * Lives in core/ because both HttpClient instances now need it: the root one
+ * (public site, for the membership-interest form) and the /platform one.
  */
 @Injectable()
 export class CsrfTokenExtractor extends HttpXsrfTokenExtractor {

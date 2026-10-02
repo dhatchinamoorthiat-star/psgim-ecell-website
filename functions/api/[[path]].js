@@ -52,6 +52,12 @@ const ALLOWED_RESOURCES = new Set([
   'settings',
   'schema',
   'docs',
+  // Phase 2: the CMS public read API (ContentApiService) and the public
+  // membership-interest form. 'join' is the staff-facing inbox, which is
+  // permission-gated by Django, not by this allowlist.
+  'content',
+  'public',
+  'join',
 ]);
 
 const SEGMENT = /^[A-Za-z0-9._~-]+$/;
@@ -132,6 +138,10 @@ export async function onRequest({ request, env }) {
       method: request.method,
       headers,
       body: hasBody ? request.body : undefined,
+      // Required by the fetch spec when the body is a stream. Workers accepts
+      // it; Node's fetch throws without it, which is what lets this function
+      // be exercised end-to-end against a real backend in CI.
+      ...(hasBody ? { duplex: 'half' } : {}),
       redirect: 'manual', // let the browser see redirects as the backend sent them
     });
   } catch {

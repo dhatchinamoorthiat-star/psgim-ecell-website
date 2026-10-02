@@ -8,7 +8,7 @@ import {
 import { Routes } from '@angular/router';
 import { ApiService } from './core/api.service';
 import { AuthService } from './core/auth.service';
-import { CSRF_COOKIE, CsrfTokenExtractor } from './core/csrf-token.extractor';
+import { CSRF_COOKIE, CsrfTokenExtractor } from '../core/csrf-token.extractor';
 import { anonymousOnlyGuard, authGuard, permissionGuard } from './core/guards';
 import { sessionExpiryInterceptor } from './core/session-expiry.interceptor';
 import { PlatformRootComponent } from './platform-root.component';

@@ -67,6 +67,13 @@ EVENT_WORKSPACE_MANAGE = "event_workspace.manage"
 KB_EDIT = "kb.edit"
 KB_VIEW = "kb.view"
 ANALYTICS_VIEW = "analytics.view"
+# Recruitment. Global-only by design: a membership-interest submission is not
+# attached to a vertical (the public form deliberately does not ask), so there
+# is nothing for a vertical scope to narrow. One permission covers reading and
+# marking handled — anyone trusted with applicants' contact details is equally
+# trusted to tick them off, and splitting it would add a grant to manage for
+# no real separation.
+JOIN_SUBMISSION_MANAGE = "join_submission.manage"
 
 PERMISSIONS: dict[str, str] = {
     USER_VIEW: "See user accounts (within scope)",
@@ -114,6 +121,7 @@ PERMISSIONS: dict[str, str] = {
     EVENT_WORKSPACE_MANAGE: "Manage an event workspace",
     KB_EDIT: "Edit knowledge-base articles",
     KB_VIEW: "Read the knowledge base",
+    JOIN_SUBMISSION_MANAGE: "See membership-interest submissions and mark them handled",
     ANALYTICS_VIEW: "See analytics",
 }
 
@@ -150,6 +158,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             SYSTEM_SETTINGS,
             AUDIT_VIEW,
             APPROVAL_RULE_MANAGE,
+            JOIN_SUBMISSION_MANAGE,
             *_CONTENT_AND_OPS,
         ],  # fmt: skip
         "own_only": [],
@@ -169,6 +178,7 @@ SYSTEM_ROLES: dict[str, dict] = {
             MEMBERSHIP_MANAGE,
             ACADEMIC_YEAR_MANAGE,
             SUCCESSION_RUN,
+            JOIN_SUBMISSION_MANAGE,
             *_CONTENT_AND_OPS,
         ],  # fmt: skip
         "own_only": [],
