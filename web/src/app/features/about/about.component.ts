@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   hero,
@@ -19,7 +19,8 @@ import {
 } from '../../core/data/about.data';
 import { toInitiativeRows } from '../../core/data/initiatives.data';
 import { SeoService } from '../../core/services/seo.service';
-import { RevealOnScrollDirective } from '../../core/directives/reveal.directive';
+import { RevealOnScrollDirective } from '../../core/motion/directives/reveal.directive';
+import { StaggerDirective } from '../../core/motion/directives/stagger.directive';
 import { PendingFlagComponent } from '../../shared/ui/pending-flag.component';
 import { AwaitingPanelComponent } from '../../shared/ui/awaiting-panel.component';
 import { EditorialRowListComponent } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
@@ -32,6 +33,7 @@ import { EditorialTimelineComponent } from '../../shared/ui/editorial-timeline/e
     CommonModule,
     RouterLink,
     RevealOnScrollDirective,
+    StaggerDirective,
     PendingFlagComponent,
     AwaitingPanelComponent,
     EditorialRowListComponent,
@@ -58,6 +60,12 @@ export class AboutComponent implements OnInit {
   testimonials = testimonials;
 
   private seo = inject(SeoService);
+  private platformId = inject(PLATFORM_ID);
+
+  /** Readers who ask for reduced motion get the still frame, not the stinger. */
+  readonly autoplayStoryLogo =
+    isPlatformBrowser(this.platformId) &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   ngOnInit(): void {
     this.seo.set({
