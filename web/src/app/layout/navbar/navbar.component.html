@@ -2,7 +2,10 @@
   <div class="wrap navbar-inner">
     <a routerLink="/" class="navbar-logo" aria-label="PSGIM E-Cell Home">
       <img [src]="logoSrc" alt="PSGIM E-Cell" />
-      <span class="navbar-logo-sub">PSGIM</span>
+      <span class="navbar-logo-text">
+        <span class="navbar-logo-title">E-Cell</span>
+        <span class="navbar-logo-sub">PSGIM</span>
+      </span>
     </a>
 
     <nav class="navbar-links" aria-label="Primary Navigation">
@@ -123,7 +126,10 @@
   <div class="wrap mobile-nav-header">
     <a routerLink="/" class="navbar-logo" (click)="closeMobile()">
       <img [src]="logoSrc" alt="PSGIM E-Cell" />
-      <span class="navbar-logo-sub">PSGIM</span>
+      <span class="navbar-logo-text">
+        <span class="navbar-logo-title">E-Cell</span>
+        <span class="navbar-logo-sub">PSGIM</span>
+      </span>
     </a>
     <div class="mobile-nav-header-actions">
       <button

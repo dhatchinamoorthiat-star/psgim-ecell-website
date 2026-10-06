@@ -115,7 +115,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   }
 
   get logoSrc(): string {
-    return this.theme.effective() === 'dark' ? '/logo-lockup-compact-dark.png' : '/logo-lockup-compact.png';
+    return this.theme.effective() === 'dark' ? '/logo-mark-dark.png' : '/logo-mark.png';
   }
 
   ngAfterViewInit(): void {
