@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../core/api.service';
+import { Page } from '../core/api.types';
 import { ContentBlockTypeDef, ContentItemSummary, ContentVersionRecord } from './editor.types';
 import { BlockNode } from '../../shared/blocks/block.types';
 
@@ -18,6 +19,25 @@ export class EditorApiService {
    * scope-checked server-side (404 outside scope, never a leak). */
   getItemBySlug = (contentType: string, slug: string) =>
     this.api.get<ContentItemSummary>(`/content/by-slug/${contentType}/${slug}`);
+
+  /** Every ContentItem visible to the caller (`_visible_items`, same scoping
+   * as everywhere else in this API) — backs the "Pages" directory. */
+  listItems = (page = 1) => this.api.get<Page<ContentItemSummary>>('/content', { page });
+
+  /** Creates a brand-new ContentItem + its first DRAFT version
+   * (`ContentItemListView.post`) — server enforces `content.submit` at the
+   * chosen scope and the (content_type, slug) uniqueness constraint
+   * (409 `stale_version`-style conflict if the slug is taken). Starts with
+   * an empty block document; the editor fills it in afterwards. */
+  createItem = (body: {
+    content_type: string;
+    slug: string;
+    owner_vertical_id?: string | null;
+  }) =>
+    this.api.post<ContentItemSummary>('/content', {
+      ...body,
+      blocks: { schema_version: 1, blocks: [] },
+    });
 
   getVersion = (versionId: string) =>
     this.api.get<ContentVersionRecord>(`/content/versions/${versionId}`);
