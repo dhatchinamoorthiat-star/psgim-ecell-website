@@ -58,10 +58,13 @@
 .section-heading .kicker { margin-bottom: var(--s-3); }
 /* The white→accent gradient text from the old NEC reference page's
    .nec-lead (main.psgim-ecell.pages.dev/assets/nec.css), rebuilt to fit
-   this system: built from --ink/--accent-ink instead of hard-coded white/
-   blue, so it adapts per theme automatically rather than needing separate
+   this system: built from --ink/--accent instead of hard-coded white/blue,
+   so it adapts per theme automatically rather than needing separate
    light/dark rules — in dark mode --ink is white (matching the source
-   exactly), in light mode it's navy, fading into the same gold either way.
+   exactly), in light mode it's black, fading into the same brand gold
+   (--accent) either way. Uses --accent rather than --accent-ink: the latter
+   is the button-text-contrast token and is black in light mode (same as
+   --ink), which collapsed this into an invisible black-on-black gradient.
    Falls back to solid --ink wherever background-clip: text isn't supported
    (older WebKit/Firefox) — the @supports guard, not the property itself,
    carries that fallback. */
@@ -69,7 +72,7 @@
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .section-heading h2 {
     color: transparent;
-    background: linear-gradient(120deg, var(--ink) 30%, var(--accent-ink));
+    background: linear-gradient(120deg, var(--ink) 30%, var(--accent));
     -webkit-background-clip: text; background-clip: text;
   }
 }
