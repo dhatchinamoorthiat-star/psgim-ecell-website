@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, inject, signal } from '@angular/core';
 import { ContentApiService } from '../../../core/services/content-api.service';
 import { PendingFlagComponent } from '../../ui/pending-flag.component';
+import { BlockEditorHost } from '../block-editor-host';
 
 type QueryId = 'published_events_upcoming' | 'published_events_past' | 'published_blogs';
 
@@ -151,6 +152,7 @@ interface BlogResult {
 export class BlockDynamicQueryComponent implements OnInit {
   @Input({ required: true }) props!: DynamicQueryProps;
   @Input() blockId = '';
+  @Input() editorHost: BlockEditorHost | null = null;
 
   private api = inject(ContentApiService);
   events = signal<EventResult[]>([]);

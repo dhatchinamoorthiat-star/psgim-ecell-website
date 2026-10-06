@@ -558,10 +558,17 @@
 }
 .be-canvas-frame {
   margin: 0 auto;
-  background: #fff;
   min-height: 100%;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
   transition: width 0.2s ease;
+  /* Preview always renders the site's light theme, independent of the
+     editor user's OS color scheme, so --ink/--paper stay in sync here. */
+  color-scheme: light;
+  --ink: #16181d;
+  --ink-2: #4b4f58;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  background: #fff;
 }
 .be-empty {
   padding: 2rem;

@@ -254,6 +254,21 @@
   background: var(--accent);
 }
 
+.editorial-row__gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: var(--s-3);
+  margin: 0 0 var(--s-5);
+  max-width: 48rem;
+}
+.editorial-row__gallery-img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--surface-2, var(--ink-3));
+}
+
 .editorial-row__cta {
   display: inline-flex;
   align-items: center;

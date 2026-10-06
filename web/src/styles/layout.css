@@ -9,10 +9,10 @@
   position: relative;
   overflow: hidden;
   background-color: var(--band);
-  color: var(--on-ink);
+  color: var(--band-ink);
   background-image: radial-gradient(46rem 18rem at 50% 130%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 75%);
-  --ink: var(--on-ink); --ink-2: var(--on-ink-2); --ink-3: var(--on-ink-3);
-  --rule: var(--on-ink-rule); --rule-strong: var(--on-ink-2); --accent-ink: var(--accent);
+  --ink: var(--band-ink); --ink-2: var(--band-ink-2); --ink-3: var(--band-ink-3);
+  --rule: var(--band-rule); --rule-strong: var(--band-ink-2); --accent-ink: var(--accent);
   animation: bg-pan-1 40s var(--ease-in-out) infinite alternate;
 }
 @keyframes bg-pan-1 {

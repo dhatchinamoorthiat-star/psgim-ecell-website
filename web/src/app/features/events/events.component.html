@@ -1,8 +1,20 @@
 <section class="hero wrap" revealOnScroll>
-  <span class="kicker">Calendar</span>
-  <h1>Events</h1>
-  <p class="lede">{{ eventsNote }}</p>
-  <ui-pending-flag label="Illustrative — nothing on this page is confirmed yet" style="display:inline-block; margin-top: var(--s-5)"></ui-pending-flag>
+  <div class="grid grid-2-editorial" style="align-items: center; gap: 3rem;">
+    <div>
+      <span class="kicker">Calendar</span>
+      <h1>Events</h1>
+      <p class="lede">{{ eventsNote }}</p>
+      <ui-pending-flag label="Upcoming dates are illustrative — past events below are confirmed" style="display:inline-block; margin-top: var(--s-5)"></ui-pending-flag>
+    </div>
+    <div class="editorial-illustration-frame">
+      <img
+        src="/illustrations/events/keynote-workshop-editorial.jpg"
+        alt="PSGIM E-Cell workshops and keynote sessions illustration"
+        class="editorial-illustration-img"
+        loading="lazy"
+      />
+    </div>
+  </div>
 </section>
 
 <section class="section wrap" revealOnScroll>
@@ -26,7 +38,13 @@
       @if (upcomingRows.length) {
         <app-editorial-row-list [items]="upcomingRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
       } @else {
-        <p style="color: var(--ink-2); margin-top: var(--s-5)">No upcoming events right now.</p>
+        <ui-awaiting-panel
+          heading="No upcoming events scheduled"
+          message="We are finalizing dates and speaker panels for our next campus sessions. Check back soon or explore past events."
+          illustration="/illustrations/about/idea-strategy-blue.jpg"
+          illustrationAlt="Calendar planning illustration"
+          style="display: block; margin-top: var(--s-5)"
+        ></ui-awaiting-panel>
       }
     </div>
   }

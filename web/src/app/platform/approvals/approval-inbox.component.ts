@@ -129,7 +129,10 @@ const MINE_STATUSES: WorkflowState[] = [
                 <td data-label="Author">{{ item.author_email }}</td>
                 <td data-label="Changed">{{ item.updated_at | date: 'medium' }}</td>
                 <td class="pf-actions">
-                  <a class="pf-btn pf-btn-sm pf-btn-primary" [routerLink]="['/platform/approvals', item.id]">
+                  <a
+                    class="pf-btn pf-btn-sm pf-btn-primary"
+                    [routerLink]="['/platform/approvals', item.id]"
+                  >
                     {{ item.pending_action === 'open_review' ? 'Open review' : 'Review' }}
                   </a>
                 </td>
@@ -176,7 +179,9 @@ const MINE_STATUSES: WorkflowState[] = [
                 </td>
                 <td data-label="Changed">{{ item.updated_at | date: 'medium' }}</td>
                 <td class="pf-actions">
-                  <a class="pf-btn pf-btn-sm" [routerLink]="['/platform/approvals', item.id]">View</a>
+                  <a class="pf-btn pf-btn-sm" [routerLink]="['/platform/approvals', item.id]"
+                    >View</a
+                  >
                 </td>
               </tr>
             }
@@ -220,7 +225,9 @@ export class ApprovalInboxComponent implements OnInit {
 
   applyFilters(): void {
     this.filteredPending.set(
-      this.pending().filter((i) => !this.contentTypeFilter || i.content_type === this.contentTypeFilter),
+      this.pending().filter(
+        (i) => !this.contentTypeFilter || i.content_type === this.contentTypeFilter,
+      ),
     );
     this.filteredMine.set(
       this.mine().filter(

@@ -29,13 +29,34 @@ const publicRoutes: Routes = [
     loadComponent: () => import('./features/website-av/website-av.component').then((m) => m.WebsiteAvComponent),
   },
   { path: 'events', loadComponent: () => import('./features/events/events.component').then((m) => m.EventsComponent) },
-  { path: 'blogs', loadComponent: () => import('./features/blogs/blogs.component').then((m) => m.BlogsComponent) },
+  {
+    path: 'blogs',
+    loadChildren: () => import('./features/blogs/blogs.routes').then((m) => m.BLOGS_ROUTES),
+  },
   { path: 'team', loadComponent: () => import('./features/team/team.component').then((m) => m.TeamComponent) },
   { path: 'gallery', loadComponent: () => import('./features/gallery/gallery.component').then((m) => m.GalleryComponent) },
   { path: 'nec', loadComponent: () => import('./features/nec/nec.component').then((m) => m.NecComponent) },
   { path: 'contact', loadComponent: () => import('./features/contact/contact.component').then((m) => m.ContactComponent) },
+  {
+    path: 'testimonials',
+    loadComponent: () => import('./features/testimonials/testimonials.component').then((m) => m.TestimonialsComponent),
+  },
+  {
+    path: 'meet-the-team',
+    loadChildren: () => import('./features/meet-the-team/meet-the-team.routes').then((m) => m.MEET_THE_TEAM_ROUTES),
+  },
   { path: 'soon', loadComponent: () => import('./features/soon/soon.component').then((m) => m.SoonComponent) },
-  { path: 'control', loadComponent: () => import('./features/control/control.component').then((m) => m.ControlComponent) },
+  {
+    path: 'index-experiment',
+    loadComponent: () =>
+      import('./features/index-experiment/index-experiment.component').then((m) => m.IndexExperimentComponent),
+  },
+  {
+    path: 'home-experiment',
+    loadComponent: () =>
+      import('./features/home-experiment/home-experiment.component').then((m) => m.HomeExperimentComponent),
+  },
+  { path: 'control', redirectTo: 'platform/control', pathMatch: 'full' },
   // Phase 2B cutover route (docs/22_MIGRATION_MATRIX.md) — renders a
   // published CMS document through the canonical BlockRenderer. Additive
   // only: none of the routes above are replaced or removed. SSR'd at

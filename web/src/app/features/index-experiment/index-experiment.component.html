@@ -1,0 +1,210 @@
+<main class="index-experiment" [class.has-relationship-active]="selectedInitiativeId() !== null">
+
+  <!-- Hero -->
+  <header class="index-hero" revealOnScroll>
+    <p class="index-kicker">The Collective</p>
+    <h1 class="index-headline">Index</h1>
+    <p class="index-lede">
+      {{ stats.people }} people.
+      {{ stats.verticals }} verticals.
+      {{ stats.initiatives }} initiatives.
+      {{ stats.stories }} stories.
+      A growing body of work.
+    </p>
+  </header>
+
+  <!-- Filters -->
+  <nav class="index-filters" role="toolbar" aria-label="Filter entities by type" revealOnScroll>
+    @for (f of filters; track f.key) {
+      <button
+        class="filter-btn"
+        [attr.aria-pressed]="activeFilter() === f.key"
+        [class.active]="activeFilter() === f.key"
+        (click)="setFilter(f.key)">
+        {{ f.label }}
+      </button>
+    }
+  </nav>
+
+  <p class="index-count" aria-live="polite">{{ totalCount() }} entries</p>
+
+  <!-- Grouped entries -->
+  @for (group of grouped(); track trackGroup($index, group)) {
+    <section
+      class="index-group"
+      [attr.aria-label]="group.label"
+      [class.has-selected-group]="group.key === 'initiatives' && selectedInitiativeId() !== null">
+      <h2 class="group-heading" revealOnScroll>{{ group.label }}</h2>
+      <ul class="group-list" appStagger [childSelector]="'li.index-entry'">
+        @for (entry of group.entries; track trackEntry($index, entry)) {
+          @let initId = getInitiativeIdFromEntry(entry);
+          <li
+            class="index-entry"
+            [class.is-selected-initiative]="initId !== null && initId === selectedInitiativeId()">
+
+            @if (entry.category === 'initiatives' && initId) {
+              <div class="entry-row-initiative">
+                <a [routerLink]="entry.href" class="entry-link">
+                  <span class="entry-name">{{ entry.name }}</span>
+                  <span class="entry-rule" aria-hidden="true"></span>
+                  <span class="entry-tag">{{ entry.tag }}</span>
+                </a>
+                <button
+                  type="button"
+                  class="entry-pathway-trigger"
+                  [class.active]="selectedInitiativeId() === initId"
+                  [attr.aria-expanded]="selectedInitiativeId() === initId"
+                  (click)="toggleInitiative(initId)"
+                  [title]="'Explore ' + entry.name + ' spatial pathway'">
+                  <span class="trigger-label">{{ selectedInitiativeId() === initId ? 'Close Pathway' : 'Idea Pathway' }}</span>
+                  <span class="trigger-icon" aria-hidden="true">{{ selectedInitiativeId() === initId ? '✕' : '→' }}</span>
+                </button>
+              </div>
+
+              <!-- Spatial Idea Pathway Transformation (Dynamically 2, 3, or 4 nodes) -->
+              @if (selectedInitiativeId() === initId && relationshipChain(); as chain) {
+                <div
+                  class="pathway-canvas"
+                  role="region"
+                  aria-label="Initiative spatial pathway"
+                  aria-live="polite">
+
+                  <!-- Stage Control Bar -->
+                  <header class="pathway-stage-bar">
+                    <div class="pathway-stage-meta">
+                      <span class="pathway-kicker">Spatial Pathway Transformation</span>
+                      <span class="pathway-meta-title">An Idea Moves Through E-Cell</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-pathway-close"
+                      (click)="selectInitiative(null)"
+                      aria-label="Return to Collective Index (Escape)">
+                      <span>Return to Registry</span>
+                      <span class="btn-close-symbol" aria-hidden="true">✕</span>
+                    </button>
+                  </header>
+
+                  <!-- The Spatial Field (Dynamically 2, 3, or 4 nodes) -->
+                  <div
+                    class="pathway-field"
+                    [class.pathway-field--3-nodes]="chain.event !== null && chain.nec === null"
+                    [class.pathway-field--2-nodes]="chain.event === null && chain.nec === null">
+
+                    <!-- NODE 01: INITIATIVE ANCHOR -->
+                    <article class="pathway-point point-01">
+                      <div class="point-header">
+                        <span class="point-index">01</span>
+                        <span class="point-type">Initiative Anchor</span>
+                      </div>
+                      <h3 class="point-title">{{ chain.initiative.title }}</h3>
+                      <p class="point-lede">{{ chain.initiative.summary }}</p>
+                      <p class="point-detail">{{ chain.initiative.body }}</p>
+                      <div class="point-meta">
+                        <span>Cadence: <strong>{{ chain.initiative.cadence }}</strong></span>
+                        @if (chain.initiative.venue) {
+                          <span>Venue: <strong>{{ chain.initiative.venue }}</strong></span>
+                        }
+                      </div>
+                    </article>
+
+                    <!-- SPATIAL VECTOR 1 -> 2 & NODE 02: JOURNEY STAGE -->
+                    @if (chain.stage; as stage) {
+                      <div class="pathway-vector vector-1-2" aria-hidden="true">
+                        <span class="vector-line"></span>
+                        <span class="vector-arrow">→</span>
+                      </div>
+
+                      <article class="pathway-point point-02">
+                        <div class="point-header">
+                          <span class="point-index">02</span>
+                          <span class="point-type">Journey Stage</span>
+                        </div>
+                        <h4 class="point-headline">Stage {{ stage.index }} — {{ stage.label }}</h4>
+                        <blockquote class="point-quote">"{{ stage.note }}"</blockquote>
+                      </article>
+                    }
+
+                    <!-- SPATIAL VECTOR 2 -> 3 & NODE 03: VERIFIED EVENT -->
+                    @if (chain.event; as ev) {
+                      <div class="pathway-vector vector-2-3" aria-hidden="true">
+                        <span class="vector-line"></span>
+                        <span class="vector-arrow">→</span>
+                      </div>
+
+                      <article class="pathway-point point-03">
+                        <div class="point-header">
+                          <span class="point-index">03</span>
+                          <span class="point-type">Verified Event</span>
+                        </div>
+                        <h4 class="point-headline">{{ ev.title }}</h4>
+                        <p class="point-lede">{{ ev.summary }}</p>
+                        <div class="point-meta">
+                          <span>Date: <strong>{{ ev.date }}</strong></span>
+                          @if (ev.venue) {
+                            <span>Venue: <strong>{{ ev.venue }}</strong></span>
+                          }
+                          @if (ev.turnout) {
+                            <span>Turnout: <strong>{{ ev.turnout }}</strong></span>
+                          }
+                        </div>
+                      </article>
+                    }
+
+                    <!-- SPATIAL VECTOR 3 -> 4 & NODE 04: PROGRAMME CONNECTION -->
+                    @if (chain.nec; as necData) {
+                      <div class="pathway-vector vector-3-4" aria-hidden="true">
+                        <span class="vector-line"></span>
+                        <span class="vector-arrow">→</span>
+                      </div>
+
+                      <article class="pathway-point point-04">
+                        <div class="point-header">
+                          <span class="point-index">04</span>
+                          <span class="point-type">National Programme Terminal</span>
+                        </div>
+                        <h3 class="point-title">{{ necData.title }}</h3>
+                        <span class="point-badge">{{ necData.track }}</span>
+                        <p class="point-lede">{{ necData.summary }}</p>
+                        <div class="point-meta">
+                          <span>Organiser: <strong>{{ necData.organiser }}</strong></span>
+                        </div>
+                        <div class="point-action">
+                          <a [routerLink]="necData.href" class="btn-pathway-cta">
+                            Explore NEC 2026 Campaign →
+                          </a>
+                        </div>
+                      </article>
+                    }
+
+                  </div>
+
+                  <!-- Stage Footer Bar -->
+                  <footer class="pathway-stage-footer">
+                    <button type="button" class="btn-pathway-return" (click)="selectInitiative(null)">
+                      ← Return to Collective Index
+                    </button>
+                  </footer>
+
+                </div>
+              }
+
+            } @else {
+              <a [routerLink]="entry.href" class="entry-link">
+                <span class="entry-name" [style.view-transition-name]="entry.transitionName || 'none'">{{ entry.name }}</span>
+                <span class="entry-rule" aria-hidden="true"></span>
+                <span class="entry-tag">{{ entry.tag }}</span>
+              </a>
+            }
+
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (totalCount() === 0) {
+    <p class="index-empty">No entries match the current filter.</p>
+  }
+
+</main>

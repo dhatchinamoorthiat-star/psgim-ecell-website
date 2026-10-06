@@ -10,7 +10,7 @@
   position: relative;
   overflow: hidden;
   border-bottom: none;
-  color: var(--on-ink);
+  color: var(--band-ink);
   background: var(--band);
   background-image:
     radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,.7), transparent 60%),
@@ -38,10 +38,10 @@
   .nec-hero, .nec-diamond--back, .nec-diamond--front { animation: none; }
 }
 
-.nec-hero h1 { color: var(--on-ink); }
-.nec-hero .kicker { color: var(--on-ink-2); }
+.nec-hero h1 { color: var(--band-ink); }
+.nec-hero .kicker { color: var(--band-ink-2); }
 .nec-hero .kicker::before { background: var(--accent); }
-.nec-hero .lede { color: var(--on-ink-2); }
+.nec-hero .lede { color: var(--band-ink-2); }
 
 .nec-hero-shapes {
   position: absolute;

@@ -4,7 +4,7 @@ html, body { padding: 0; margin: 0; max-width: 100%; }
    scroll container, which breaks position:sticky descendants (their
    sticky offset resolves against body's own, always-zero scroll
    position instead of the real viewport scroller). */
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; overflow-x: hidden; scroll-padding-top: calc(var(--header-h, 68px) + 1.5rem); }
 :root {
   --cursor-arrow: url(/cursors/default.svg) 3 2;
 }

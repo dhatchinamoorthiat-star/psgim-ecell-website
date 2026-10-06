@@ -19,11 +19,23 @@
 </section>
 
 <section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">{{ nec.about.heading }}</span><h2>{{ nec.about.lead }}</h2></div>
-  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
-    @for (p of nec.about.paragraphs; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
+  <div class="grid grid-2-editorial" style="align-items: center; gap: 3rem;">
+    <div>
+      <div class="section-heading"><span class="kicker">{{ nec.about.heading }}</span><h2>{{ nec.about.lead }}</h2></div>
+      <div style="margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
+        @for (p of nec.about.paragraphs; track p) {
+          <p style="color: var(--ink-2)">{{ p }}</p>
+        }
+      </div>
+    </div>
+    <div class="editorial-illustration-frame">
+      <img
+        src="/illustrations/nec/national-challenge.jpg"
+        alt="IIT Bombay National Entrepreneurship Challenge milestone illustration"
+        class="editorial-illustration-img"
+        loading="lazy"
+      />
+    </div>
   </div>
 </section>
 

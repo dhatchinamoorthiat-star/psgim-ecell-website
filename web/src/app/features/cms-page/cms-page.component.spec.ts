@@ -29,7 +29,7 @@ describe('CmsPageComponent', () => {
       slug: 'home',
       blocks: {
         schema_version: 1,
-        blocks: [{ id: 'h1', type: 'hero', props: { heading: 'Creating founders on campus' } }],
+        blocks: [{ id: 'h1', type: 'hero', props: { heading: 'Innovate To Elevate' } }],
       },
       seo: { title: 'Home', description: 'd', path: '/' },
       published_at: 'x',
@@ -37,7 +37,7 @@ describe('CmsPageComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(el.querySelector('h1')?.textContent).toBe('Creating founders on campus');
+    expect(el.querySelector('h1')?.textContent).toBe('Innovate To Elevate');
   });
 
   it('shows a not-found state instead of any content when nothing is published', async () => {

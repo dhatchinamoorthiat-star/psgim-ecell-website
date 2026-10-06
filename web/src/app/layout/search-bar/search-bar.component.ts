@@ -14,11 +14,11 @@ export class SearchBarComponent {
   private router = inject(Router);
 
   readonly query = signal('');
-  readonly isOpen = signal(false);
+  readonly isOverlayOpen = signal(false);
   readonly activeIndex = signal(0);
 
   @ViewChild('input') inputRef?: ElementRef<HTMLInputElement>;
-  @ViewChild('root') rootRef?: ElementRef<HTMLElement>;
+  @ViewChild('modalRoot') modalRootRef?: ElementRef<HTMLElement>;
 
   readonly results = computed(() => {
     const q = this.query().trim().toLowerCase();
@@ -44,33 +44,48 @@ export class SearchBarComponent {
     return 0;
   }
 
-  onInput(value: string): void {
-    this.query.set(value);
-    this.activeIndex.set(0);
-    this.isOpen.set(true);
+  openSearch(): void {
+    this.isOverlayOpen.set(true);
+    setTimeout(() => {
+      this.inputRef?.nativeElement.focus();
+    }, 50);
   }
 
-  onFocus(): void {
-    if (this.query().trim()) this.isOpen.set(true);
-  }
-
-  select(href: string): void {
-    this.router.navigateByUrl(href);
-    this.close();
-  }
-
-  close(): void {
-    this.isOpen.set(false);
+  closeSearch(): void {
+    this.isOverlayOpen.set(false);
     this.query.set('');
     this.activeIndex.set(0);
   }
 
+  toggleSearch(): void {
+    if (this.isOverlayOpen()) {
+      this.closeSearch();
+    } else {
+      this.openSearch();
+    }
+  }
+
+  onInput(value: string): void {
+    this.query.set(value);
+    this.activeIndex.set(0);
+    if (!this.isOverlayOpen()) {
+      this.openSearch();
+    }
+  }
+
+  select(href: string): void {
+    this.router.navigateByUrl(href);
+    this.closeSearch();
+  }
+
   onKeydown(event: KeyboardEvent): void {
     const list = this.results();
-    if (!this.isOpen() || list.length === 0) {
-      if (event.key === 'Escape') this.inputRef?.nativeElement.blur();
+    if (event.key === 'Escape') {
+      this.closeSearch();
       return;
     }
+    if (list.length === 0) return;
+
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       this.activeIndex.set((this.activeIndex() + 1) % list.length);
@@ -79,18 +94,16 @@ export class SearchBarComponent {
       this.activeIndex.set((this.activeIndex() - 1 + list.length) % list.length);
     } else if (event.key === 'Enter') {
       event.preventDefault();
-      this.select(list[this.activeIndex()].href);
-    } else if (event.key === 'Escape') {
-      this.close();
-      this.inputRef?.nativeElement.blur();
+      if (list[this.activeIndex()]) {
+        this.select(list[this.activeIndex()].href);
+      }
     }
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (!this.rootRef) return;
-    if (!this.rootRef.nativeElement.contains(event.target as Node)) {
-      this.isOpen.set(false);
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.isOverlayOpen()) {
+      this.closeSearch();
     }
   }
 }

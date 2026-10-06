@@ -5,11 +5,19 @@ describe('visibleNav', () => {
   it('shows only what the user may open', () => {
     const labels = (perms: string[]) =>
       visibleNav((p) => perms.includes(p)).flatMap((s) => s.items.map((i) => i.label));
-    expect(labels([])).toEqual(['Dashboard', 'Approvals']);
-    expect(labels(['vertical.view'])).toEqual(['Dashboard', 'Approvals', 'Verticals']);
+    expect(labels([])).toEqual(['Dashboard', 'QR Generator', 'Approvals']);
+    expect(labels(['vertical.view'])).toEqual([
+      'Dashboard',
+      'QR Generator',
+      'Approvals',
+      'Control Center',
+      'Verticals',
+    ]);
     expect(labels(['user.view', 'vertical.view', 'role.view'])).toEqual([
       'Dashboard',
+      'QR Generator',
       'Approvals',
+      'Control Center',
       'Users',
       'Verticals',
       'Roles',
@@ -18,7 +26,7 @@ describe('visibleNav', () => {
   });
 
   it('drops empty sections', () => {
-    expect(visibleNav(() => false).map((s) => s.label)).toEqual(['Workspace']);
+    expect(visibleNav(() => false).map((s) => s.label)).toEqual(['Overview', 'Tools']);
   });
 });
 

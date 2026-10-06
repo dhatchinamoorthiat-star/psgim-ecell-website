@@ -19,4 +19,8 @@ export interface BlockEditorHost {
   remove?(id: string): void;
   moveUp?(id: string): void;
   moveDown?(id: string): void;
+  /** Inline text editing: canvas text fields are directly click-and-type
+   * editable (via `ui-inline-text`) rather than requiring the side panel.
+   * Optional so a read-only host can omit mutation entirely. */
+  updateProp?(id: string, key: string, value: unknown): void;
 }

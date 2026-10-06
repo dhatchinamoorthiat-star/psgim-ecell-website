@@ -131,14 +131,23 @@ export class AnimatedBackgroundComponent implements AfterViewInit, OnDestroy {
 
   private recomputeColors(): void {
     const styles = getComputedStyle(document.documentElement);
-    const ink = styles.getPropertyValue('--ink').trim() || '#0a1b33';
-    const accent = styles.getPropertyValue('--accent').trim() || '#ec9900';
     const dark = this.theme.effective() === 'dark';
-    this.colors = {
-      dot: this.hexToRgba(ink, dark ? 0.55 : 0.32),
-      line: this.hexToRgba(ink, dark ? 0.16 : 0.09),
-      pulse: this.hexToRgba(accent, 0.85),
-    };
+    if (dark) {
+      const ink = styles.getPropertyValue('--ink').trim() || '#ffffff';
+      const accent = styles.getPropertyValue('--accent').trim() || '#ec9900';
+      this.colors = {
+        dot: this.hexToRgba(ink, 0.55),
+        line: this.hexToRgba(ink, 0.16),
+        pulse: this.hexToRgba(accent, 0.85),
+      };
+    } else {
+      // Light Mode Palette: Neutral muted slate dots (#737B87), subtle warm grey lines (#D9D6CC), Bright Yellow pulse (#FFC928)
+      this.colors = {
+        dot: 'rgba(115, 123, 135, 0.28)',
+        line: 'rgba(217, 214, 204, 0.55)',
+        pulse: 'rgba(255, 201, 40, 0.85)',
+      };
+    }
   }
 
   private hexToRgba(hex: string, alpha: number): string {

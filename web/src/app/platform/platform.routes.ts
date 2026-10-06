@@ -37,10 +37,15 @@ export const platformRoutes: Routes = [
     ],
     children: [
       {
-        path: 'login',
+        path: 'loginpage',
         canActivate: [anonymousOnlyGuard],
-        title: 'Sign in — PSGIM E-Cell Platform',
+        title: 'Member Login — PSGIM E-Cell Platform',
         loadComponent: () => import('./auth/login.component').then((m) => m.LoginComponent),
+      },
+      {
+        path: 'login',
+        redirectTo: 'loginpage',
+        pathMatch: 'full',
       },
       {
         path: 'forgot-password',
@@ -66,6 +71,23 @@ export const platformRoutes: Routes = [
             title: 'Dashboard — PSGIM E-Cell Platform',
             loadComponent: () =>
               import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
+          },
+          {
+            path: 'qr-generator',
+            title: 'QR Generator — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./qr-generator/platform-qr-generator.component').then((m) => m.PlatformQrGeneratorComponent),
+          },
+          {
+            path: 'control',
+            title: 'Control Center — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./control/platform-control.component').then((m) => m.PlatformControlComponent),
+          },
+          {
+            path: 'control-center',
+            redirectTo: 'control',
+            pathMatch: 'full',
           },
           {
             path: 'forbidden',
@@ -112,6 +134,16 @@ export const platformRoutes: Routes = [
                   import('./admin/assignments.component').then((m) => m.AssignmentsComponent),
               },
             ],
+          },
+          {
+            // Content directory — lists every ContentItem the caller can
+            // see (server-scoped, GET /content) and links each one straight
+            // into the Phase 2C editor route below.
+            path: 'pages',
+            canActivate: [permissionGuard('content.view')],
+            title: 'Pages — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./pages/pages-directory.component').then((m) => m.PagesDirectoryComponent),
           },
           {
             // Phase 2D approval inbox — any signed-in user may reach it

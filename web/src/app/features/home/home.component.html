@@ -1,18 +1,120 @@
-<section class="hero-plain">
+<section class="hero-plain" [attr.data-hero-phase]="heroPhase()" [attr.data-reveal-step]="revealStep()">
   <app-animated-background variant="hero"></app-animated-background>
-  <div class="wrap">
-    <span class="kicker">{{ hero.kicker }}</span>
-    <h1>Creating <span class="highlight">founders</span> on campus</h1>
-    <p class="lede">{{ hero.lede }}</p>
-    <div class="hero-actions">
-      <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
-      <a routerLink="/initiatives/" class="btn btn-ghost">What we run</a>
+  
+  <div class="hero-video-cinematic-layer" aria-hidden="true">
+    <video
+      #heroVideo
+      src="/videos/herovideo.mp4"
+      muted
+      playsinline
+      [attr.preload]="heroVideoPreload()"
+      class="hero-video-cinematic-el"
+      (ended)="onVideoEnded()"
+      (error)="onVideoError()"
+    ></video>
+    <div class="hero-video-cinematic-scrim"></div>
+  </div>
+
+  <!-- Left Multi-Photo Editorial Collage (Local Photography, Unique Frames & Depth) -->
+  <div class="hero-collage-left" aria-hidden="true">
+    <div class="collage-container">
+      <div
+        *ngFor="let photo of heroCollageLeft()"
+        class="collage-card card-item-{{ photo.id }} frame-{{ photo.frame }} hero-stagger-item"
+        [class.is-revealed]="revealStep() >= photo.step"
+        [attr.data-step]="photo.step"
+        [style.top]="photo.top"
+        [style.left]="photo.left"
+        [style.right]="photo.right"
+        [style.bottom]="photo.bottom"
+        [style.width]="photo.size"
+        [style.zIndex]="photo.zIndex"
+      >
+        <div class="collage-frame">
+          <img [src]="photo.src" [alt]="photo.alt" class="collage-img" [style.aspectRatio]="photo.aspectRatio" />
+          <span *ngIf="photo.label" class="collage-badge">
+            <span class="collage-dot"></span>
+            {{ photo.label }}
+          </span>
+        </div>
+      </div>
+      <!-- Geometric Yellow Accents & Floating Markers -->
+      <div class="collage-geo-accent geo-yellow" [class.is-revealed]="revealStep() >= 2"></div>
+      <div class="collage-yellow-dot dot-1" [class.is-revealed]="revealStep() >= 3"></div>
+      <div class="collage-yellow-dot dot-2" [class.is-revealed]="revealStep() >= 5"></div>
+      <div class="collage-yellow-rule rule-left" [class.is-revealed]="revealStep() >= 4"></div>
+      <div class="collage-stamp" [class.is-revealed]="revealStep() >= 6">PSGIM E-CELL · CAMPUS</div>
     </div>
   </div>
 
-  <!-- Carries confirmed NEC standing rather than an event: the events data is
-       illustrative, and the hero is the last place to assert it as a fixture. -->
-  <a routerLink="/nec/" class="hero-ticker wrap">
+  <!-- Right Multi-Photo Editorial Collage (Local Photography, Unique Frames & Depth) -->
+  <div class="hero-collage-right" aria-hidden="true">
+    <div class="collage-container">
+      <div
+        *ngFor="let photo of heroCollageRight()"
+        class="collage-card card-item-{{ photo.id }} frame-{{ photo.frame }} hero-stagger-item"
+        [class.is-revealed]="revealStep() >= photo.step"
+        [attr.data-step]="photo.step"
+        [style.top]="photo.top"
+        [style.left]="photo.left"
+        [style.right]="photo.right"
+        [style.bottom]="photo.bottom"
+        [style.width]="photo.size"
+        [style.zIndex]="photo.zIndex"
+      >
+        <div class="collage-frame">
+          <img [src]="photo.src" [alt]="photo.alt" class="collage-img" [style.aspectRatio]="photo.aspectRatio" />
+          <span *ngIf="photo.label" class="collage-badge">
+            <span class="collage-dot"></span>
+            {{ photo.label }}
+          </span>
+        </div>
+      </div>
+      <!-- Geometric Accents & Markers -->
+      <div class="collage-geo-accent geo-dark" [class.is-revealed]="revealStep() >= 2"></div>
+      <div class="collage-yellow-dot dot-3" [class.is-revealed]="revealStep() >= 3"></div>
+      <div class="collage-yellow-dot dot-4" [class.is-revealed]="revealStep() >= 5"></div>
+      <div class="collage-yellow-rule rule-right" [class.is-revealed]="revealStep() >= 4"></div>
+      <div class="collage-stamp" [class.is-revealed]="revealStep() >= 6">BUILD · CONNECT · ELEVATE</div>
+    </div>
+  </div>
+
+  <div class="wrap hero-content-wrap">
+    <span class="kicker hero-stagger-item" [class.is-revealed]="revealStep() >= 1">PSG INSTITUTE OF MANAGEMENT · COIMBATORE</span>
+    
+    <h1 class="hero-headline-editorial" aria-label="INNOVATE TO ELEVATE.">
+      <span class="editorial-line editorial-line-1">
+        <span>{{ typedLine1() }}</span><span *ngIf="currentCursorLine() === 1" class="typing-cursor" aria-hidden="true">|</span>
+      </span>
+      <span class="editorial-line editorial-line-2">
+        <span class="highlight-to">{{ typedLine2() }}</span><span *ngIf="currentCursorLine() === 2" class="typing-cursor" aria-hidden="true">|</span>
+      </span>
+      <span class="editorial-line editorial-line-3">
+        <span>{{ typedLine3Main() }}</span><span *ngIf="typedLine3HasPeriod()" class="editorial-period">.</span><span *ngIf="currentCursorLine() === 3" class="typing-cursor persistent-cursor" aria-hidden="true">|</span>
+      </span>
+    </h1>
+
+    <p class="lede hero-stagger-item" [class.is-revealed]="revealStep() >= 2">Where ideas become opportunities, ventures and impact.</p>
+    
+    <!-- Subtle integrated ecosystem progression node flow -->
+    <div class="hero-ecosystem-flow hero-stagger-item" [class.is-revealed]="revealStep() >= 3" aria-label="Ecosystem progression: Idea to Build to Connect to Elevate">
+      <span class="flow-node"><span class="flow-dot"></span><span class="flow-text">Idea</span></span>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <span class="flow-node"><span class="flow-dot"></span><span class="flow-text">Build</span></span>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <span class="flow-node"><span class="flow-dot"></span><span class="flow-text">Connect</span></span>
+      <span class="flow-arrow" aria-hidden="true">→</span>
+      <span class="flow-node flow-node--accent"><span class="flow-dot"></span><span class="flow-text">Elevate</span></span>
+    </div>
+
+    <div class="hero-actions hero-stagger-item" [class.is-revealed]="revealStep() >= 4">
+      <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
+      <a routerLink="/initiatives/" class="btn btn-ghost">Explore What We Do</a>
+    </div>
+  </div>
+
+  <!-- Carries confirmed NEC standing rather than an event -->
+  <a routerLink="/nec/" class="hero-ticker wrap hero-stagger-item" [class.is-revealed]="revealStep() >= 5">
     <span class="hero-ticker-dot" aria-hidden="true"></span>
     <span class="hero-ticker-label">On now</span>
     <span class="hero-ticker-title">Competing in NEC {{ nec.year }} — {{ ourTrack }}</span>
@@ -21,20 +123,233 @@
 </section>
 
 <section class="section section-band">
-  <div class="wrap stats-band">
+  <div class="wrap stats-band" appStagger childSelector="ui-stat-tile">
     @for (s of stats; track s.label) {
       <ui-stat-tile [value]="s.value" [label]="s.label" [count]="s.count" [suffix]="s.suffix ?? ''"></ui-stat-tile>
     }
   </div>
 </section>
 
-<section class="section wrap" revealOnScroll>
+<!-- ── COLLECTIVE INDEX DISCOVERY ENGINE ── -->
+<section
+  id="collective-index"
+  class="section collective-index-section wrap"
+  [class.has-relationship-active]="selectedInitiativeId() !== null"
+  aria-label="Ecosystem Index Discovery">
+
+  <div class="section-heading" revealOnScroll>
+    <span class="kicker">Explore the collective</span>
+    <h2>The E-Cell Ecosystem Registry</h2>
+  </div>
+  <p class="lede" style="margin-top: var(--s-4); max-width: var(--wrap-narrow)" revealOnScroll>
+    Discover the people, verticals, initiatives, events, and campaigns that make up the E-Cell. Select an entity or trigger an idea pathway to explore relationships.
+  </p>
+
+  <!-- Filter Bar -->
+  <nav class="index-filters" role="toolbar" aria-label="Filter entities by type" revealOnScroll>
+    @for (f of filters; track f.key) {
+      <button
+        class="filter-btn"
+        [attr.aria-pressed]="activeFilter() === f.key"
+        [class.active]="activeFilter() === f.key"
+        (click)="setFilter(f.key)">
+        {{ f.label }}
+      </button>
+    }
+  </nav>
+
+  <p class="index-count" aria-live="polite">{{ totalCount() }} entries in ecosystem</p>
+
+  <!-- Grouped Entries -->
+  @for (group of grouped(); track trackGroup($index, group)) {
+    <section
+      class="index-group"
+      [attr.aria-label]="group.label"
+      [class.has-selected-group]="group.key === 'initiatives' && selectedInitiativeId() !== null">
+      <h3 class="group-heading" revealOnScroll>{{ group.label }}</h3>
+      <ul class="group-list" appStagger [childSelector]="'li.index-entry'">
+        @for (entry of group.entries; track trackEntry($index, entry)) {
+          @let initId = getInitiativeIdFromEntry(entry);
+          <li
+            class="index-entry"
+            [class.is-selected-initiative]="initId !== null && initId === selectedInitiativeId()">
+
+            @if (entry.category === 'initiatives' && initId) {
+              <div class="entry-row-initiative">
+                <a [routerLink]="entry.href" class="entry-link">
+                  <span class="entry-name">{{ entry.name }}</span>
+                  <span class="entry-rule" aria-hidden="true"></span>
+                  <span class="entry-tag">{{ entry.tag }}</span>
+                </a>
+                <button
+                  type="button"
+                  class="entry-pathway-trigger"
+                  [class.active]="selectedInitiativeId() === initId"
+                  [attr.aria-expanded]="selectedInitiativeId() === initId"
+                  (click)="toggleInitiative(initId)"
+                  [title]="'Explore ' + entry.name + ' spatial pathway'">
+                  <span class="trigger-label">{{ selectedInitiativeId() === initId ? 'Close Pathway' : 'Idea Pathway' }}</span>
+                  <span class="trigger-icon" aria-hidden="true">{{ selectedInitiativeId() === initId ? '✕' : '→' }}</span>
+                </button>
+              </div>
+
+              <!-- SPATIAL IDEA PATHWAY TRANSFORMATION (01 → 02 → 03 → 04) -->
+              @if (selectedInitiativeId() === initId && relationshipChain(); as chain) {
+                <div
+                  class="pathway-canvas"
+                  role="region"
+                  aria-label="Initiative spatial pathway"
+                  aria-live="polite">
+
+                  <!-- Stage Control Bar -->
+                  <header class="pathway-stage-bar">
+                    <div class="pathway-stage-meta">
+                      <span class="pathway-kicker">Spatial Pathway Transformation</span>
+                      <span class="pathway-meta-title">An Idea Moves Through E-Cell</span>
+                    </div>
+                    <button
+                      type="button"
+                      class="btn-pathway-close"
+                      (click)="selectInitiative(null)"
+                      aria-label="Return to Registry (Escape)">
+                      <span>Return to Registry</span>
+                      <span class="btn-close-symbol" aria-hidden="true">✕</span>
+                    </button>
+                  </header>
+
+                  <!-- Spatial Field Canvas -->
+                  <div
+                    class="pathway-field"
+                    [class.pathway-field--3-nodes]="chain.event !== null && chain.nec === null"
+                    [class.pathway-field--2-nodes]="chain.event === null && chain.nec === null">
+
+                    <!-- NODE 01: INITIATIVE ANCHOR -->
+                    <article class="pathway-point point-01">
+                      <div class="point-header">
+                        <span class="point-index">01</span>
+                        <span class="point-type">Initiative Anchor</span>
+                      </div>
+                      <h4 class="point-title">{{ chain.initiative.title }}</h4>
+                      <p class="point-lede">{{ chain.initiative.summary }}</p>
+                      <p class="point-detail">{{ chain.initiative.body }}</p>
+                      <div class="point-meta">
+                        <span>Cadence: <strong>{{ chain.initiative.cadence }}</strong></span>
+                        @if (chain.initiative.venue) {
+                          <span>Venue: <strong>{{ chain.initiative.venue }}</strong></span>
+                        }
+                      </div>
+                    </article>
+
+                    <!-- SPATIAL VECTOR 1 -> 2 & NODE 02: JOURNEY STAGE -->
+                    @if (chain.stage; as stage) {
+                      <div class="pathway-vector vector-1-2" aria-hidden="true">
+                        <span class="vector-line"></span>
+                        <span class="vector-arrow">→</span>
+                      </div>
+
+                      <article class="pathway-point point-02">
+                        <div class="point-header">
+                          <span class="point-index">02</span>
+                          <span class="point-type">Journey Stage</span>
+                        </div>
+                        <h5 class="point-headline">Stage {{ stage.index }} — {{ stage.label }}</h5>
+                        <blockquote class="point-quote">"{{ stage.note }}"</blockquote>
+                      </article>
+                    }
+
+                    <!-- SPATIAL VECTOR 2 -> 3 & NODE 03: VERIFIED EVENT -->
+                    @if (chain.event; as ev) {
+                      <div class="pathway-vector vector-2-3" aria-hidden="true">
+                        <span class="vector-line"></span>
+                        <span class="vector-arrow">→</span>
+                      </div>
+
+                      <article class="pathway-point point-03">
+                        <div class="point-header">
+                          <span class="point-index">03</span>
+                          <span class="point-type">Verified Event</span>
+                        </div>
+                        <h5 class="point-headline">{{ ev.title }}</h5>
+                        <p class="point-lede">{{ ev.summary }}</p>
+                        <div class="point-meta">
+                          <span>Date: <strong>{{ ev.date }}</strong></span>
+                          @if (ev.venue) {
+                            <span>Venue: <strong>{{ ev.venue }}</strong></span>
+                          }
+                          @if (ev.turnout) {
+                            <span>Turnout: <strong>{{ ev.turnout }}</strong></span>
+                          }
+                        </div>
+                      </article>
+                    }
+
+                    <!-- SPATIAL VECTOR 3 -> 4 & NODE 04: PROGRAMME TERMINAL -->
+                    @if (chain.nec; as necData) {
+                      <div class="pathway-vector vector-3-4" aria-hidden="true">
+                        <span class="vector-line"></span>
+                        <span class="vector-arrow">→</span>
+                      </div>
+
+                      <article class="pathway-point point-04">
+                        <div class="point-header">
+                          <span class="point-index">04</span>
+                          <span class="point-type">National Programme Terminal</span>
+                        </div>
+                        <h4 class="point-title">{{ necData.title }}</h4>
+                        <span class="point-badge">{{ necData.track }}</span>
+                        <p class="point-lede">{{ necData.summary }}</p>
+                        <div class="point-meta">
+                          <span>Organiser: <strong>{{ necData.organiser }}</strong></span>
+                        </div>
+                        <div class="point-action">
+                          <a [routerLink]="necData.href" class="btn-pathway-cta">
+                            Explore NEC 2026 Campaign →
+                          </a>
+                        </div>
+                      </article>
+                    }
+
+                  </div>
+
+                  <!-- Stage Footer Bar -->
+                  <footer class="pathway-stage-footer">
+                    <button type="button" class="btn-pathway-return" (click)="selectInitiative(null)">
+                      ← Return to Registry
+                    </button>
+                  </footer>
+
+                </div>
+              }
+
+            } @else {
+              <!-- LAYER 3: ENTITY EXPLORATION LINK -->
+              <a [routerLink]="entry.href" class="entry-link">
+                <span class="entry-name" [style.view-transition-name]="entry.transitionName || 'none'">{{ entry.name }}</span>
+                <span class="entry-rule" aria-hidden="true"></span>
+                <span class="entry-tag">{{ entry.tag }}</span>
+              </a>
+            }
+
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  @if (totalCount() === 0) {
+    <p class="index-empty">No entries match the current filter.</p>
+  }
+
+</section>
+
+<!-- ── WHY WE EXIST ── -->
+<section class="section wrap" appMorphScene>
   <div class="section-heading">
     <span class="kicker">{{ why.kicker }}</span>
     <h2>{{ why.heading }}</h2>
   </div>
   <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ why.lede }}</p>
-  <ul class="grid grid-3" style="margin-top: var(--s-6)">
+  <ul class="grid grid-3" style="margin-top: var(--s-6)" appStagger childSelector="li.card">
     @for (q of why.questions; track q) {
       <li class="card">{{ q }}</li>
     }
@@ -42,21 +357,7 @@
   <p style="color: var(--ink-2); margin-top: var(--s-6); max-width: var(--wrap-narrow)">{{ why.body }}</p>
 </section>
 
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading">
-    <span class="kicker">{{ whatHappens.kicker }}</span>
-    <h2>{{ whatHappens.heading }}</h2>
-  </div>
-  <div class="grid grid-3" style="margin-top: var(--s-6)">
-    @for (c of whatHappens.cards; track c.title) {
-      <div class="card">
-        <h3>{{ c.title }}</h3>
-        <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ c.body }}</p>
-      </div>
-    }
-  </div>
-</section>
-
+<!-- ── THE JOURNEY ARC ── -->
 <section class="section wrap" #journeySection revealOnScroll>
   <div class="section-heading">
     <span class="kicker">The journey</span>
@@ -65,7 +366,7 @@
   <div class="journey-rail" style="margin-top: var(--s-7)">
     <div class="fill" [style.width.%]="arcProgress() * 100"></div>
   </div>
-  <div class="journey">
+  <div class="journey" appStagger childSelector="div.journey-stage">
     @for (stage of stages; track stage.id; let i = $index) {
       <div class="journey-stage" [class.is-lit]="i < litCount()">
         <span class="index">{{ stage.index }}</span>
@@ -73,18 +374,6 @@
         <p>{{ stage.note }}</p>
       </div>
     }
-  </div>
-</section>
-
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading">
-    <span class="kicker">Our initiatives</span>
-    <h2>What we run, every year</h2>
-  </div>
-  <p class="lede" style="margin-top: var(--s-4); max-width: var(--wrap-narrow)">Programmes repeat each academic year, so a first-year can follow the whole arc before they graduate.</p>
-  <app-editorial-row-list [items]="initiativeRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-  <div class="hero-actions" style="margin-top: var(--s-6)">
-    <a routerLink="/initiatives/" class="btn btn-ghost">All {{ initiatives.length }} initiatives →</a>
   </div>
 </section>
 
@@ -96,7 +385,7 @@
     <h2>{{ nec.hero.title }}</h2>
   </div>
   <p class="lede" style="margin-top: var(--s-4); max-width: var(--wrap-narrow)">{{ nec.hero.lede }}</p>
-  <dl class="nec-teaser">
+  <dl class="nec-teaser" appStagger childSelector="div">
     <div>
       <dt>Our track</dt>
       <dd>{{ ourTrack }}</dd>
@@ -134,21 +423,21 @@
   <div class="wrap">
     <div class="section-heading">
       <span class="kicker" style="color: var(--ocean)">NEC 2026 drive</span>
-      <h2 style="color: var(--on-ink)">Building our public track record</h2>
+      <h2 style="color: var(--ink)">Building our public track record</h2>
     </div>
     @if (drive.pending) {
       <ui-pending-flag label="Self-reported" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
     }
-    <div class="grid grid-3" style="margin-top: var(--s-7)">
+    <div class="grid grid-3" style="margin-top: var(--s-7)" appStagger childSelector="div.drive-target">
       @for (t of drive.targets; track t.label) {
         <div class="drive-target">
-          <div class="row"><span style="color: var(--on-ink)">{{ t.label }}</span><span style="color: var(--on-ink-2)">{{ t.now }} / {{ t.target }}</span></div>
+          <div class="row"><span style="color: var(--ink)">{{ t.label }}</span><span style="color: var(--ink-2)">{{ t.now }} / {{ t.target }}</span></div>
           <ui-progress-bar [now]="t.now" [target]="t.target"></ui-progress-bar>
-          <p style="color: var(--on-ink-3); font-size: var(--t-xs)">{{ t.detail }}</p>
+          <p style="color: var(--ink-3); font-size: var(--t-xs)">{{ t.detail }}</p>
         </div>
       }
     </div>
-    <p style="color: var(--on-ink-3); font-size: var(--t-xs); margin-top: var(--s-6)">{{ drive.note }}</p>
+    <p style="color: var(--ink-3); font-size: var(--t-xs); margin-top: var(--s-6)">{{ drive.note }}</p>
   </div>
 </section>
 
@@ -157,7 +446,7 @@
     <span class="kicker">{{ ecellWay.kicker }}</span>
     <h2>{{ ecellWay.heading }}</h2>
   </div>
-  <div class="grid grid-2" style="margin-top: var(--s-6)">
+  <div class="grid grid-2" style="margin-top: var(--s-6)" appStagger childSelector="div.card">
     @for (item of ecellWay.items; track item.left) {
       <div class="card">
         <p style="text-transform: uppercase; letter-spacing: var(--track-wide); font-size: var(--t-xs); color: var(--accent)">{{ item.left }} &gt; {{ item.right }}</p>
@@ -176,3 +465,4 @@
     <a routerLink="/nec/" class="btn btn-ghost">See NEC 2026</a>
   </div>
 </section>
+

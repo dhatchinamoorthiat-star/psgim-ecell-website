@@ -30,7 +30,7 @@ async function run(guard: typeof authGuard, auth: object, url = '/platform/admin
 describe('platform guards', () => {
   it('sends anonymous visitors to sign in, remembering the page', async () => {
     expect(await run(authGuard, fakeAuth('anonymous'))).toBe(
-      '/platform/login?returnUrl=%2Fplatform%2Fadmin%2Fusers',
+      '/platform/loginpage?returnUrl=%2Fplatform%2Fadmin%2Fusers',
     );
   });
 

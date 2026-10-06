@@ -136,7 +136,7 @@ const AUTOSAVE_DEBOUNCE_MS = 2000;
             </button>
           </aside>
           <main class="be-panel be-panel-canvas">
-            <app-editor-canvas [viewport]="viewport()" />
+            <app-editor-canvas [viewport]="viewport()" (propChange)="onInlinePropChange($event)" />
           </main>
           <aside class="be-panel be-panel-right">
             <app-editor-inspector
@@ -314,6 +314,14 @@ export class EditorPageComponent implements OnInit, OnDestroy {
     this.scheduleAutosave();
   }
 
+  /** Inline canvas text edits (`ui-inline-text` via `BlockEditorHost.updateProp`) —
+   * same autosave path as the side panel's `onPropsChange`, just keyed by the
+   * edited block's own id instead of always the current selection. */
+  onInlinePropChange(change: { id: string; key: string; value: unknown }): void {
+    this.doc.updateBlockProps(change.id, { [change.key]: change.value });
+    this.scheduleAutosave();
+  }
+
   onAddBlock(typeKey: string): void {
     const bt = this.blockTypes().find((b) => b.key === typeKey);
     if (!bt) return;
@@ -376,9 +384,15 @@ export class EditorPageComponent implements OnInit, OnDestroy {
       clearRecovery(this.userId(), version.id);
     } catch (e) {
       const err = toApiError(e);
-      if (err.code === 'stale_version') {
+      if (err.code === 'stale_version' || err.status === 409) {
         this.conflictLocalSnapshot = this.doc.blocks();
         this.saveStatus.set('conflict');
+        try {
+          const fresh = await this.api.getVersion(version.id);
+          this.version.update((v) => (v ? { ...v, updated_at: fresh.updated_at } : v));
+        } catch {
+          // keep showing the conflict state if the refetch itself fails
+        }
       } else {
         this.saveStatus.set('error');
       }

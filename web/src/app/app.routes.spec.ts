@@ -23,7 +23,11 @@ describe('app routes', () => {
       'gallery',
       'nec',
       'contact',
+      'testimonials',
+      'meet-the-team',
       'soon',
+      'index-experiment',
+      'home-experiment',
       'control',
       'content/:contentType/:slug',
     ]);

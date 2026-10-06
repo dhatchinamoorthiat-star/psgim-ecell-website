@@ -43,8 +43,10 @@ describe('ApprovalInboxComponent', () => {
     ];
     const api: Partial<ApiService> = {
       get: async (path: string) => {
-        if (path === '/content/inbox') return { results: pending, count: 2, next: null, previous: null } as never;
-        if (path === '/content/mine') return { results: [], count: 0, next: null, previous: null } as never;
+        if (path === '/content/inbox')
+          return { results: pending, count: 2, next: null, previous: null } as never;
+        if (path === '/content/mine')
+          return { results: [], count: 0, next: null, previous: null } as never;
         throw new Error(`unexpected path ${path}`);
       },
     };

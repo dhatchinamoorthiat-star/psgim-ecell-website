@@ -1,7 +1,8 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { AfterViewInit, Component, HostListener, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { nav, primaryCta, site } from '../../core/data/site.data';
+import { NavItem } from '../../core/models/models';
 import { ThemeService } from '../../core/services/theme.service';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 
@@ -18,6 +19,7 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
 
   private theme = inject(ThemeService);
   private platformId = inject(PLATFORM_ID);
+  private router = inject(Router);
   private resizeHandler = () => this.onResize();
 
   readonly scrollProgress = signal(0);
@@ -25,19 +27,65 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   readonly mobileOpen = signal(false);
   readonly openDropdown = signal<string | null>(null);
   readonly openMobileGroup = signal<string | null>(null);
+  
   private ticking = false;
+  private closeTimer: any = null;
   private static readonly SHRINK_DISTANCE = 160;
 
+  onMouseEnter(label: string): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
+    this.openDropdown.set(label);
+  }
+
+  onMouseLeave(): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+    }
+    this.closeTimer = setTimeout(() => {
+      this.closeDropdown();
+    }, 200);
+  }
+
   toggleDropdown(label: string): void {
-    this.openDropdown.set(this.openDropdown() === label ? null : label);
+    if (this.openDropdown() === label) {
+      this.closeDropdown();
+    } else {
+      this.onMouseEnter(label);
+    }
   }
 
   closeDropdown(): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+      this.closeTimer = null;
+    }
     this.openDropdown.set(null);
+  }
+
+  onItemClick(): void {
+    setTimeout(() => {
+      this.closeDropdown();
+    }, 100);
   }
 
   toggleMobileGroup(label: string): void {
     this.openMobileGroup.set(this.openMobileGroup() === label ? null : label);
+  }
+
+  isItemActive(item: NavItem): boolean {
+    const currentUrl = this.router.url;
+    if (item.children?.length) {
+      return item.children.some((child) => {
+        const path = child.href.split('#')[0].replace(/\/$/, '');
+        return path !== '' && currentUrl.includes(path);
+      }) || (item.href !== '/' && currentUrl.includes(item.href.replace(/\/$/, '')));
+    }
+    const path = item.href.split('#')[0].replace(/\/$/, '');
+    if (!path || path === '') return currentUrl === '/';
+    return currentUrl.includes(path);
   }
 
   @HostListener('document:click', ['$event'])
@@ -76,6 +124,9 @@ export class NavbarComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer);
+    }
     if (isPlatformBrowser(this.platformId)) {
       window.removeEventListener('resize', this.resizeHandler);
     }

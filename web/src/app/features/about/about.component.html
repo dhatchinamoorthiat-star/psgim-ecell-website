@@ -5,24 +5,56 @@
 </section>
 
 <section class="section wrap" revealOnScroll>
-  <div class="section-heading">
-    <span class="kicker">{{ intro.kicker }}</span>
-    <h2>{{ intro.headline }}</h2>
-  </div>
-  <div class="grid grid-2" style="margin-top: var(--s-6)">
-    @for (p of intro.body; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
+  <div class="grid grid-2-editorial" style="margin-top: var(--s-6); align-items: center; gap: 3rem;">
+    <div>
+      <div class="section-heading" style="margin-bottom: var(--s-5)">
+        <span class="kicker">{{ intro.kicker }}</span>
+        <h2>{{ intro.headline }}</h2>
+      </div>
+      @for (p of intro.body; track p) {
+        <p style="color: var(--ink-2); margin-bottom: var(--s-4)">{{ p }}</p>
+      }
+    </div>
+    <div class="editorial-illustration-frame">
+      <img
+        src="/illustrations/about/idea-strategy-blue.jpg"
+        alt="Strategic analysis and idea development concept illustration"
+        class="editorial-illustration-img"
+        loading="lazy"
+      />
+    </div>
   </div>
 </section>
 
 <section class="section wrap" revealOnScroll>
-  <img src="/logo-lockup.png" alt="PSGIM E-Cell — PSG Institute of Management" class="story-logo" />
-  <div class="section-heading"><span class="kicker">{{ story.kicker }}</span><h2>The story</h2></div>
-  <div style="max-width: var(--wrap-narrow); margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-5)">
-    @for (p of story.paragraphs; track p) {
-      <p style="color: var(--ink-2)">{{ p }}</p>
-    }
+  <video
+    class="story-logo"
+    src="/videos/story-logo.mp4"
+    poster="/videos/story-logo-poster.jpg"
+    [attr.autoplay]="autoplayStoryLogo ? '' : null"
+    [attr.loop]="autoplayStoryLogo ? '' : null"
+    muted
+    playsinline
+    preload="metadata"
+    aria-label="PSGIM E-Cell — PSG Institute of Management"
+  ></video>
+  <div class="grid grid-2-editorial" style="margin-top: var(--s-6); align-items: center; gap: 3rem;">
+    <div>
+      <div class="section-heading"><span class="kicker">{{ story.kicker }}</span><h2>The story</h2></div>
+      <div style="margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-5)">
+        @for (p of story.paragraphs; track p) {
+          <p style="color: var(--ink-2)">{{ p }}</p>
+        }
+      </div>
+    </div>
+    <div class="editorial-illustration-frame" style="aspect-ratio: 3 / 4; max-height: 380px; justify-self: center;">
+      <img
+        src="/illustrations/about/origin-heritage.jpg"
+        alt="PSGIM E-Cell origin and heritage editorial illustration"
+        class="editorial-illustration-img"
+        loading="lazy"
+      />
+    </div>
   </div>
 </section>
 
@@ -59,7 +91,7 @@
     <h2>{{ reach.heading }}</h2>
   </div>
   <p class="lede" style="margin-top: var(--s-5); max-width: var(--wrap-narrow)">{{ reach.lede }}</p>
-  <div class="grid grid-2" style="margin-top: var(--s-6)">
+  <div class="grid grid-2" style="margin-top: var(--s-6)" appStagger childSelector="div.card">
     @for (l of reach.layers; track l) {
       <div class="card">{{ l }}</div>
     }
@@ -95,7 +127,12 @@
   <div style="margin-top: var(--s-6); display:flex; flex-direction:column; gap: var(--s-4)">
     <ui-awaiting-panel heading="Spotlight — awaiting confirmation" [message]="spotlight.note"></ui-awaiting-panel>
     @if (mentors.length === 0) {
-      <ui-awaiting-panel heading="Mentor panel — awaiting confirmation" message="Named mentors will appear here once the panel is signed off with the faculty coordinators."></ui-awaiting-panel>
+      <ui-awaiting-panel
+        heading="Mentor panel — awaiting confirmation"
+        message="Named mentors will appear here once the panel is signed off with the faculty coordinators."
+        illustration="/illustrations/about/collaboration-network.jpg"
+        illustrationAlt="Mentor panel networking illustration"
+      ></ui-awaiting-panel>
     }
     @if (testimonials.length === 0) {
       <ui-awaiting-panel heading="Testimonials — awaiting collection" message="We don't have quotes we can stand behind yet — nothing here is invented."></ui-awaiting-panel>

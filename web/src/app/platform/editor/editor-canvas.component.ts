@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { BlockEditorHost } from '../../shared/blocks/block-editor-host';
 import { BlockRendererComponent } from '../../shared/blocks/block-renderer.component';
 import { EditorDocumentService } from './editor-document.service';
@@ -33,6 +33,10 @@ const VIEWPORT_WIDTH: Record<ViewportSize, string> = {
 })
 export class EditorCanvasComponent {
   @Input() viewport: ViewportSize = 'desktop';
+  /** Mirrors `EditorPageComponent.onPropsChange` (the side panel's path) so
+   * inline canvas edits go through the same autosave scheduling instead of
+   * only mutating the document. */
+  @Output() propChange = new EventEmitter<{ id: string; key: string; value: unknown }>();
 
   doc = inject(EditorDocumentService);
 
@@ -45,6 +49,7 @@ export class EditorCanvasComponent {
     remove: (id) => this.doc.deleteBlock(id),
     moveUp: (id) => this.doc.moveBlock(id, -1),
     moveDown: (id) => this.doc.moveBlock(id, 1),
+    updateProp: (id, key, value) => this.propChange.emit({ id, key, value }),
   };
 
   frameWidth(): string {

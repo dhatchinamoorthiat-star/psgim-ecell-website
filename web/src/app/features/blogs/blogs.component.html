@@ -1,32 +1,38 @@
-<section class="hero wrap" revealOnScroll>
-  <span class="kicker">Writing</span>
-  <h1>Blogs</h1>
-  <p class="lede">{{ blogsNote }}</p>
+<!-- Editorial Landing Page Hero -->
+<section class="blogs-hero wrap" revealOnScroll>
+  <span class="hero-eyebrow">{{ meta.eyebrow }}</span>
+  <h1 class="hero-title">{{ meta.title }}</h1>
+  <p class="hero-subtitle">{{ meta.subtitle }}</p>
 </section>
 
-<section class="section wrap" revealOnScroll>
-  <div class="section-heading"><span class="kicker">Archive</span><h2>Latest posts</h2></div>
-  <div class="events-list" style="margin-top: var(--s-6)">
-    @for (post of posts; track post.id) {
-      <div class="event-row">
-        <span class="date">{{ post.date | date: 'MMM d, y' }}</span>
-        <div>
-          <h3>
-            @if (post.url) {
-              <a [href]="post.url" target="_blank" rel="noopener">{{ post.title }}</a>
-            } @else {
-              {{ post.title }}
-            }
-          </h3>
-          <p style="color: var(--ink-2); margin-top: var(--s-2)">{{ post.summary }}</p>
-          <div class="meta">
-            <span>{{ post.author }}</span>
-            @if (post.pending) { <ui-pending-flag label="Illustrative"></ui-pending-flag> }
-          </div>
-        </div>
-      </div>
-    } @empty {
-      <p>No blog posts yet.</p>
+<!-- 4-Stage Series Pathway Component -->
+<app-blog-series-pathway [activePart]="0" revealOnScroll />
+
+<!-- Flagship Series Feature Section -->
+<section class="series-section wrap" revealOnScroll>
+  <div class="section-title-row">
+    <div>
+      <span class="kicker">FLAGSHIP SERIES</span>
+      <h2 class="sec-heading">From Idea to Impact</h2>
+    </div>
+  </div>
+
+  <!-- Large Featured Article (Part 1) -->
+  @if (featuredArticle) {
+    <app-featured-blog-card [article]="featuredArticle" />
+  }
+
+  <!-- Secondary Series Articles (Parts 2, 3, 4) -->
+  <div class="section-title-row" style="margin-top: var(--s-8)">
+    <div>
+      <span class="kicker">SERIES PROGRESSION</span>
+      <h2 class="sec-heading">Parts 2, 3 & 4</h2>
+    </div>
+  </div>
+
+  <div class="articles-grid" appStagger childSelector="app-blog-card">
+    @for (art of remainingArticles; track art.id) {
+      <app-blog-card [article]="art" />
     }
   </div>
 </section>

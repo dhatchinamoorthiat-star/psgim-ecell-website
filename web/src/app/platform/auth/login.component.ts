@@ -16,7 +16,10 @@ export function safeReturnUrl(url: string | undefined | null): string {
   selector: 'app-login',
   imports: [ReactiveFormsModule, RouterLink, AuthCardComponent],
   template: `
-    <app-auth-card heading="Sign in">
+    <app-auth-card heading="Member Sign In">
+      <p class="pf-muted" style="margin-bottom: var(--s-3); font-size: 0.95rem; text-align: center;">
+        Welcome back. Sign in with your E-Cell credentials.
+      </p>
       @if (reason() === 'expired') {
         <div class="pf-alert" role="status">Your session ended. Please sign in again.</div>
       }
@@ -25,13 +28,14 @@ export function safeReturnUrl(url: string | undefined | null): string {
       }
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <div class="pf-field">
-          <label for="email">Email</label>
+          <label for="email">Email / Member ID</label>
           <input
             id="email"
             class="pf-input"
             type="email"
             formControlName="email"
             autocomplete="username"
+            placeholder="member@psgim.ac.in"
             required
           />
         </div>
@@ -47,7 +51,7 @@ export function safeReturnUrl(url: string | undefined | null): string {
           />
         </div>
         <button class="pf-btn pf-btn-primary" type="submit" [disabled]="busy()" style="width: 100%">
-          {{ busy() ? 'Signing in…' : 'Sign in' }}
+          {{ busy() ? 'Signing in…' : 'Sign In' }}
         </button>
       </form>
       <div class="pf-auth-links">

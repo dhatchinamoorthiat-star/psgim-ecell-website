@@ -1,41 +1,78 @@
-<div class="search-bar" #root>
-  <svg class="search-bar-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
-    <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+<button
+  type="button"
+  class="search-trigger-btn"
+  (click)="toggleSearch()"
+  aria-label="Search E-Cell"
+  [attr.aria-expanded]="isOverlayOpen()"
+  title="Search E-Cell"
+>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
-  <input
-    #input
-    type="search"
-    class="search-bar-input"
-    placeholder="Search pages…"
-    role="combobox"
-    [attr.aria-expanded]="isOpen()"
-    aria-controls="search-bar-results"
-    autocomplete="off"
-    [value]="query()"
-    (input)="onInput($any($event.target).value)"
-    (focus)="onFocus()"
-    (keydown)="onKeydown($event)"
-  />
+</button>
 
-  @if (isOpen() && results().length > 0) {
-    <ul class="search-bar-results" id="search-bar-results" role="listbox">
-      @for (r of results(); track r.href; let i = $index) {
-        <li role="option" [attr.aria-selected]="i === activeIndex()">
-          <button
-            type="button"
-            class="search-bar-result"
-            [class.is-active]="i === activeIndex()"
-            (mouseenter)="activeIndex.set(i)"
-            (click)="select(r.href)"
-          >
-            <span class="search-bar-result-label">{{ r.label }}</span>
-            <span class="search-bar-result-section">{{ r.section }}</span>
-          </button>
-        </li>
-      }
-    </ul>
-  } @else if (isOpen() && query().trim().length > 0) {
-    <div class="search-bar-empty">No pages match “{{ query() }}”.</div>
-  }
-</div>
+@if (isOverlayOpen()) {
+  <div class="search-backdrop" (click)="closeSearch()">
+    <div class="search-modal" (click)="$event.stopPropagation()" #modalRoot role="dialog" aria-modal="true" aria-label="Search E-Cell">
+      <div class="search-modal-header">
+        <svg class="search-modal-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          #input
+          type="search"
+          class="search-modal-input"
+          placeholder="Search E-Cell..."
+          [value]="query()"
+          (input)="onInput($any($event.target).value)"
+          (keydown)="onKeydown($event)"
+          autocomplete="off"
+        />
+        <button type="button" class="search-modal-close" (click)="closeSearch()" aria-label="Close search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="search-modal-body">
+        @if (results().length > 0) {
+          <ul class="search-results-list" role="listbox">
+            @for (r of results(); track r.href; let i = $index) {
+              <li role="option" [attr.aria-selected]="i === activeIndex()">
+                <button
+                  type="button"
+                  class="search-result-item"
+                  [class.is-active]="i === activeIndex()"
+                  (mouseenter)="activeIndex.set(i)"
+                  (click)="select(r.href)"
+                >
+                  <div class="search-result-main">
+                    <span class="search-result-label">{{ r.label }}</span>
+                  </div>
+                  <span class="search-result-badge">{{ r.section }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else if (query().trim().length > 0) {
+          <div class="search-empty-state">No results found for “{{ query() }}”</div>
+        } @else {
+          <div class="search-hint-state">
+            <span class="search-hint-title">Quick Searches</span>
+            <div class="search-hint-tags">
+              <button type="button" class="search-tag" (click)="onInput('events')">Events</button>
+              <button type="button" class="search-tag" (click)="onInput('initiatives')">What We Do</button>
+              <button type="button" class="search-tag" (click)="onInput('stories')">Stories</button>
+              <button type="button" class="search-tag" (click)="onInput('team')">Team</button>
+              <button type="button" class="search-tag" (click)="onInput('nec')">NEC 2026</button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}

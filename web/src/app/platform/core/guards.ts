@@ -11,7 +11,7 @@ export const authGuard: CanActivateFn = async (_route, state) => {
   const router = inject(Router);
   await auth.ensureLoaded().catch(() => undefined);
   if (auth.state() === 'authenticated') return true;
-  return router.createUrlTree(['/platform/login'], { queryParams: { returnUrl: state.url } });
+  return router.createUrlTree(['/platform/loginpage'], { queryParams: { returnUrl: state.url } });
 };
 
 /** Signed-in users do not need the sign-in screens. */

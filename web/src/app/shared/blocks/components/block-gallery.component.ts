@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { ImageProp } from '../block.types';
 import { BlockImageComponent } from './block-image.component';
+import { BlockEditorHost } from '../block-editor-host';
 
 interface GalleryItem {
   image?: ImageProp | null;
@@ -56,4 +57,5 @@ interface GalleryProps {
 export class BlockGalleryComponent {
   @Input({ required: true }) props!: GalleryProps;
   @Input() blockId = '';
+  @Input() editorHost: BlockEditorHost | null = null;
 }

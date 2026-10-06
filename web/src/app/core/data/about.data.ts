@@ -31,7 +31,7 @@ export const intro: IntroContent = {
 
 export const hero: HeroContent = {
   kicker: 'PSG Institute of Management · Coimbatore',
-  headline: 'Creating founders on campus',
+  headline: 'Innovate to Elevate',
   lede: 'The Entrepreneurship Cell of PSGIM has, since 2019, helped students take an idea from a classroom conversation to a working venture — through speaker sessions, build weekends, mentorship and the National Entrepreneurship Challenge.',
 };
 

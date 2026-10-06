@@ -15,10 +15,23 @@ export interface NavSection {
 
 export const PLATFORM_NAV: NavSection[] = [
   {
-    label: 'Workspace',
+    label: 'Overview',
     items: [
       { label: 'Dashboard', path: '/platform/dashboard', anyOf: [] },
+    ],
+  },
+  {
+    label: 'Tools',
+    items: [
+      { label: 'Pages', path: '/platform/pages', anyOf: ['content.view'] },
+      { label: 'QR Generator', path: '/platform/qr-generator', anyOf: [] },
       { label: 'Approvals', path: '/platform/approvals', anyOf: [] },
+    ],
+  },
+  {
+    label: 'Management',
+    items: [
+      { label: 'Control Center', path: '/platform/control', anyOf: ['user.view', 'vertical.view', 'role.view', 'content.view'] },
     ],
   },
   {

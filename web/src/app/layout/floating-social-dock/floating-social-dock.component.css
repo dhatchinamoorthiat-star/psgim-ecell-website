@@ -1,0 +1,248 @@
+/* Floating Social & Quick Navigation Dock */
+:host {
+  display: block;
+  pointer-events: none;
+}
+
+.floating-dock-wrapper {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+  pointer-events: auto;
+  animation: dockSlideIn var(--dur-reveal, 720ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) forwards;
+}
+
+@keyframes dockSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(24px, -50%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+
+.floating-dock {
+  background: rgba(10, 16, 30, 0.82);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--rule, rgba(255, 255, 255, 0.14));
+  border-right: none;
+  border-radius: var(--r-md, 8px) 0 0 var(--r-md, 8px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transition: background-color var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              border-color var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              box-shadow var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+:host-context([data-theme='light']) .floating-dock,
+:host-context(html:not([data-theme='dark'])) .floating-dock {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--rule, #D9D6CC);
+  border-right: none;
+  box-shadow: 0 8px 28px -4px rgba(17, 17, 17, 0.12), 0 2px 8px rgba(17, 17, 17, 0.06);
+}
+
+.dock-stack {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dock-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 54px;
+  height: 50px;
+  padding: 0 15px;
+  color: var(--ink, #ffffff);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule, rgba(255, 255, 255, 0.08));
+  transition: width var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              background-color var(--dur-fast, 140ms) ease,
+              color var(--dur-fast, 140ms) ease;
+  outline: none;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+:host-context([data-theme='light']) .dock-item,
+:host-context(html:not([data-theme='dark'])) .dock-item {
+  color: var(--ink, #111111);
+  border-bottom-color: var(--rule, rgba(0, 0, 0, 0.08));
+}
+
+.dock-stack .dock-item:last-child {
+  border-bottom: none;
+}
+
+/* Label element sliding in to the left of the icon */
+.dock-label {
+  opacity: 0;
+  max-width: 0;
+  transform: translateX(10px);
+  font-family: var(--font-display, inherit);
+  font-size: var(--t-xs, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink, #ffffff);
+  overflow: hidden;
+  transition: opacity var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              max-width var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              transform var(--dur-normal, 260ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              color var(--dur-fast, 140ms) ease;
+  margin-right: 10px;
+  pointer-events: none;
+}
+
+:host-context([data-theme='light']) .dock-label,
+:host-context(html:not([data-theme='dark'])) .dock-label {
+  color: var(--ink, #111111);
+}
+
+.dock-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.dock-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--ink-2, #b8b8b8);
+  transition: color var(--dur-fast, 140ms) ease, transform var(--dur-fast, 140ms) ease;
+}
+
+:host-context([data-theme='light']) .dock-icon,
+:host-context(html:not([data-theme='dark'])) .dock-icon {
+  color: var(--ink, #111111);
+}
+
+/* Hover and Focus States */
+.dock-item:hover,
+.dock-item:focus-visible {
+  width: 154px;
+  background: var(--surface-2, rgba(236, 153, 0, 0.16));
+}
+
+:host-context([data-theme='light']) .dock-item:hover,
+:host-context([data-theme='light']) .dock-item:focus-visible,
+:host-context(html:not([data-theme='dark'])) .dock-item:hover,
+:host-context(html:not([data-theme='dark'])) .dock-item:focus-visible {
+  background: var(--surface-2, #fff3bf);
+}
+
+.dock-item:hover .dock-label,
+.dock-item:focus-visible .dock-label {
+  opacity: 1;
+  max-width: 90px;
+  transform: translateX(0);
+  color: var(--accent-ink, #f5b52e);
+}
+
+:host-context([data-theme='light']) .dock-item:hover .dock-label,
+:host-context([data-theme='light']) .dock-item:focus-visible .dock-label,
+:host-context(html:not([data-theme='dark'])) .dock-item:hover .dock-label,
+:host-context(html:not([data-theme='dark'])) .dock-item:focus-visible .dock-label {
+  color: var(--ink, #111111);
+}
+
+.dock-item:hover .dock-icon,
+.dock-item:focus-visible .dock-icon {
+  color: var(--accent, #ec9900);
+  transform: scale(1.1);
+}
+
+:host-context([data-theme='light']) .dock-item:hover .dock-icon,
+:host-context([data-theme='light']) .dock-item:focus-visible .dock-icon,
+:host-context(html:not([data-theme='dark'])) .dock-item:hover .dock-icon,
+:host-context(html:not([data-theme='dark'])) .dock-item:focus-visible .dock-icon {
+  color: var(--ink, #111111);
+}
+
+/* Focus Ring */
+.dock-item:focus-visible {
+  outline: 2px solid var(--accent, #ec9900);
+  outline-offset: -2px;
+}
+
+/* High Contrast & Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .floating-dock-wrapper {
+    animation: none;
+  }
+  .dock-item,
+  .dock-label,
+  .dock-icon {
+    transition: none !important;
+  }
+}
+
+/* Tablet Layout */
+@media (max-width: 1024px) {
+  .dock-item {
+    width: 48px;
+    height: 46px;
+    padding: 0 12px;
+  }
+  .dock-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .dock-item:hover,
+  .dock-item:focus-visible {
+    width: 144px;
+  }
+}
+
+/* Mobile Layout: Compact safe right edge floating dock */
+@media (max-width: 768px) {
+  .floating-dock-wrapper {
+    top: auto;
+    bottom: max(24px, env(safe-area-inset-bottom, 24px));
+    transform: none;
+    right: 0;
+  }
+
+  @keyframes dockSlideIn {
+    from {
+      opacity: 0;
+      transform: translate(24px, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate(0, 0);
+    }
+  }
+
+  .floating-dock {
+    border-radius: var(--r-md, 8px) 0 0 var(--r-md, 8px);
+    box-shadow: var(--shadow-lg, 0 4px 20px rgba(0, 0, 0, 0.3));
+  }
+
+  .dock-item {
+    width: 44px;
+    height: 42px;
+    padding: 0 10px;
+  }
+
+  .dock-item:hover,
+  .dock-item:focus-visible {
+    width: 136px;
+  }
+
+  .dock-label {
+    font-size: var(--t-micro, 0.6875rem);
+  }
+}

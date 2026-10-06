@@ -28,7 +28,9 @@ export const nec: NecData = {
     ],
   },
   stats: [
-    { value: '23', label: 'Team members', count: 23 },
+    // Must match `necTeamSize` in team.data.ts — the roll is the source of
+    // truth for this number, not the other way round.
+    { value: '22', label: 'Team members', count: 22 },
     { value: '6 mo', label: 'Challenge length', count: 6, suffix: ' mo' },
     { value: '6', label: 'Preliminary tasks cleared', count: 6 },
     { value: '2019', label: 'E-Cell since', count: null },

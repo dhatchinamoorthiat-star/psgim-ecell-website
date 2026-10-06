@@ -1,20 +1,27 @@
 import { BlogPost } from '../models/models';
+import { BLOG_ARTICLES } from './blog-series.data';
 
-export const blogs: BlogPost[] = [
-  {
-    id: 'sample-blog-1',
-    title: 'Why bootstrapped founders beat pitch decks',
-    author: 'E-Cell writing team',
-    date: '2026-09-01',
-    url: null,
-    summary: 'A look at how Coimbatore-area founders built revenue before they built slides.',
-    pending: true,
-  },
-];
+export const blogs: BlogPost[] = BLOG_ARTICLES.map((article) => ({
+  id: article.id,
+  title: `Part ${article.seriesPart}: ${article.title}`,
+  author: article.author,
+  date: article.date,
+  url: `/blogs/${article.slug}`,
+  summary: article.subtitle,
+  pending: false,
+  slug: article.slug,
+  series: article.series,
+  seriesPart: article.seriesPart,
+  readTime: article.readTime,
+  week: article.week,
+  category: article.category,
+  heroConcept: article.heroConcept,
+}));
 
 export const blogsNote =
-  'Weekly blogs written by the team on entrepreneurship, posted to our blog portal. Sample entries while the archive is being confirmed.';
+  'Stories, frameworks and practical insights for student founders — featuring our flagship 4-part series "From Idea to Impact".';
 
 export function sortBlogs(list: BlogPost[]): BlogPost[] {
-  return [...list].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  return [...list].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
+

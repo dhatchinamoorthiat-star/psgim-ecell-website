@@ -9,7 +9,7 @@
     <span class="kicker">{{ whatWeCreate.kicker }}</span>
     <h2>{{ whatWeCreate.heading }}</h2>
   </div>
-  <div class="grid grid-3" style="margin-top: var(--s-6)">
+  <div class="grid grid-3" style="margin-top: var(--s-6)" appStagger childSelector="div.card">
     @for (item of whatWeCreate.items; track item.label) {
       <div class="card">
         <p class="role" style="text-transform: uppercase; letter-spacing: var(--track-wide); font-size: var(--t-xs); color: var(--accent)">{{ item.label }}</p>
@@ -20,7 +20,27 @@
 </section>
 
 <section class="section wrap" revealOnScroll>
-  <div class="journey">
+  <div class="grid grid-2-editorial" style="align-items: center; gap: 3rem; margin-bottom: var(--s-7);">
+    <div>
+      <div class="section-heading" style="margin-bottom: var(--s-4)">
+        <span class="kicker">ENTREPRENEURIAL PIPELINE</span>
+        <h2>From initial spark to venture back</h2>
+      </div>
+      <p style="color: var(--ink-2); line-height: var(--lh-body);">
+        Our seven flagship initiatives act as a structured ladder for student founders. Whether you are validating a problem statement or preparing a pitch deck for funding, each programme provides tactical guidance and resources.
+      </p>
+    </div>
+    <div class="editorial-illustration-frame" style="max-width: 420px; justify-self: center;">
+      <img
+        src="/illustrations/initiatives/pitch-growth-blue.jpg"
+        alt="Student founder pitch deck and venture growth pipeline illustration"
+        class="editorial-illustration-img"
+        loading="lazy"
+      />
+    </div>
+  </div>
+
+  <div class="journey" appStagger childSelector="div.journey-stage">
     @for (stage of stages; track stage.id) {
       <div class="journey-stage is-lit">
         <span class="index">{{ stage.index }}</span>

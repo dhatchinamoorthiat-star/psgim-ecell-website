@@ -1,3 +1,10 @@
+/* ─────────────────────────────────────────────────────────────
+   SCROLL REVEAL
+   Driven by RevealOnScrollDirective (motion library / IntersectionObserver).
+   These rules establish the resting-hidden state; the directive animates
+   to revealed. The [data-reveal] attribute is applied by the directive
+   in the browser, so no element is ever hidden during SSR.
+───────────────────────────────────────────────────────────── */
 [data-reveal] {
   opacity: 0;
   transform: translateY(24px);
@@ -8,11 +15,240 @@
   transform: translateY(0);
 }
 
+
+/* ─────────────────────────────────────────────────────────────
+   PHASE B.5 — COLLECTIVE INDEX EDITORIAL SCENE TRANSITION
+   (Technical vertical prototype)
+
+   Concept: "one editorial scene transforming into another."
+   The selected entity (Technical) is the spatial anchor.
+   Everything else responds to its departure and arrival.
+
+   Three layers:
+     1. Root snapshots   — the context that surrounds the heading
+     2. Named group      — the heading's spatial travel
+     3. Post-arrival     — kicker/lede/figure on the destination
+
+   Direction awareness: app.config.ts stamps data-vt-direction
+   on <html> before the transition renders. "back" = popstate.
+───────────────────────────────────────────────────────────── */
+
+/* ── 1a. Root exit (old page — forward navigation)
+        The index retreats upward, yielding to the selected entity.
+        220ms: exits before the heading finishes traveling so the
+        morph is never obscured by the departing context.            */
+::view-transition-old(root) {
+  animation: vt-scene-exit-fwd 220ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* ── 1b. Root entrance (new page — forward navigation)
+        The destination emerges from below and around the arriving heading.
+        100ms delay: the heading starts morphing first so it feels like
+        the page is building around it, not landing on top.           */
+::view-transition-new(root) {
+  animation: vt-scene-enter-fwd 380ms cubic-bezier(0.22, 1, 0.36, 1) 100ms both;
+}
+
+/* ── 1c. Back navigation root variants
+        Spatial axis inverts: the detail page slides down (it was "below"
+        the index), the index returns from a position slightly above.  */
+[data-vt-direction="back"] ::view-transition-old(root) {
+  animation: vt-scene-exit-back 220ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+[data-vt-direction="back"] ::view-transition-new(root) {
+  animation: vt-scene-enter-back 380ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
+}
+
+
+/* ── 2. Named group: heading spatial travel
+        The group pseudo-element handles the size/position interpolation.
+        old/new animations add semantic lift-off and landing on top.   */
+::view-transition-group(vt-vertical-technical),
+::view-transition-group(vt-vertical-media),
+::view-transition-group(vt-vertical-podcasts),
+::view-transition-group(vt-vertical-operations),
+::view-transition-group(vt-vertical-public-relations) {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Lift-off: the index entry name scales up slightly and fades — it
+   "rises" from the registry list before traveling to its destination. */
+::view-transition-old(vt-vertical-technical),
+::view-transition-old(vt-vertical-media),
+::view-transition-old(vt-vertical-podcasts),
+::view-transition-old(vt-vertical-operations),
+::view-transition-old(vt-vertical-public-relations) {
+  animation: vt-heading-lift 200ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* Settle: the destination H1 arrives scaled down and rises to full —
+   communicates weight and arrival, not a generic fade.               */
+::view-transition-new(vt-vertical-technical),
+::view-transition-new(vt-vertical-media),
+::view-transition-new(vt-vertical-podcasts),
+::view-transition-new(vt-vertical-operations),
+::view-transition-new(vt-vertical-public-relations) {
+  animation: vt-heading-settle 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   KEYFRAMES
+───────────────────────────────────────────────────────────── */
+
+/* Root — forward exit: page retreats upward */
+@keyframes vt-scene-exit-fwd {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-14px); }
+}
+
+/* Root — forward enter: destination rises into place */
+@keyframes vt-scene-enter-fwd {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Root — back exit: detail slides downward (spatial reverse) */
+@keyframes vt-scene-exit-back {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(14px); }
+}
+
+/* Root — back enter: index descends from above */
+@keyframes vt-scene-enter-back {
+  from { opacity: 0; transform: translateY(-18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Heading lift-off from index list */
+@keyframes vt-heading-lift {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.06); }
+}
+
+/* Heading settles into H1 position */
+@keyframes vt-heading-settle {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   PHASE B.5 — POST-ARRIVAL CHOREOGRAPHY
+   Elements inside app-vertical-detail's hero arrive after the
+   heading settles, creating an "emerging around" effect.
+
+   Scoped to the component via the :host selector that Angular
+   applies automatically to component styles. These are placed
+   here (global) because they reference named keyframes shared
+   with the view-transition layer and because the component uses
+   inline styles[] — keeping all transition-aware motion in one file.
+
+   Delays are timed relative to heading settle (0–450ms):
+     figure  280ms — starts arriving while heading is still landing
+     kicker  350ms — appears as heading settles
+     lede    430ms — arrives last, completes the scene
+   This creates a short ensemble, not a long sequential chain.
+
+   animation-fill-mode: both ensures:
+   - Elements are invisible before their delay (so they don't
+     flash visible on direct URL load before the animation starts)
+   - Elements stay visible after the animation ends
+
+   On direct URL load (no view transition), these animations still
+   run — they produce a fast, clean entrance (≤800ms total) that
+   works as a standalone entrance without the VT context.
+───────────────────────────────────────────────────────────── */
+app-vertical-detail .vd-figure,
+app-vertical-detail .vd-hero__numeral {
+  animation: vt-arrive-figure 400ms cubic-bezier(0.22, 1, 0.36, 1) 280ms both;
+}
+
+app-vertical-detail .vd-hero__text .kicker {
+  animation: vt-arrive-kicker 320ms cubic-bezier(0.22, 1, 0.36, 1) 350ms both;
+}
+
+app-vertical-detail .vd-hero__text .lede {
+  animation: vt-arrive-lede 360ms cubic-bezier(0.22, 1, 0.36, 1) 430ms both;
+}
+
+@keyframes vt-arrive-figure {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vt-arrive-kicker {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vt-arrive-lede {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* The old data-boot="revealing" hero entrance (kicker/h1/lede/actions/ticker
+   fade-up, keyed off BootExperienceService) has been removed: it ran on a
+   fixed ~1.6s timer completely unsynced from the video/typing cinematic
+   sequence in home.component.ts, so on a slow-loading video it faded hero
+   text in on top of the still-playing video. HeroPhase + .hero-stagger-item
+   now own the entire hero reveal, for both the video and typing-only paths. */
+
+
+/* ─────────────────────────────────────────────────────────────
+   REDUCED MOTION
+   prefers-reduced-motion: reduce kills ALL of the above.
+   Not just shorter durations — completely instant.
+   The spatial movement is suppressed entirely, not merely slowed.
+───────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+  /* View transition root snapshots: instant swap */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+
+  /* Named groups: no animation, instant position swap */
+  ::view-transition-group(vt-vertical-technical),
+  ::view-transition-old(vt-vertical-technical),
+  ::view-transition-new(vt-vertical-technical),
+  ::view-transition-group(vt-vertical-media),
+  ::view-transition-old(vt-vertical-media),
+  ::view-transition-new(vt-vertical-media),
+  ::view-transition-group(vt-vertical-podcasts),
+  ::view-transition-old(vt-vertical-podcasts),
+  ::view-transition-new(vt-vertical-podcasts),
+  ::view-transition-group(vt-vertical-operations),
+  ::view-transition-old(vt-vertical-operations),
+  ::view-transition-new(vt-vertical-operations),
+  ::view-transition-group(vt-vertical-public-relations),
+  ::view-transition-old(vt-vertical-public-relations),
+  ::view-transition-new(vt-vertical-public-relations) {
+    animation: none !important;
+  }
+
+  /* Back navigation overrides: also instant */
+  [data-vt-direction="back"] ::view-transition-old(root),
+  [data-vt-direction="back"] ::view-transition-new(root) {
+    animation: none !important;
+  }
+
+  /* Post-arrival choreography: skip entirely */
+  app-vertical-detail .vd-figure,
+  app-vertical-detail .vd-hero__numeral,
+  app-vertical-detail .vd-hero__text .kicker,
+  app-vertical-detail .vd-hero__text .lede {
+    animation: none !important;
+  }
+
+  /* Scroll reveal: show immediately */
   [data-reveal] {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
   }
+
   html { scroll-behavior: auto; }
 }

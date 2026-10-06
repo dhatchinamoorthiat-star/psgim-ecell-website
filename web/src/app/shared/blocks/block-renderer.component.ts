@@ -117,7 +117,10 @@ import { BlockNode } from './block.types';
 
     <ng-template #outlet let-ctx>
       <ng-container
-        *ngComponentOutlet="ctx.cmp; inputs: { props: ctx.block.props, blockId: ctx.block.id }"
+        *ngComponentOutlet="
+          ctx.cmp;
+          inputs: { props: ctx.block.props, blockId: ctx.block.id, editorHost: editorHost }
+        "
       ></ng-container>
     </ng-template>
   `,

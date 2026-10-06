@@ -1,47 +1,105 @@
 <header class="navbar" [class.is-stuck]="isStuck()" [style.--scroll-progress]="scrollProgress()">
   <div class="wrap navbar-inner">
-    <a routerLink="/" class="navbar-logo">
+    <a routerLink="/" class="navbar-logo" aria-label="PSGIM E-Cell Home">
       <img [src]="logoSrc" alt="PSGIM E-Cell" />
       <span class="navbar-logo-sub">PSGIM</span>
     </a>
 
-    <nav class="navbar-links" aria-label="Primary">
-      @for (item of nav; track item.href) {
+    <nav class="navbar-links" aria-label="Primary Navigation">
+      @for (item of nav; track item.label) {
         @if (item.children?.length) {
-          <div class="navbar-nav-item" [class.is-open]="openDropdown() === item.label">
+          <div
+            class="navbar-nav-item"
+            [class.is-open]="openDropdown() === item.label"
+            [class.is-active]="isItemActive(item)"
+            (mouseenter)="onMouseEnter(item.label)"
+            (mouseleave)="onMouseLeave()"
+          >
             <button
               type="button"
               class="navbar-nav-trigger"
               [class.highlight]="item.highlight"
+              [class.active]="isItemActive(item)"
               (click)="toggleDropdown(item.label)"
               [attr.aria-expanded]="openDropdown() === item.label"
+              aria-haspopup="menu"
             >
-              {{ item.label }}
-              <span class="navbar-nav-caret" aria-hidden="true">▾</span>
+              <span>{{ item.label }}</span>
+              <svg class="navbar-nav-caret" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </button>
-            <div class="navbar-dropdown" [attr.aria-hidden]="openDropdown() !== item.label">
-              <a [routerLink]="item.href" routerLinkActive="active" (click)="closeDropdown()" class="navbar-dropdown-item navbar-dropdown-overview">
-                {{ item.label }} overview
-              </a>
-              @for (child of item.children; track child.href) {
-                <a [routerLink]="child.href" routerLinkActive="active" (click)="closeDropdown()" class="navbar-dropdown-item">
-                  {{ child.label }}
-                </a>
-              }
+            <div
+              class="navbar-dropdown"
+              [class.navbar-dropdown-wide]="item.label === 'What We Do'"
+              [attr.aria-hidden]="openDropdown() !== item.label"
+              (mouseenter)="onMouseEnter(item.label)"
+              (mouseleave)="onMouseLeave()"
+              role="menu"
+            >
+              <div class="navbar-dropdown-grid">
+                @for (child of item.children; track child.href + child.label) {
+                  <a
+                    [routerLink]="child.href.split('#')[0]"
+                    [fragment]="child.href.includes('#') ? child.href.split('#')[1] : undefined"
+                    (click)="onItemClick()"
+                    class="navbar-dropdown-card"
+                    role="menuitem"
+                  >
+                    <span class="navbar-dropdown-title">{{ child.label }}</span>
+                    @if (child.description) {
+                      <span class="navbar-dropdown-desc">{{ child.description }}</span>
+                    }
+                  </a>
+                }
+              </div>
             </div>
           </div>
         } @else {
-          <a [routerLink]="item.href" routerLinkActive="active" [class.highlight]="item.highlight">{{ item.label }}</a>
+          <a
+            [routerLink]="item.href"
+            routerLinkActive="active"
+            [class.highlight]="item.highlight"
+            [class.active]="isItemActive(item)"
+            class="navbar-nav-link"
+          >
+            {{ item.label }}
+          </a>
         }
       }
     </nav>
 
     <div class="navbar-actions">
       <app-search-bar></app-search-bar>
-      <button type="button" class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()">
-        <span aria-hidden="true">{{ effectiveTheme === 'dark' ? '☀️' : '🌙' }}</span>
+      <button
+        type="button"
+        class="theme-toggle-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="themeLabel()"
+        [title]="themeLabel()"
+      >
+        @if (effectiveTheme === 'dark') {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        } @else {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        }
       </button>
-      <a [routerLink]="primaryCta.href" class="btn btn-primary">{{ primaryCta.label }}</a>
+
+      <a routerLink="/platform/loginpage" class="btn btn-ghost nav-member-login-btn">Member Login</a>
+      <a [routerLink]="primaryCta.href" class="btn btn-primary nav-cta-btn">{{ primaryCta.label }}</a>
+
       <button
         type="button"
         class="nav-toggle btn btn-ghost"
@@ -50,55 +108,107 @@
         aria-controls="mobile-nav"
         [attr.aria-expanded]="mobileOpen()"
       >
-        Menu
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
       </button>
     </div>
   </div>
 </header>
 
+<!-- Mobile Navigation Drawer -->
 <div class="mobile-nav" id="mobile-nav" [class.is-open]="mobileOpen()" [attr.aria-hidden]="!mobileOpen()">
-  <div class="wrap" style="display:flex; justify-content: space-between; align-items:center;">
+  <div class="wrap mobile-nav-header">
     <a routerLink="/" class="navbar-logo" (click)="closeMobile()">
       <img [src]="logoSrc" alt="PSGIM E-Cell" />
       <span class="navbar-logo-sub">PSGIM</span>
     </a>
-    <button type="button" class="mobile-nav-close btn btn-ghost" (click)="closeMobile()" aria-label="Close menu">
-      Close
-    </button>
+    <div class="mobile-nav-header-actions">
+      <button
+        type="button"
+        class="theme-toggle-btn"
+        (click)="toggleTheme()"
+        [attr.aria-label]="themeLabel()"
+      >
+        @if (effectiveTheme === 'dark') {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        } @else {
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        }
+      </button>
+      <button type="button" class="mobile-nav-close btn btn-ghost" (click)="closeMobile()" aria-label="Close menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
   </div>
-  <div class="wrap" style="margin-top: var(--s-6); --search-bar-max-width: none">
-    <app-search-bar></app-search-bar>
-  </div>
-  <nav class="mobile-nav-links wrap" aria-label="Mobile">
-    @for (item of nav; track item.href) {
+
+  <nav class="mobile-nav-links wrap" aria-label="Mobile Navigation">
+    @for (item of nav; track item.label) {
       @if (item.children?.length) {
         <div class="mobile-nav-group">
           <div class="mobile-nav-group-head">
-            <a [routerLink]="item.href" (click)="closeMobile()">{{ item.label }}</a>
+            <a [routerLink]="item.href" (click)="closeMobile()" class="mobile-nav-group-title">{{ item.label }}</a>
             <button
               type="button"
               class="mobile-nav-group-toggle"
               (click)="toggleMobileGroup(item.label)"
               [attr.aria-expanded]="openMobileGroup() === item.label"
-              [attr.aria-label]="'Toggle ' + item.label + ' pages'"
+              [attr.aria-label]="'Toggle ' + item.label + ' section'"
             >
-              <span [class.is-open]="openMobileGroup() === item.label">▾</span>
+              <svg class="mobile-caret" [class.is-open]="openMobileGroup() === item.label" width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </button>
           </div>
           @if (openMobileGroup() === item.label) {
             <div class="mobile-nav-subgroup">
-              @for (child of item.children; track child.href) {
-                <a [routerLink]="child.href" (click)="closeMobile()">{{ child.label }}</a>
+              @for (child of item.children; track child.href + child.label) {
+                <a
+                  [routerLink]="child.href.split('#')[0]"
+                  [fragment]="child.href.includes('#') ? child.href.split('#')[1] : undefined"
+                  (click)="closeMobile()"
+                  class="mobile-sublink"
+                >
+                  <span class="mobile-sublink-title">{{ child.label }}</span>
+                  @if (child.description) {
+                    <span class="mobile-sublink-desc">{{ child.description }}</span>
+                  }
+                </a>
               }
             </div>
           }
         </div>
       } @else {
-        <a [routerLink]="item.href" (click)="closeMobile()">{{ item.label }}</a>
+        <a [routerLink]="item.href" [class.highlight]="item.highlight" (click)="closeMobile()" class="mobile-nav-item-link">
+          {{ item.label }}
+        </a>
       }
     }
-    <a [routerLink]="primaryCta.href" class="btn btn-primary" (click)="closeMobile()" style="width:fit-content">{{
-      primaryCta.label
-    }}</a>
+
+    <div class="mobile-nav-cta" style="display: flex; flex-direction: column; gap: 0.5rem;">
+      <a routerLink="/platform/loginpage" class="btn btn-ghost" (click)="closeMobile()" style="width: 100%; justify-content: center;">
+        Member Login
+      </a>
+      <a [routerLink]="primaryCta.href" class="btn btn-primary" (click)="closeMobile()" style="width: 100%; justify-content: center;">
+        {{ primaryCta.label }}
+      </a>
+    </div>
   </nav>
 </div>

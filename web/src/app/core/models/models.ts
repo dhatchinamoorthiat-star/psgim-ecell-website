@@ -32,6 +32,7 @@ export interface NavItem {
   label: string;
   href: string;
   highlight?: boolean;
+  description?: string;
   children?: NavItem[];
 }
 
@@ -206,10 +207,16 @@ export interface JourneyStage {
   note: string;
 }
 
+export interface EventImage {
+  src: string;
+  alt: string;
+}
+
 export interface EventItem {
   id: string;
   title: string;
-  initiative: string;
+  /** Omit when the event doesn't belong to one of the standing initiatives. */
+  initiative?: string;
   date: string;
   endDate?: string;
   time: string | null;
@@ -219,6 +226,14 @@ export interface EventItem {
   turnout: string | null;
   registration: string | null;
   pending: boolean;
+  /** Longer writeup for the expanded row, beyond `summary`. */
+  description?: string;
+  /** Post image first, any additional photos after. */
+  gallery?: EventImage[];
+  speaker?: { name: string; designation?: string; org?: string };
+  registrationLink?: string;
+  linkedinUrl?: string;
+  hashtags?: string[];
 }
 
 export interface FacultyMember {
@@ -239,16 +254,49 @@ export interface TeamRole {
   remit: string;
 }
 
+/** A named student on the roll. `photo` is optional because the site has
+ * never had a portrait for anyone — `.avatar-initials` is the real
+ * treatment, not a fallback waiting to be replaced. `verticalSlug` is
+ * optional and currently unset for everyone: which student works in which
+ * vertical is not recorded anywhere, and is not guessed. */
 export interface NecTeamMember {
   name: string;
-  photo: string;
   role?: string;
+  photo?: string;
+  verticalSlug?: string;
 }
 
 export interface NecTeam {
   lead: NecTeamMember;
   members: NecTeamMember[];
   note: string;
+}
+
+/** A vertical is documented by what it is responsible for, not by who
+ * staffs it or how it has performed. There is deliberately no `head`,
+ * `members` or `stats` field: no vertical head is recorded, no
+ * member-to-vertical mapping exists, and no metric here has ever been
+ * measured. Adding those fields back is what invited invented content
+ * the first time.
+ *
+ * `heroImage` is nullable rather than optional-by-omission so that the
+ * absence is explicit: Public Relations has no illustration of its own, and
+ * renders as a typographic panel by design (see `vertical-card`). Don't
+ * borrow another section's artwork to even out the row.
+ *
+ * `relatedWork` points at a real route on this site where the output of
+ * this vertical can actually be seen — navigation, not a claim. */
+export interface VerticalEcosystem {
+  id: string;
+  slug: string;
+  name: string;
+  shortName: string;
+  description: string;
+  heroImage: string | null;
+  displayOrder: number;
+  responsibilities: string[];
+  relatedWork: { label: string; href: string } | null;
+  isActive: boolean;
 }
 
 export interface Stat {
@@ -354,6 +402,109 @@ export interface BlogPost {
   url: string | null;
   summary: string;
   pending: boolean;
+  slug?: string;
+  series?: string;
+  seriesPart?: number;
+  readTime?: string;
+  week?: string;
+  category?: string;
+  heroConcept?: string;
+}
+
+export interface SourceLink {
+  title: string;
+  url: string;
+}
+
+export interface StudentExerciseItem {
+  num: string;
+  title?: string;
+  text: string;
+  placeholder?: string;
+}
+
+export interface CaseStudyData {
+  company: string;
+  founders?: string;
+  foundedYear?: string;
+  headline: string;
+  narrative: string[];
+  steps?: { title: string; desc: string }[];
+  outcome?: string;
+}
+
+export interface InfographicData {
+  id: string;
+  type: 'comparison' | 'sources-radial' | 'timeline' | 'mvp-spectrum' | 'business-stack' | 'funnel' | 'scale-balance' | 'unit-economics' | 'growth-chart' | 'master-flow';
+  title: string;
+  subtitle?: string;
+  content: any;
+}
+
+export interface ArticleSection {
+  id: string;
+  heading: string;
+  subheading?: string;
+  paragraphs: string[];
+  pullQuote?: { quote: string; author?: string; note?: string };
+  callout?: { title?: string; text: string; icon?: string };
+  caseStudy?: CaseStudyData;
+  infographic?: InfographicData;
+  listItems?: string[];
+}
+
+export interface BlogArticle {
+  id: string;
+  slug: string;
+  series: string;
+  seriesPart: number;
+  totalParts: number;
+  week: string;
+  readTime: string;
+  category: string;
+  title: string;
+  subtitle: string;
+  author: string;
+  date: string;
+  publishedAt: string;
+  heroTagline: string;
+  heroConcept: string;
+  introParagraphs: string[];
+  sections: ArticleSection[];
+  studentExercise: {
+    heading: string;
+    subtitle: string;
+    items: StudentExerciseItem[];
+    outcome: string;
+  };
+  nextArticleBridge: {
+    heading: string;
+    text: string;
+  };
+  sources: SourceLink[];
+  seo: {
+    title: string;
+    description: string;
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+    suggestedSlug: string;
+  };
+  social: {
+    linkedIn: string;
+    instagram: string;
+    hashtags: string[];
+  };
+  nextArticle?: {
+    part: number;
+    title: string;
+    slug: string;
+    teaser: string;
+  };
+  previousArticle?: {
+    part: number;
+    title: string;
+    slug: string;
+  };
 }
 
 export interface RoadmapItem {

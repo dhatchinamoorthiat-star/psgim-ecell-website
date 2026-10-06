@@ -15,6 +15,10 @@ export interface EditorialRowDetails {
   /** Rendered as a definition list, and only for the facts that exist. */
   facts?: { label: string; value: string }[];
   cta?: { label: string; href: string; fragment?: string };
+  /** External CTA (e.g. a registration link or the LinkedIn source post). */
+  externalCta?: { label: string; href: string };
+  /** Thumbnail strip; first image also used as the row's cover image. */
+  images?: { src: string; alt: string }[];
 }
 
 export interface EditorialRowItem {
@@ -101,6 +105,13 @@ export interface EditorialRowItem {
               [attr.inert]="isOpen(item.id) ? null : ''"
             >
               <div class="editorial-row__panel-inner">
+                @if (item.details.images?.length) {
+                  <div class="editorial-row__gallery">
+                    @for (img of item.details.images; track img.src) {
+                      <img [src]="img.src" [alt]="img.alt" loading="lazy" class="editorial-row__gallery-img" />
+                    }
+                  </div>
+                }
                 @for (paragraph of paragraphs(item.details.body); track paragraph) {
                   <p class="editorial-row__body">{{ paragraph }}</p>
                 }
@@ -127,6 +138,12 @@ export interface EditorialRowItem {
                 @if (item.details.cta; as cta) {
                   <a class="editorial-row__cta" [routerLink]="cta.href" [fragment]="cta.fragment">
                     {{ cta.label }}
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                  </a>
+                }
+                @if (item.details.externalCta; as ext) {
+                  <a class="editorial-row__cta" [href]="ext.href" target="_blank" rel="noopener">
+                    {{ ext.label }}
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" /></svg>
                   </a>
                 }

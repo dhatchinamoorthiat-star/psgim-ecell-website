@@ -4,13 +4,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { stages, whatWeCreate, toInitiativeDisclosureRows } from '../../core/data/initiatives.data';
 import { SeoService } from '../../core/services/seo.service';
-import { RevealOnScrollDirective } from '../../core/directives/reveal.directive';
+import { RevealOnScrollDirective } from '../../core/motion/directives/reveal.directive';
+import { StaggerDirective } from '../../core/motion/directives/stagger.directive';
 import { EditorialRowListComponent } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
 
 @Component({
   selector: 'app-initiatives',
   standalone: true,
-  imports: [CommonModule, RevealOnScrollDirective, EditorialRowListComponent],
+  imports: [CommonModule, RevealOnScrollDirective, StaggerDirective, EditorialRowListComponent],
   templateUrl: './initiatives.component.html',
 })
 export class InitiativesComponent implements OnInit {

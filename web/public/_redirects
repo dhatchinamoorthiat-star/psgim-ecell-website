@@ -5,3 +5,19 @@
 # URL; without this, Pages would fall back to the prerendered *home page*.
 /platform    /index.csr.html  200
 /platform/*  /index.csr.html  200
+
+# Team ecosystem — retired URLs, redirected at the edge (301, not a rewrite).
+#
+# These paths have no prerendered HTML, so without a rule here Pages would
+# serve the home page at a /meet-the-team/... URL rather than redirecting.
+# A matching in-app router redirect exists in meet-the-team.routes.ts for
+# dev and `serve:ssr:web`; this is what actually runs in production.
+#
+# `member/:slug` is reserved, not shipped: no per-person content is recorded,
+# so the page could only show a name and a role. `president` and
+# `vice-president` were hardcoded duplicates of `member/:slug` pointing at
+# people who were never on record.
+/meet-the-team/member/*       /meet-the-team/  301
+/meet-the-team/member         /meet-the-team/  301
+/meet-the-team/president      /meet-the-team/  301
+/meet-the-team/vice-president /meet-the-team/  301

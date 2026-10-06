@@ -2,8 +2,8 @@ import { Stat, DriveContent } from '../models/models';
 
 export const stats: Stat[] = [
   { value: '2019', label: 'Established', count: null },
-  { value: '23', label: 'Active members', count: 23 },
-  { value: '12+', label: 'Events a year', count: 12, suffix: '+' },
+  { value: '75+', label: 'Active members', count: 75, suffix: '+' },
+  { value: '20+', label: 'Events a year', count: 20, suffix: '+' },
   { value: 'NEC', label: '2026 · Registered', count: null },
 ];
 

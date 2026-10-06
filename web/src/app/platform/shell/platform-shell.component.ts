@@ -100,7 +100,7 @@ export class PlatformShellComponent {
       await this.auth.logout();
     } finally {
       this.signingOut.set(false);
-      await this.router.navigate(['/platform/login']);
+      await this.router.navigate(['/']);
     }
   }
 }

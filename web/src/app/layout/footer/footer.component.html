@@ -1,19 +1,20 @@
 <footer class="footer">
   <div class="wrap footer-grid">
     <div>
-      <span class="navbar-logo" style="color: var(--on-ink)">{{ site.name }}</span>
-      <p style="margin-top: var(--s-3); max-width: 32ch; color: var(--on-ink-2)">{{ site.tagline }}</p>
-      <p style="margin-top: var(--s-3); color: var(--on-ink-3); font-size: var(--t-sm)">{{ site.address.oneLine }}</p>
+      <span class="navbar-logo" style="color: var(--ink)">{{ site.name }}</span>
+      <p style="margin-top: var(--s-3); max-width: 32ch; color: var(--ink-2)">{{ site.tagline }}</p>
+      <p style="margin-top: var(--s-3); color: var(--ink-3); font-size: var(--t-sm)">{{ site.address.oneLine }}</p>
     </div>
     <div>
-      <h3 style="color: var(--on-ink); font-size: var(--t-sm); margin-bottom: var(--s-3)">Navigate</h3>
+      <h3 style="color: var(--ink); font-size: var(--t-sm); margin-bottom: var(--s-3)">Navigate</h3>
       @for (item of nav; track item.href) {
         <p style="margin-bottom: var(--s-2)"><a [routerLink]="item.href">{{ item.label }}</a></p>
       }
+      <p style="margin-bottom: var(--s-2)"><a routerLink="/platform/loginpage">Member Login</a></p>
     </div>
     <div>
-      <h3 style="color: var(--on-ink); font-size: var(--t-sm); margin-bottom: var(--s-3)">Contact</h3>
-      <p style="margin-bottom: var(--s-2); color: var(--on-ink-2)">{{ site.contact.email.value }}</p>
+      <h3 style="color: var(--ink); font-size: var(--t-sm); margin-bottom: var(--s-3)">Contact</h3>
+      <p style="margin-bottom: var(--s-2); color: var(--ink-2)">{{ site.contact.email.value }}</p>
       <p style="margin-bottom: var(--s-2)"><a routerLink="/contact/">Get in touch</a></p>
     </div>
   </div>

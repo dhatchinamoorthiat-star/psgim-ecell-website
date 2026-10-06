@@ -1,0 +1,472 @@
+/**
+ * Boot experience.
+ *
+ * The composition is centred on a horizontal progress axis. That axis sits
+ * at exactly 50% of the viewport, which is also the seam between the two
+ * panels — so when the panels part, the screen opens along the same line
+ * the progress just finished travelling. The loader doesn't fade out; it
+ * becomes the aperture.
+ *
+ * Ground, rule and accent are the site's own tokens rather than a fixed
+ * brand plate, so the boot screen is literally the homepage's background
+ * (light or dark, already resolved by index.html before Angular boots).
+ */
+
+:host {
+  display: contents;
+}
+
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: auto;
+  /* Failsafe: if the JS bundle dies after the first frame, the overlay
+     still clears itself. The normal path removes the node at ~1.9s, long
+     before this fires. */
+  animation: boot-failsafe 1ms linear 10s forwards;
+}
+
+.boot[data-phase='revealing'],
+.boot[data-phase='complete'] {
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- panels */
+
+.boot-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50vh;
+  height: 50dvh;
+  overflow: hidden;
+  background: var(--paper);
+  /* Duration must stay in step with REVEAL_MS in boot-experience.service.ts. */
+  transition: transform 700ms cubic-bezier(0.76, 0, 0.24, 1);
+  will-change: transform;
+}
+
+.boot-panel[data-panel='top'] {
+  top: 0;
+}
+.boot-panel[data-panel='bottom'] {
+  bottom: 0;
+}
+
+/* Each panel clips the same full-viewport stage from opposite sides, so the
+   two halves are one continuous image until they separate. */
+.boot-stage {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+}
+.boot-panel[data-panel='top'] .boot-stage {
+  top: 0;
+}
+.boot-panel[data-panel='bottom'] .boot-stage {
+  top: -50vh;
+  top: -50dvh;
+}
+
+/* A single restrained glow behind the mark, the same gold the hero uses. */
+.boot-stage::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(60rem, 140vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(236, 153, 0, 0.11), transparent 62%);
+  opacity: 0;
+  animation: boot-glow 1400ms var(--ease-out) 120ms forwards;
+}
+
+/* ------------------------------------------------------------------ mark */
+
+/**
+ * The mark is a background-image, not an <img>, specifically so the theme
+ * decides it.
+ *
+ * The prerendered HTML is one static file shared by every visitor, so a
+ * [src] binding there can only ever bake in one variant — and the boot
+ * screen's most visible moment is before hydration, when that wrong variant
+ * is still on screen. `data-theme` is set by the inline script in
+ * index.html before first paint, so the cascade below picks correctly from
+ * frame zero with no JS involved and no flash of the wrong artwork.
+ *
+ * Only the matching URL is fetched: browsers skip background images whose
+ * rule loses the cascade.
+ *
+ * The three-way resolution mirrors tokens.css exactly (default light,
+ * prefers-color-scheme override, explicit data-theme override) so the
+ * artwork can never disagree with the ground it sits on. aspect-ratio plus
+ * background-size: contain keeps both variants in an identical box despite
+ * their differing intrinsic ratios (700:644 vs 600:495) — no layout shift,
+ * no distortion.
+ */
+.boot-mark {
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% + 3.25rem);
+  width: min(13rem, 38vw);
+  aspect-ratio: 700 / 644;
+  background-image: url('/logo-lockup-compact.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transform: translateX(-50%) translateY(10px) scale(0.985);
+  opacity: 0;
+  /* Entry, then an extremely slow drift so the composition is alive during
+     the loading window without anything moving enough to notice directly. */
+  animation:
+    boot-mark-in 900ms var(--ease-out) 60ms forwards,
+    boot-mark-drift 7s var(--ease-in-out) 960ms infinite;
+}
+
+/* Dark ground → the white lockup. Order mirrors tokens.css so the two can't
+   diverge.
+
+   These must use :host-context() rather than a plain `:root[data-theme]`
+   descendant selector. Under emulated encapsulation Angular appends the
+   component's scoping attribute to the first compound selector, turning
+   `:root[data-theme='dark'] .boot-mark` into
+   `[_ngcontent-x]:root[data-theme='dark'] .boot-mark[_ngcontent-x]` — which
+   requires <html> itself to carry the scoping attribute and therefore never
+   matches. :host-context() is compiled as an ancestor check instead. */
+@media (prefers-color-scheme: dark) {
+  :host-context(html:not([data-theme='light'])) .boot-mark {
+    background-image: url('/logo-lockup-compact-dark.png');
+  }
+}
+:host-context([data-theme='dark']) .boot-mark {
+  background-image: url('/logo-lockup-compact-dark.png');
+}
+:host-context([data-theme='light']) .boot-mark {
+  background-image: url('/logo-lockup-compact.png');
+}
+
+/* The "locks into position" beat: the mark settles up a hair at 100%. */
+.boot[data-phase='ready'] .boot-mark,
+.boot[data-phase='revealing'] .boot-mark {
+  animation: none;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px) scale(1.025);
+  transition:
+    transform 620ms var(--ease-out),
+    opacity 420ms var(--ease-out);
+}
+.boot[data-phase='revealing'] .boot-mark {
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------------ axis */
+
+.boot-axis {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(26rem, 64vw);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: boot-axis-in 700ms var(--ease-out) 220ms forwards;
+}
+
+.boot-axis-track {
+  position: relative;
+  height: 2px;
+  background: var(--rule-strong);
+  border-radius: 2px;
+  overflow: hidden;
+  /* Grows a hair as the line fills — expansion, not a chunky bar. */
+  transition:
+    height 520ms var(--ease-out),
+    box-shadow 520ms var(--ease-out);
+}
+
+.boot[data-phase='ready'] .boot-axis-track,
+.boot[data-phase='revealing'] .boot-axis-track {
+  height: 3px;
+  box-shadow: 0 0 22px -4px rgba(236, 153, 0, 0.55);
+}
+
+.boot-axis-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: left center;
+  transform: scaleX(0);
+  /* No transition: the smoothed value is interpolated per frame in the
+     service, so adding CSS easing on top would lag the real signal. */
+}
+
+/* The light at the leading edge of travel. Its position is the real drawn
+   value, so unlike the sheen it is not decoration — it marks the front. */
+.boot-axis-head {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateY(-50%);
+  box-shadow:
+    0 0 10px rgba(236, 153, 0, 0.9),
+    0 0 26px rgba(236, 153, 0, 0.45);
+  opacity: 0;
+  animation: boot-axis-in 520ms var(--ease-out) 420ms forwards;
+}
+/* At 100% the head has arrived; it dissolves into the finished line. */
+.boot[data-phase='ready'] .boot-axis-head,
+.boot[data-phase='revealing'] .boot-axis-head {
+  animation: none;
+  opacity: 0;
+  transition: opacity 320ms var(--ease-out);
+}
+
+/* Light travelling along the line — decoration that keeps a genuinely
+   stalled signal from looking frozen, never a stand-in for progress. */
+.boot-axis-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(236, 153, 0, 0.75), transparent);
+  width: 42%;
+  animation: boot-sheen 1900ms var(--ease-in-out) infinite;
+}
+.boot[data-phase='ready'] .boot-axis-sheen,
+.boot[data-phase='revealing'] .boot-axis-sheen {
+  animation: none;
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------------ meta */
+
+.boot-meta {
+  position: absolute;
+  top: calc(50% + 1.5rem);
+  left: 50%;
+  width: min(26rem, 64vw);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  opacity: 0;
+  animation: boot-axis-in 700ms var(--ease-out) 340ms forwards;
+}
+
+.boot-status {
+  position: relative;
+  display: block;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  transition: color var(--dur-normal) var(--ease-out);
+}
+/* Each wording change replaces this node, so the swap animates rather than
+   the text snapping from one word to another. */
+.boot-status-word {
+  display: inline-block;
+  animation: boot-status-swap 420ms var(--ease-out) both;
+}
+.boot[data-phase='ready'] .boot-status,
+.boot[data-phase='revealing'] .boot-status {
+  color: var(--accent-ink);
+}
+
+.boot-percent {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.boot-percent i {
+  font-style: normal;
+  color: var(--ink-3);
+}
+.boot[data-phase='revealing'] .boot-meta {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+/* ------------------------------------------------------------------ seam */
+
+/* The axis, promoted to a full-width horizontal line the screen opens
+   along. Drawn above both panels so it survives the split for a moment. */
+.boot-seam {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(26rem, 64vw);
+  height: 2px;
+  transform: translate(-50%, -50%) scaleX(1);
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition:
+    opacity 240ms var(--ease-out),
+    width 560ms cubic-bezier(0.76, 0, 0.24, 1);
+}
+/* The expansion happens during the READY hold, so the line visibly becomes
+   the full-width axis *before* the panels move — the "unlock" beat. */
+.boot[data-phase='ready'] .boot-seam {
+  opacity: 1;
+  width: 100%;
+  transition:
+    opacity 160ms var(--ease-out),
+    width 340ms cubic-bezier(0.76, 0, 0.24, 1);
+}
+.boot[data-phase='revealing'] .boot-seam {
+  width: 100%;
+  opacity: 0;
+  transition: opacity 560ms var(--ease-out) 140ms;
+}
+
+/* ---------------------------------------------------------------- reveal */
+
+.boot[data-phase='revealing'] .boot-panel[data-panel='top'] {
+  transform: translateY(-100%);
+}
+.boot[data-phase='revealing'] .boot-panel[data-panel='bottom'] {
+  transform: translateY(100%);
+}
+
+/* ------------------------------------------------------------- keyframes */
+
+@keyframes boot-mark-in {
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+@keyframes boot-axis-in {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes boot-mark-drift {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-3px) scale(1.004);
+  }
+}
+@keyframes boot-status-swap {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes boot-glow {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes boot-sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+@keyframes boot-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* ---------------------------------------------------------------- mobile */
+
+@media (max-width: 640px) {
+  .boot-mark {
+    width: min(10rem, 52vw);
+    bottom: calc(50% + 2.5rem);
+  }
+  .boot-axis,
+  .boot-meta,
+  .boot-seam {
+    width: min(20rem, 78vw);
+  }
+  .boot-meta {
+    top: calc(50% + 1.25rem);
+  }
+}
+
+/* Short viewports (mobile landscape): keep the mark clear of the axis. */
+@media (max-height: 460px) {
+  .boot-mark {
+    width: min(7rem, 22vw);
+    bottom: calc(50% + 1.75rem);
+  }
+}
+
+/* -------------------------------------------------------- reduced motion */
+
+/* No split, no travelling light, no settle — a brief crossfade only. */
+@media (prefers-reduced-motion: reduce) {
+  .boot {
+    transition: opacity 220ms linear;
+  }
+  .boot[data-phase='revealing'] {
+    opacity: 0;
+  }
+  .boot-panel,
+  .boot[data-phase='revealing'] .boot-panel[data-panel='top'],
+  .boot[data-phase='revealing'] .boot-panel[data-panel='bottom'] {
+    transform: none;
+    transition: none;
+  }
+  .boot-mark,
+  .boot-axis,
+  .boot-meta,
+  .boot-stage::before {
+    animation: none;
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+  .boot-mark {
+    transform: translateX(-50%);
+  }
+  .boot-axis {
+    transform: translate(-50%, -50%);
+  }
+  .boot-stage::before {
+    transform: translate(-50%, -50%);
+  }
+  .boot[data-phase='ready'] .boot-mark,
+  .boot[data-phase='revealing'] .boot-mark {
+    transform: translateX(-50%);
+    transition: none;
+  }
+  .boot-axis-sheen,
+  .boot-axis-head {
+    display: none;
+  }
+  .boot-status-word {
+    animation: none;
+  }
+  .boot-seam,
+  .boot[data-phase='ready'] .boot-seam {
+    opacity: 0;
+    transition: none;
+  }
+  .boot-axis-track,
+  .boot[data-phase='ready'] .boot-axis-track {
+    box-shadow: none;
+  }
+}

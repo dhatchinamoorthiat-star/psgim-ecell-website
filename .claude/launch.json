@@ -11,6 +11,33 @@
       "port": 4200
     },
     {
+      "name": "psgim-ecell-static",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd web/dist/web/browser && npx --yes http-server -p 4010 -c-1 --silent"
+      ],
+      "port": 4010
+    },
+    {
+      "name": "psgim-ecell-static-cached",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd web/dist/web/browser && npx --yes http-server -p 4011 -c3600 --silent"
+      ],
+      "port": 4011
+    },
+    {
+      "name": "psgim-ecell-ssr",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd web && node dist/web/server/server.mjs"
+      ],
+      "port": 4000
+    },
+    {
       "name": "ecell-nextjs",
       "runtimeExecutable": "sh",
       "runtimeArgs": [

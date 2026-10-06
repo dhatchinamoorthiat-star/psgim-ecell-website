@@ -1,0 +1,40 @@
+<section class="hero wrap" revealOnScroll>
+  <span class="kicker">Student & Alumni Voices</span>
+  <h1>Testimonials & Reflections</h1>
+  <p class="lede">
+    Real experiences, stories, and feedback from student founders, workshop builders, and campus team members at PSGIM E-Cell.
+  </p>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="testimonials-grid">
+    @for (t of testimonials; track t.name + t.program) {
+      <div class="testimonial-card" [class.is-highlight]="t.highlight">
+        <div class="testimonial-quote-mark" aria-hidden="true">“</div>
+        <p class="testimonial-quote-text">{{ t.quote }}</p>
+        <div class="testimonial-footer">
+          <div class="testimonial-author">
+            <span class="testimonial-author-name">{{ t.name }}</span>
+            <span class="testimonial-author-role">{{ t.role }}</span>
+          </div>
+          @if (t.program) {
+            <span class="testimonial-program-tag">{{ t.program }}</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
+  <div class="card testimonial-cta-card" style="text-align: center; padding: var(--s-8) var(--s-6);">
+    <span class="kicker" style="color: var(--accent-ink)">Share Your Experience</span>
+    <h2 style="font-size: var(--t-h2); font-weight: 700; margin-top: var(--s-2)">Built something with E-Cell?</h2>
+    <p style="color: var(--ink-2); max-width: 36rem; margin: var(--s-3) auto 0;">
+      Whether you participated in a Bootcamp, pitched at Ideathon, or joined an Idea Clinic session, we'd love to hear your story.
+    </p>
+    <div style="margin-top: var(--s-6);">
+      <a routerLink="/contact" class="btn btn-primary">Submit Your Feedback</a>
+    </div>
+  </div>
+</section>
