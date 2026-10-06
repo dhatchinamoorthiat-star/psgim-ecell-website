@@ -23,7 +23,7 @@ export const site: SiteConfig = {
     { name: 'Instagram', handle: '@ecell.psgim', url: null, pending: true, icon: 'instagram' },
     { name: 'LinkedIn', handle: 'PSGIM E-Cell', url: null, pending: true, icon: 'linkedin' },
   ],
-  notice: { show: true, text: 'Pre-launch draft — items marked "to be confirmed" await approval.' },
+  notice: { show: false, text: '' },
   credit: { name: 'Dhatchina Moorthi TA', role: 'Technical Team, PSGIM E-Cell' },
 };
 
