@@ -4,7 +4,8 @@ import { BootExperienceService } from '../../../core/services/boot-experience.se
 
 /**
  * The cinematic boot layer: a full-screen brand composition whose progress
- * line becomes the axis the screen splits along to reveal the homepage.
+ * line becomes the vertical seam the screen opens along — like a pair of
+ * doors parting — to reveal the homepage.
  *
  * The composition is duplicated into two panels, each clipping the same
  * full-viewport stage from opposite sides, so the two halves read as one
@@ -67,8 +68,8 @@ export class BootExperienceComponent implements OnInit, OnDestroy {
   protected readonly boot = inject(BootExperienceService);
   private readonly platformId = inject(PLATFORM_ID);
 
-  /** Top and bottom halves of the same composition. */
-  protected readonly panels = ['top', 'bottom'] as const;
+  /** Left and right halves of the same composition — the two "doors". */
+  protected readonly panels = ['left', 'right'] as const;
 
   protected readonly fillTransform = computed(() => `scaleX(${this.boot.visualProgress()})`);
 
