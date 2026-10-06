@@ -250,6 +250,14 @@
   padding: 0 var(--s-3);
   font-size: var(--t-xs);
 }
+.pf-btn-wrap {
+  white-space: normal;
+  justify-content: flex-start;
+  text-align: left;
+  height: auto;
+  padding-top: var(--s-2);
+  padding-bottom: var(--s-2);
+}
 @media (pointer: coarse) {
   .pf-btn,
   .pf-btn-sm {
