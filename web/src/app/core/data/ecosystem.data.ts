@@ -1,6 +1,5 @@
 import { necTeamSize, verticalEcosystems } from './team.data';
 import { initiatives } from './initiatives.data';
-import { events } from './events.data';
 import { blogs } from './blogs.data';
 
 export type IndexCategory = 'people' | 'verticals' | 'initiatives' | 'events' | 'stories' | 'explore';
@@ -56,16 +55,22 @@ function initiativeEntries(): IndexEntry[] {
   }));
 }
 
-function eventEntries(): IndexEntry[] {
+/**
+ * Takes the already-fetched `published_events_*` results rather than
+ * importing a static array — the Collective Index's "Events" category must
+ * read from the same canonical backend source as `/events` and the
+ * homepage's activity teaser, not a third copy of the data.
+ */
+export function eventEntries(events: { slug: string; title: string; starts_at?: string | null; pending?: boolean }[]): IndexEntry[] {
   return events
     .filter((ev) => !ev.pending)
     .map((ev) => ({
-      id: `event-${ev.id}`,
+      id: `event-${ev.slug}`,
       name: ev.title,
       category: 'events' as IndexCategory,
-      tag: ev.date,
+      tag: ev.starts_at ? ev.starts_at.slice(0, 10) : '',
       href: '/events/',
-      pending: ev.pending,
+      pending: ev.pending ?? false,
     }));
 }
 
@@ -102,11 +107,14 @@ function exploreEntries(): IndexEntry[] {
   }));
 }
 
-export const ecosystem: IndexEntry[] = [
+/** The non-event categories — static and build-time-safe. `events` are
+ * merged in by each caller (`HomeComponent`, `HomeExperimentComponent`,
+ * `IndexExperimentComponent`) once fetched from the API via `eventEntries`
+ * below — one canonical event source for all three. */
+export const baseEcosystem: IndexEntry[] = [
   ...peopleEntries(),
   ...verticalEntries(),
   ...initiativeEntries(),
-  ...eventEntries(),
   ...storyEntries(),
   ...exploreEntries(),
 ];

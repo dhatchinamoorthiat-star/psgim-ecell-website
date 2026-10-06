@@ -1,7 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { EventItem } from '../../core/models/models';
-import { events, eventsNote, splitEvents } from '../../core/data/events.data';
-import { initiatives } from '../../core/data/initiatives.data';
+import { ContentApiService } from '../../core/services/content-api.service';
+import { EventQueryResult } from '../../shared/blocks/block.types';
 import { SeoService } from '../../core/services/seo.service';
 import { RevealOnScrollDirective } from '../../core/motion/directives/reveal.directive';
 import { StaggerDirective } from '../../core/motion/directives/stagger.directive';
@@ -11,9 +10,8 @@ import { AwaitingPanelComponent } from '../../shared/ui/awaiting-panel.component
 
 export type EventFilter = 'all' | 'upcoming' | 'past';
 
-function initiativeTag(initiativeId: string | undefined): string {
-  return initiatives.find((i) => i.id === initiativeId)?.tag ?? 'Event';
-}
+const eventsNote =
+  'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report, alongside illustrative placeholders while the rest of the calendar is finalized with the office.';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -21,42 +19,45 @@ function formatDate(iso: string): string {
 
 /**
  * Only the fields the event actually has are passed through, so the expanded
- * panel never renders a label with nothing behind it.
+ * panel never renders a label with nothing behind it. Source is the CMS's
+ * `published_events_upcoming`/`published_events_past` dynamic query
+ * (backend/apps/content/dynamic_queries.py) — the one canonical event
+ * source; nothing here falls back to the old `events.data.ts` array.
  */
-function toRow(ev: EventItem, index: number, isPast: boolean): EditorialRowItem {
-  const dateRange = formatDate(ev.date) + (ev.endDate ? ` – ${formatDate(ev.endDate)}` : '');
+function toRow(ev: EventQueryResult, index: number, isPast: boolean): EditorialRowItem {
+  const dateRange = ev.starts_at
+    ? formatDate(ev.starts_at) + (ev.ends_at ? ` – ${formatDate(ev.ends_at)}` : '')
+    : 'Date unconfirmed';
   const facts: { label: string; value: string }[] = [{ label: 'Date', value: dateRange }];
-  if (ev.time) facts.push({ label: 'Time', value: ev.time });
+  if (ev.time_label) facts.push({ label: 'Time', value: ev.time_label });
   if (ev.venue) facts.push({ label: 'Venue', value: ev.venue });
   if (ev.audience) facts.push({ label: 'Who', value: ev.audience });
-  if (ev.speaker) {
-    const speakerValue = [ev.speaker.name, ev.speaker.designation, ev.speaker.org].filter(Boolean).join(', ');
+  if (ev.organizer) facts.push({ label: 'Organizer', value: ev.organizer });
+  for (const speaker of ev.speakers ?? []) {
+    const speakerValue = [speaker.name, speaker.designation, speaker.org].filter(Boolean).join(', ');
     facts.push({ label: 'Speaker', value: speakerValue });
   }
-  if (ev.registration) facts.push({ label: 'Registration', value: ev.registration });
+  if (ev.registration_status) facts.push({ label: 'Registration', value: ev.registration_status });
   if (ev.turnout) facts.push({ label: 'Turnout', value: ev.turnout });
+  if (ev.pending) facts.push({ label: 'Status', value: 'Illustrative — not a confirmed historical event' });
 
-  const body = ev.description ? [ev.summary, ev.description] : ev.summary;
-  const cta = ev.initiative
-    ? { label: 'About this programme', href: '/initiatives/', fragment: ev.initiative }
-    : undefined;
-  const externalCta = ev.registrationLink
-    ? { label: 'Register', href: ev.registrationLink }
-    : ev.linkedinUrl
-      ? { label: 'View on LinkedIn', href: ev.linkedinUrl }
+  const body = ev.description ? [ev.summary ?? '', ev.description] : (ev.summary ?? '');
+  const externalCta = ev.registration_link
+    ? { label: 'Register', href: ev.registration_link }
+    : ev.linkedin_url
+      ? { label: 'View on LinkedIn', href: ev.linkedin_url }
       : undefined;
 
   return {
-    id: ev.id,
+    id: ev.slug,
     index: String(index + 1).padStart(2, '0'),
     title: ev.title,
-    tag: initiativeTag(ev.initiative),
-    when: isPast ? formatDate(ev.date) : dateRange,
+    tag: ev.kind || (ev.pending ? 'Illustrative' : 'Event'),
+    when: isPast ? (ev.starts_at ? formatDate(ev.starts_at) : 'Date unconfirmed') : dateRange,
     details: {
       body,
       facts,
       images: ev.gallery,
-      cta,
       externalCta,
     },
   };
@@ -72,10 +73,9 @@ export class EventsComponent implements OnInit {
   eventsNote = eventsNote;
   filter = signal<EventFilter>('all');
 
-  private split = splitEvents(events);
-
-  upcomingRows = this.split.upcoming.map((ev, i) => toRow(ev, i, false));
-  pastRows = this.split.past.map((ev, i) => toRow(ev, i, true));
+  upcomingRows = signal<EditorialRowItem[]>([]);
+  pastRows = signal<EditorialRowItem[]>([]);
+  loaded = signal(false);
 
   showUpcoming = computed(() => this.filter() !== 'past');
   showPast = computed(() => this.filter() !== 'upcoming');
@@ -87,6 +87,7 @@ export class EventsComponent implements OnInit {
   ];
 
   private seo = inject(SeoService);
+  private api = inject(ContentApiService);
 
   ngOnInit(): void {
     this.seo.set({
@@ -94,5 +95,16 @@ export class EventsComponent implements OnInit {
       description: eventsNote,
       path: '/events/',
     });
+    void this.load();
+  }
+
+  private async load(): Promise<void> {
+    const [upcoming, past] = await Promise.all([
+      this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
+      this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
+    ]);
+    this.upcomingRows.set(upcoming.results.map((ev, i) => toRow(ev, i, false)));
+    this.pastRows.set(past.results.map((ev, i) => toRow(ev, i, true)));
+    this.loaded.set(true);
   }
 }

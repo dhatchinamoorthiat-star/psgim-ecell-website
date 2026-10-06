@@ -600,11 +600,11 @@ def migrate_nec() -> PageMigration:
 # rows to list — not just the mechanism proven against test fixtures.
 
 _EVENT_SOURCE = [
-    {"id": "founders-on-campus-sep", "title": "Founders on Campus — bootstrapped SaaS from Coimbatore", "date": "2026-09-18", "time": "6:00 PM", "venue": "Auditorium", "audience": "Open to all", "summary": "A Coimbatore founder on going from a college side-project to a profitable software business without raising a rupee.", "registration": None, "pending": True},
-    {"id": "bootcamp-oct", "title": "48-Hour Bootcamp — problem statements from local industry", "date": "2026-10-04", "endDate": "2026-10-06", "time": "Fri – Sun", "venue": None, "audience": "Teams of 4", "summary": "A full build weekend. Problem statements from local manufacturers and D2C brands. Mentors on site throughout.", "registration": "open", "pending": True},
-    {"id": "nec-kickoff", "title": "NEC kick-off & orientation", "date": "2026-08-22", "time": None, "venue": "Seminar Hall", "audience": None, "summary": "The campaign team and open attendees walked through the NEC task list, timeline and how to get involved.", "turnout": "~120 attended", "registration": None, "pending": True},
-    {"id": "idea-clinic-jul", "title": "Idea Clinic — one-on-one feedback with mentors", "date": "2026-07-30", "time": None, "venue": None, "audience": "14 teams", "summary": "Fourteen teams, twenty-minute slots, one written next step each. Three were fast-tracked to the Bootcamp.", "turnout": "~45 attended", "registration": None, "pending": True},
-    {"id": "ideathon-2026-finals", "title": "Ideathon 2026 finals", "date": "2026-03-12", "time": None, "venue": None, "audience": "₹25k prize pool", "summary": "Nine teams pitched live to a panel of alumni and investors. The top three took a mentoring block into the summer.", "turnout": "~200 attended", "registration": None, "pending": True},
+    {"id": "founders-on-campus-sep", "title": "Founders on Campus — bootstrapped SaaS from Coimbatore", "initiative": "founders-on-campus", "date": "2026-09-18", "time": "6:00 PM", "venue": "Auditorium", "audience": "Open to all", "summary": "A Coimbatore founder on going from a college side-project to a profitable software business without raising a rupee.", "registration": None, "pending": True},
+    {"id": "bootcamp-oct", "title": "48-Hour Bootcamp — problem statements from local industry", "initiative": "bootcamp", "date": "2026-10-04", "endDate": "2026-10-06", "time": "Fri – Sun", "venue": None, "audience": "Teams of 4", "summary": "A full build weekend. Problem statements from local manufacturers and D2C brands. Mentors on site throughout.", "registration": "open", "pending": True},
+    {"id": "nec-kickoff", "title": "NEC kick-off & orientation", "initiative": "nec-drive", "date": "2026-08-22", "time": None, "venue": "Seminar Hall", "audience": None, "summary": "The campaign team and open attendees walked through the NEC task list, timeline and how to get involved.", "turnout": "~120 attended", "registration": None, "pending": True},
+    {"id": "idea-clinic-jul", "title": "Idea Clinic — one-on-one feedback with mentors", "initiative": "idea-clinic", "date": "2026-07-30", "time": None, "venue": None, "audience": "14 teams", "summary": "Fourteen teams, twenty-minute slots, one written next step each. Three were fast-tracked to the Bootcamp.", "turnout": "~45 attended", "registration": None, "pending": True},
+    {"id": "ideathon-2026-finals", "title": "Ideathon 2026 finals", "initiative": "ideathon", "date": "2026-03-12", "time": None, "venue": None, "audience": "₹25k prize pool", "summary": "Nine teams pitched live to a panel of alumni and investors. The top three took a mentoring block into the summer.", "turnout": "~200 attended", "registration": None, "pending": True},
 ]  # fmt: skip
 
 
@@ -633,6 +633,7 @@ def migrate_events() -> list[PageMigration]:
                     "registration_status": ev.get("registration") or "",
                     "turnout": ev.get("turnout") or "",
                     "pending": ev.get("pending", False),
+                    "related_initiative": ev.get("initiative") or "",
                 },
             )
         )

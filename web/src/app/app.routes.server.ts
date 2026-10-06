@@ -27,5 +27,10 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'meet-the-team/member/**', renderMode: RenderMode.Server },
   { path: 'blogs/**', renderMode: RenderMode.Server },
   { path: 'blogs', renderMode: RenderMode.Server },
+  // Events now reads from the CMS's `published_events_*` dynamic queries
+  // (apps.content.dynamic_queries) instead of a static TS array — same
+  // backend-reachability-at-build-time problem as `/blogs` above, same fix.
+  { path: 'events/**', renderMode: RenderMode.Server },
+  { path: 'events', renderMode: RenderMode.Server },
   { path: '**', renderMode: RenderMode.Prerender },
 ];

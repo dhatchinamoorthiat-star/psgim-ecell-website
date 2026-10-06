@@ -5,19 +5,21 @@ import { RouterLink, ActivatedRoute } from '@angular/router';
 import { hero, intro } from '../../core/data/about.data';
 import { why, whatHappens, ecellWay } from '../../core/data/home.data';
 import { initiatives, stages, toInitiativeRows } from '../../core/data/initiatives.data';
-import { events, eventsNote } from '../../core/data/events.data';
 import { nec, preliminaryTotals } from '../../core/data/nec.data';
 import { stats, drive } from '../../core/data/stats.data';
 import { site, primaryCta } from '../../core/data/site.data';
 import {
-  ecosystem,
+  baseEcosystem,
+  eventEntries,
   ecosystemStats,
   categoryLabels,
   categoryOrder,
   IndexCategory,
   IndexEntry,
 } from '../../core/data/ecosystem.data';
-import { Initiative, JourneyStage, EventItem } from '../../core/models/models';
+import { Initiative, JourneyStage } from '../../core/models/models';
+import { ContentApiService } from '../../core/services/content-api.service';
+import { EventQueryResult } from '../../shared/blocks/block.types';
 import { SeoService } from '../../core/services/seo.service';
 import { CinematicBootService } from '../../core/services/cinematic-boot.service';
 import { RevealOnScrollDirective } from '../../core/motion/directives/reveal.directive';
@@ -34,7 +36,7 @@ export type HeroPhase = 'video' | 'video-complete' | 'headline' | 'images' | 're
 export interface RelationshipChain {
   initiative: Initiative;
   stage: JourneyStage | null;
-  event: EventItem | null;
+  event: EventQueryResult | null;
   nec: {
     title: string;
     organiser: string;
@@ -100,20 +102,43 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ourTrack = nec.tracks.find((t) => t.ours)?.name ?? '';
   preliminaryCleared = nec.progress.tasks.length;
 
-  eventsNote = eventsNote;
-  activityRows = events.slice(0, 4).map((ev, i) => ({
-    id: `activity-${ev.id}`,
-    index: String(i + 1).padStart(2, '0'),
-    title: ev.title,
-    summary: ev.summary,
-    tag: initiatives.find((init) => init.id === ev.initiative)?.tag,
-    href: '/events/',
-  }));
+  /**
+   * Same canonical note as EventsComponent (both read from the CMS's
+   * `published_events_*` queries now — no local copy to drift out of sync
+   * with).
+   */
+  eventsNote =
+    'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report, alongside illustrative placeholders while the rest of the calendar is finalized with the office.';
+
+  /**
+   * Populated client-side only (see `loadEvents`) — the homepage stays a
+   * build-time-prerendered static route (`app.routes.server.ts`'s catch-all
+   * `RenderMode.Prerender`), so a backend fetch here must not run during
+   * SSR/prerender, unlike `/events` and `/blogs` which were switched to
+   * `RenderMode.Server` specifically because their entire page *is* the
+   * event/blog listing. Here the event teaser is a small section of an
+   * otherwise static page, so the smallest correct fix is to fetch after
+   * hydration instead of changing the whole homepage's render mode.
+   */
+  private eventsSignal = signal<EventQueryResult[]>([]);
+  readonly activityRows = computed(() =>
+    this.eventsSignal()
+      .slice(0, 4)
+      .map((ev, i) => ({
+        id: `activity-${ev.slug}`,
+        index: String(i + 1).padStart(2, '0'),
+        title: ev.title,
+        summary: ev.summary ?? '',
+        tag: initiatives.find((init) => init.id === ev.related_initiative)?.tag,
+        href: '/events/',
+      })),
+  );
 
   private seo = inject(SeoService);
   private bootService = inject(CinematicBootService);
   private platformId = inject(PLATFORM_ID);
   private route = inject(ActivatedRoute);
+  private api = inject(ContentApiService);
 
   // ── COLLECTIVE INDEX DISCOVERY STATE ──
   readonly ecosystemStats = ecosystemStats;
@@ -131,7 +156,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!initiative) return null;
 
     const stage = stages.find((s) => s.id === initiative.stage) ?? null;
-    const event = events.find((e) => e.initiative === initiative.id) ?? null;
+    const event = this.eventsSignal().find((e) => e.related_initiative === initiative.id) ?? null;
 
     let necData: RelationshipChain['nec'] = null;
     if (initiative.id === 'nec-drive' || initiative.href === '/nec/') {
@@ -147,9 +172,18 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     return { initiative, stage, event, nec: necData };
   });
 
+  /** `baseEcosystem` plus the "Events" category, built from the same
+   * API-fetched `eventsSignal` as the activity teaser and relationship
+   * chain above — one fetch, three consumers, no second event source. */
+  private readonly ecosystem = computed<IndexEntry[]>(() => [
+    ...baseEcosystem,
+    ...eventEntries(this.eventsSignal()),
+  ]);
+
   readonly grouped = computed(() => {
     const filter = this.activeFilter();
     const categories = filter === 'all' ? categoryOrder : [filter];
+    const ecosystem = this.ecosystem();
 
     return categories
       .map((cat) => ({
@@ -398,7 +432,16 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (!reduced && !this.bootService.hasBooted() && this.bootService.shouldPlayVideo()) {
         this.heroVideoPreload.set('auto');
       }
+      void this.loadEvents();
     }
+  }
+
+  private async loadEvents(): Promise<void> {
+    const [upcoming, past] = await Promise.all([
+      this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
+      this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
+    ]);
+    this.eventsSignal.set([...upcoming.results, ...past.results]);
   }
 
   setFilter(key: IndexCategory | 'all'): void {

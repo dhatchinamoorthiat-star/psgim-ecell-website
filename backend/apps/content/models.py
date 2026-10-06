@@ -251,6 +251,12 @@ class EventDetail(TimeStampedModel):
     # doesn't have, and serving the already-downloaded local files is the
     # minimum change that gets production off LinkedIn's CDN.
     gallery = models.JSONField(default=list, blank=True)
+    # Join key only, not a FK: initiatives aren't CMS content yet (they still
+    # live in Angular's `initiatives.data.ts`), so this just carries that
+    # catalogue's string id (e.g. "bootcamp") for HomeComponent's
+    # initiative → event lookup. No second initiative model/relationship —
+    # it's the same id the Angular side already treats as canonical.
+    related_initiative = models.CharField(max_length=80, blank=True)
 
     def __str__(self):
         return self.title

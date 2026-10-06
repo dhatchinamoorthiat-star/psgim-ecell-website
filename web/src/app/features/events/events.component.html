@@ -4,7 +4,7 @@
       <span class="kicker">Calendar</span>
       <h1>Events</h1>
       <p class="lede">{{ eventsNote }}</p>
-      <ui-pending-flag label="Upcoming dates are illustrative — past events below are confirmed" style="display:inline-block; margin-top: var(--s-5)"></ui-pending-flag>
+      <ui-pending-flag label="Entries tagged “Illustrative” are placeholders, not confirmed events" style="display:inline-block; margin-top: var(--s-5)"></ui-pending-flag>
     </div>
     <div class="editorial-illustration-frame">
       <img
@@ -35,9 +35,9 @@
   @if (showUpcoming()) {
     <div style="margin-top: var(--s-7)">
       <div class="section-heading"><span class="kicker">Upcoming</span><h2>What's next</h2></div>
-      @if (upcomingRows.length) {
-        <app-editorial-row-list [items]="upcomingRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-      } @else {
+      @if (upcomingRows().length) {
+        <app-editorial-row-list [items]="upcomingRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+      } @else if (loaded()) {
         <ui-awaiting-panel
           heading="No upcoming events scheduled"
           message="We are finalizing dates and speaker panels for our next campus sessions. Check back soon or explore past events."
@@ -52,9 +52,9 @@
   @if (showPast()) {
     <div style="margin-top: var(--s-8)">
       <div class="section-heading"><span class="kicker">Past</span><h2>What happened</h2></div>
-      @if (pastRows.length) {
-        <app-editorial-row-list [items]="pastRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-      } @else {
+      @if (pastRows().length) {
+        <app-editorial-row-list [items]="pastRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+      } @else if (loaded()) {
         <p style="color: var(--ink-2); margin-top: var(--s-5)">No past events recorded yet.</p>
       }
     </div>

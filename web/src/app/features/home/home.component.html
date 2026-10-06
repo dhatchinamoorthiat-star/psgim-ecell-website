@@ -272,7 +272,9 @@
                         <h5 class="point-headline">{{ ev.title }}</h5>
                         <p class="point-lede">{{ ev.summary }}</p>
                         <div class="point-meta">
-                          <span>Date: <strong>{{ ev.date }}</strong></span>
+                          @if (ev.starts_at) {
+                            <span>Date: <strong>{{ ev.starts_at | date: 'yyyy-MM-dd' }}</strong></span>
+                          }
                           @if (ev.venue) {
                             <span>Venue: <strong>{{ ev.venue }}</strong></span>
                           }
@@ -413,7 +415,7 @@
     <h2>The kind of thing we run</h2>
   </div>
   <ui-pending-flag [label]="eventsNote" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
-  <app-editorial-row-list [items]="activityRows" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  <app-editorial-row-list [items]="activityRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
   <div class="hero-actions" style="margin-top: var(--s-6)">
     <a routerLink="/events/" class="btn btn-ghost">The full calendar →</a>
   </div>

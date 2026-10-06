@@ -75,6 +75,7 @@ def _serialize_event(item: ContentItem) -> dict:
         "speakers": d.speakers,
         "featured_image": d.featured_image,
         "gallery": d.gallery,
+        "related_initiative": d.related_initiative,
         "seo": item.published_version.seo,
     }
 
