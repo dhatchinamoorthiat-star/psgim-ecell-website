@@ -114,8 +114,14 @@ def test_pending_content_survives_migration(db):
     assert vision_block["props"]["pending"] is True
     assert vision_block["props"]["pending_label"]
 
+    # Only the illustrative sample events (`_EVENT_SOURCE`) are pending; the
+    # real, LinkedIn-sourced events (`_LINKEDIN_EVENT_SOURCE`) are confirmed
+    # history and must never carry the "Illustrative" marker.
     event_migrations = [m for m in PAGE_MIGRATIONS if m.content_type == "event"]
-    assert event_migrations and all(m.detail_fields["pending"] is True for m in event_migrations)
+    sample_events = [m for m in event_migrations if m.detail_fields.get("source") != "linkedin"]
+    linkedin_events = [m for m in event_migrations if m.detail_fields.get("source") == "linkedin"]
+    assert sample_events and all(m.detail_fields["pending"] is True for m in sample_events)
+    assert linkedin_events and all(m.detail_fields["pending"] is False for m in linkedin_events)
 
 
 def test_events_migrate_with_full_metadata_for_dynamic_listing(db):

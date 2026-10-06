@@ -224,11 +224,33 @@ class EventDetail(TimeStampedModel):
     ends_at = models.DateTimeField(null=True, blank=True)
     venue = models.CharField(max_length=200, blank=True)
     summary = models.CharField(max_length=600, blank=True)
+    description = models.TextField(blank=True)
     time_label = models.CharField(max_length=60, blank=True)
     audience = models.CharField(max_length=120, blank=True)
+    organizer = models.CharField(max_length=200, blank=True)
     registration_status = models.CharField(max_length=40, blank=True)
+    registration_link = models.URLField(blank=True)
     turnout = models.CharField(max_length=120, blank=True)
     pending = models.BooleanField(default=False)
+    # Provenance (task: "An event should not be imported twice if the same
+    # LinkedIn URL already exists" — checked by the importer, not a DB
+    # constraint, since blank/duplicate-null values are legitimate for
+    # events with no LinkedIn post).
+    linkedin_url = models.URLField(blank=True)
+    source = models.CharField(max_length=40, blank=True, help_text="e.g. 'linkedin', 'official_pdf', 'manual'.")
+    hashtags = models.JSONField(default=list, blank=True)
+    # [{"name": str, "designation": str, "org": str}, ...] — a small enough,
+    # event-specific shape that a dedicated model/table would be premature;
+    # matches how `gallery` below is already represented.
+    speakers = models.JSONField(default=list, blank=True)
+    featured_image = models.CharField(max_length=500, blank=True)
+    # [{"src": str, "alt": str}, ...]. Local static paths (e.g.
+    # "/events/<slug>/01.jpg") until media uploads go through `MediaAsset`
+    # (Cloudinary) — see docs note on `MediaAsset` for why that wasn't
+    # wired up here: it requires real Cloudinary credentials this import
+    # doesn't have, and serving the already-downloaded local files is the
+    # minimum change that gets production off LinkedIn's CDN.
+    gallery = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.title

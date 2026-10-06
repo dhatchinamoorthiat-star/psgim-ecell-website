@@ -666,6 +666,149 @@ def migrate_blogs() -> list[PageMigration]:
     return migrations
 
 
+# --- LinkedIn-sourced events (web/src/app/core/data/events.data.ts `linkedInEvents`) ---
+# Transcribed verbatim from the 6 confirmed events a prior pass extracted
+# from the E-Cell LinkedIn page's public (logged-out) view. `source` is
+# "linkedin" and `pending` is always False — these are real past events,
+# not the illustrative placeholders in `_EVENT_SOURCE` above. `EUREKA 2026`
+# and the `YI Learning Conclave` were deliberately excluded from this list
+# (and therefore never get a ContentItem at all) because neither post gave
+# an actual event date — task: "Do not guess dates ... Keep them as
+# unpublished/draft records or otherwise flag them as requiring
+# verification." Not creating the item is the simplest form of "draft":
+# there is nothing for `published_events_past` to pick up until someone
+# supplies a real date and adds it here.
+
+_LINKEDIN_EVENT_SOURCE = [
+    {
+        "id": "un-day-2025",
+        "title": "UN Day 2025 — Rebooting Sustainability: Youth Startups in the E-Waste Economy",
+        "date": "2025-10-23",
+        "time": "2:00 PM – 4:30 PM",
+        "venue": "CAL Lab, PSG Institute of Management",
+        "audience": "Open to all",
+        "summary": "A workshop marking United Nations Day 2025, exploring how sustainability and innovation can power the e-waste economy and shape responsible entrepreneurship.",
+        "description": 'Organized in association with Green Era Recyclers, the session brought together management students, young entrepreneurs and sustainability advocates to explore solutions for responsible production and consumption, aligned with the UN Sustainable Development Goals. Highlights included a keynote on the e-waste economy, a "Pitch the Future" ideation sprint, and a UN Day oath for responsible innovation.',
+        "speaker": {"name": "Prasanth Omanakuttan", "designation": "Founder", "org": "Green Era Recyclers"},
+        "gallery": [
+            {"src": "/events/un-day-2025/01.jpg", "alt": "UN Day 2025 event poster"},
+            {"src": "/events/un-day-2025/02-recap.jpg", "alt": "Students and faculty at the UN Day 2025 workshop"},
+        ],
+        "linkedin_url": "https://www.linkedin.com/posts/e-cell-psgim_psgim-unsdg-unday-activity-7388789673655066624-j4lj",
+        "hashtags": ["PSGIM", "ECell", "UNDay2025", "CircularEconomy", "Sustainability", "Entrepreneurship", "EwasteEconomy"],
+    },
+    {
+        "id": "yes-26-business-pitch",
+        "title": "YES '26 — Business Pitch Competition",
+        "date": "2026-02-27",
+        "time": None,
+        "venue": "PSG Institute of Management",
+        "audience": "Open to all · Registration fee ₹300 (includes lunch)",
+        "summary": "A business pitch competition at YES '26, where student founders presented startup concepts for expert feedback and prize money.",
+        "description": "Part of YES '26, a programme of workshops and expert talks designed to build entrepreneurial thinking. The Business Pitch Competition gave participants the chance to present their startup concept, receive expert feedback, and compete for prizes.",
+        "registration": "closed",
+        "gallery": [{"src": "/events/yes-26/01.jpg", "alt": "YES '26 Business Pitch Competition poster"}],
+        "linkedin_url": "https://www.linkedin.com/posts/e-cell-psgim_yes26-entrepreneurship-psgim-activity-7431925851857788928-wRld",
+        "hashtags": ["YES26", "Entrepreneurship", "PSGIM", "BusinessPitch", "Innovation"],
+    },
+    {
+        "id": "sustainability-certifications-tuv-sud",
+        "title": "Sustainability Certifications and Career Opportunities",
+        "date": "2026-03-04",
+        "time": None,
+        "venue": None,
+        "audience": None,
+        "summary": "A session on sustainability-driven careers and the industry certifications that support them, led by a certification-industry expert.",
+        "description": "The session introduced students to key concepts in sustainability, the certifications organizations require, and the growing importance of environmental compliance, alongside career opportunities and skill development in sustainability and management systems.",
+        "speaker": {"name": "S. Loganathan", "designation": "General Manager – Management Systems", "org": "TÜV SÜD South Asia Pvt. Ltd."},
+        "gallery": [{"src": "/events/sustainability-tuv-sud/01.jpg", "alt": "Sustainability certifications session with TÜV SÜD"}],
+        "linkedin_url": "https://www.linkedin.com/posts/e-cell-psgim_sustainability-ecell-skilldevelopment-activity-7437122123149660160-7f52",
+        "hashtags": ["Sustainability", "ECell", "SkillDevelopment", "Entrepreneurship", "FutureCareers"],
+    },
+    {
+        "id": "ipr-awareness-cii",
+        "title": "IPR Awareness Program with CII",
+        "date": "2026-04-09",
+        "time": None,
+        "venue": None,
+        "audience": "Students and faculty",
+        "summary": "An awareness program on Intellectual Property Rights, covering patents, trademarks, copyrights and the filing process, delivered with the Confederation of Indian Industry.",
+        "description": "The session gave a comprehensive understanding of patents, trademarks and copyrights, along with practical insights into the IPR filing process — from prior art search to application and examination — bridging the gap between creativity and legal protection.",
+        "speaker": {"name": "Mahalakshmi Suresh", "designation": "Executive Officer – IPR", "org": "Confederation of Indian Industry (CII)"},
+        "gallery": [{"src": "/events/ipr-awareness-cii/01.jpg", "alt": "IPR Awareness Program session with CII"}],
+        "linkedin_url": "https://www.linkedin.com/posts/e-cell-psgim_ecellpsgim-ipr-innovation-activity-7448072024205205504-pVhZ",
+        "hashtags": ["ECellPSGIM", "IPR", "Innovation", "Entrepreneurship", "Startups", "CII", "PSGIM"],
+    },
+    {
+        "id": "in-between-the-chapters",
+        "title": "In Between the Chapters — Storytelling Session",
+        "date": "2026-03-12",
+        "time": None,
+        "venue": None,
+        "audience": None,
+        "summary": "A storytelling workshop guiding participants to weave connections between ideas and craft narratives that bridge existing storylines.",
+        "description": "Facilitated by Alan Hadle Hamilton, the session encouraged students to think beyond conventional perspectives. Participants actively contributed to discussions, brainstormed creatively and developed unique story concepts, strengthening both storytelling ability and teamwork.",
+        "speaker": {"name": "Alan Hadle Hamilton"},
+        "gallery": [
+            {"src": "/events/in-between-the-chapters/01.jpg", "alt": "In Between the Chapters storytelling session, photo 1"},
+            {"src": "/events/in-between-the-chapters/02.jpg", "alt": "In Between the Chapters storytelling session, photo 2"},
+            {"src": "/events/in-between-the-chapters/03.jpg", "alt": "In Between the Chapters storytelling session, photo 3"},
+            {"src": "/events/in-between-the-chapters/04.jpg", "alt": "In Between the Chapters storytelling session, photo 4"},
+        ],
+        "linkedin_url": "https://www.linkedin.com/posts/e-cell-psgim_inbetweenthechapters-storytellingsession-activity-7442056034590035968-P1f4",
+        "hashtags": ["InBetweenTheChapters", "StorytellingSession", "EcellPSGIM", "PSGIM"],
+    },
+    {
+        "id": "wildcard-ventures",
+        "title": "Wildcard Ventures",
+        "date": "2026-09-10",
+        "time": None,
+        "venue": None,
+        "audience": "Open to all",
+        "summary": "A rapid-ideation challenge: build a startup concept from three random words and pitch it in sixty seconds.",
+        "description": "Participants received three random words, built a startup idea incorporating all three, and submitted a 60-second video pitch on Instagram. Registration closed 7 September 2026, video submissions were due 9 September, and pitching concluded 10 September. Winners and all participants received certificates.",
+        "registration": "closed",
+        "gallery": [{"src": "/events/wildcard-ventures/01.jpg", "alt": "Wildcard Ventures challenge poster"}],
+        "linkedin_url": "https://www.linkedin.com/posts/e-cell-psgim_wildcardventures-ecellpsgim-nec2026-activity-7502228774638321664-XFmz",
+        "hashtags": ["WildcardVentures", "ECellPSGIM", "NEC2026", "Entrepreneurship", "StartupChallenge", "Innovation"],
+    },
+]  # fmt: skip
+
+
+def migrate_linkedin_events() -> list[PageMigration]:
+    migrations = []
+    for ev in _LINKEDIN_EVENT_SOURCE:
+        speaker = ev.get("speaker")
+        blocks = [{"id": "event-hero", "type": "hero", "props": {"heading": ev["title"], "description": ev["summary"]}}]
+        migrations.append(
+            PageMigration(
+                content_type="event", slug=ev["id"], title=ev["title"],
+                seo={"title": ev["title"], "description": ev["summary"], "path": f"/events/{ev['id']}/"},
+                blocks=blocks,
+                detail_fields={
+                    "starts_at": _parse_iso_date_utc(ev["date"]),
+                    "ends_at": _parse_iso_date_utc(ev.get("endDate")),
+                    "venue": ev.get("venue") or "",
+                    "summary": ev["summary"],
+                    "description": ev.get("description") or "",
+                    "time_label": ev.get("time") or "",
+                    "audience": ev.get("audience") or "",
+                    "registration_status": ev.get("registration") or "",
+                    "registration_link": ev.get("registration_link") or "",
+                    "turnout": ev.get("turnout") or "",
+                    "pending": False,
+                    "linkedin_url": ev.get("linkedin_url") or "",
+                    "source": "linkedin",
+                    "hashtags": ev.get("hashtags") or [],
+                    "speakers": [speaker] if speaker else [],
+                    "gallery": ev.get("gallery") or [],
+                    "featured_image": (ev.get("gallery") or [{}])[0].get("src", ""),
+                },
+            )
+        )
+    return migrations
+
+
 # --- Events / Blogs *listing* pages ---
 # The individual event/blog ContentItems above are the data `dynamic_query`
 # lists; these are the actual `/events` and `/blogs` route content — each a
@@ -725,5 +868,6 @@ PAGE_MIGRATIONS: list[PageMigration] = [
     migrate_events_page(),
     migrate_blogs_page(),
     *migrate_events(),
+    *migrate_linkedin_events(),
     *migrate_blogs(),
 ]

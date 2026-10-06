@@ -54,13 +54,13 @@ export const rolesNote = 'Assigned from the core team. Roles are confirmed with 
 export const necTeam: NecTeam = {
   lead: { name: 'Nimisha Sivakumar', role: 'Team Leader' },
   members: [
-    { name: 'Jegadharani' },
-    { name: 'Charan Balaji' },
     { name: 'Sakia NS' },
     { name: 'Suthaarshiny R S' },
     { name: 'Susrutha Dhanaraj' },
     { name: 'Shabharish M' },
     { name: 'Nithin Teja S' },
+    { name: 'Jegadharani' },
+    { name: 'Charan Balaji' },
     { name: 'Pranav S V' },
     { name: 'Shiva Monish R' },
     { name: 'Prabodhini A' },

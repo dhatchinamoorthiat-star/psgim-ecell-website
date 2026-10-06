@@ -50,6 +50,41 @@ def _block_types_by_key() -> dict:
     return {bt.key: bt for bt in ContentBlockType.objects.filter(is_active=True)}
 
 
+def _find_duplicate_event(migration: PageMigration) -> ContentItem | None:
+    """
+    Event-specific duplicate guard beyond the (content_type, slug) uniqueness
+    `get_or_create` already enforces (task: "The LinkedIn URL should be
+    treated as an important external identifier... also use title + date as
+    a secondary duplicate check"). Only matches a *different* slug — the
+    normal update-in-place path already handles a rerun against the same
+    slug, so this only ever fires for an accidental second import of the
+    same real-world event under a new id.
+    """
+    if migration.content_type != "event":
+        return None
+    linkedin_url = migration.detail_fields.get("linkedin_url")
+    if linkedin_url:
+        existing = (
+            EventDetail.objects.filter(linkedin_url=linkedin_url)
+            .exclude(content_item__slug=migration.slug)
+            .select_related("content_item")
+            .first()
+        )
+        if existing:
+            return existing.content_item
+    starts_at = migration.detail_fields.get("starts_at")
+    if starts_at:
+        existing = (
+            EventDetail.objects.filter(title=migration.title, starts_at=starts_at)
+            .exclude(content_item__slug=migration.slug)
+            .select_related("content_item")
+            .first()
+        )
+        if existing:
+            return existing.content_item
+    return None
+
+
 def apply_migration(migration: PageMigration, *, actor: User) -> tuple[ContentItem, bool]:
     """
     Returns (item, changed). `changed` is False when a rerun found the item
@@ -59,6 +94,10 @@ def apply_migration(migration: PageMigration, *, actor: User) -> tuple[ContentIt
     validate_blocks_document(document, _block_types_by_key())
 
     with transaction.atomic():
+        duplicate = _find_duplicate_event(migration)
+        if duplicate is not None:
+            return duplicate, False  # same LinkedIn URL / title+date already imported under another slug
+
         item, created = ContentItem.objects.select_for_update().get_or_create(
             content_type=migration.content_type, slug=migration.slug, defaults={"created_by": actor}
         )
