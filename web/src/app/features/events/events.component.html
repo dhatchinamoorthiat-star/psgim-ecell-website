@@ -32,31 +32,43 @@
     }
   </div>
 
-  @if (showUpcoming()) {
-    <div style="margin-top: var(--s-7)">
-      <div class="section-heading"><span class="kicker">Upcoming</span><h2>What's next</h2></div>
-      @if (upcomingRows().length) {
-        <app-editorial-row-list [items]="upcomingRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-      } @else if (loaded()) {
-        <ui-awaiting-panel
-          heading="No upcoming events scheduled"
-          message="We are finalizing dates and speaker panels for our next campus sessions. Check back soon or explore past events."
-          illustration="/illustrations/about/idea-strategy-blue.jpg"
-          illustrationAlt="Calendar planning illustration"
-          style="display: block; margin-top: var(--s-5)"
-        ></ui-awaiting-panel>
-      }
-    </div>
-  }
+  @if (status() === 'ready') {
+    @if (showUpcoming()) {
+      <div style="margin-top: var(--s-7)">
+        <div class="section-heading"><span class="kicker">Upcoming</span><h2>What's next</h2></div>
+        @if (upcomingRows().length) {
+          <app-editorial-row-list [items]="upcomingRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+        } @else {
+          <ui-awaiting-panel
+            heading="No upcoming events scheduled"
+            message="We are finalizing dates and speaker panels for our next campus sessions. Check back soon or explore past events."
+            illustration="/illustrations/about/idea-strategy-blue.jpg"
+            illustrationAlt="Calendar planning illustration"
+            style="display: block; margin-top: var(--s-5)"
+          ></ui-awaiting-panel>
+        }
+      </div>
+    }
 
-  @if (showPast()) {
-    <div style="margin-top: var(--s-8)">
-      <div class="section-heading"><span class="kicker">Past</span><h2>What happened</h2></div>
-      @if (pastRows().length) {
-        <app-editorial-row-list [items]="pastRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
-      } @else if (loaded()) {
-        <p style="color: var(--ink-2); margin-top: var(--s-5)">No past events recorded yet.</p>
-      }
-    </div>
+    @if (showPast()) {
+      <div style="margin-top: var(--s-8)">
+        <div class="section-heading"><span class="kicker">Past</span><h2>What happened</h2></div>
+        @if (pastRows().length) {
+          <app-editorial-row-list [items]="pastRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+        } @else {
+          <p style="color: var(--ink-2); margin-top: var(--s-5)">No past events recorded yet.</p>
+        }
+      </div>
+    }
+  } @else {
+    <ui-load-state
+      [state]="status() === 'error' ? 'error' : 'loading'"
+      [rows]="4"
+      loadingLabel="Loading events…"
+      errorHeading="Events are temporarily unavailable"
+      errorMessage="We couldn't load the events calendar just now. This is usually brief — please try again in a moment."
+      (retry)="retry()"
+      style="display: block; margin-top: var(--s-7)"
+    ></ui-load-state>
   }
 </section>

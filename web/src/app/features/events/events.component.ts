@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ContentApiService } from '../../core/services/content-api.service';
 import { EventQueryResult } from '../../shared/blocks/block.types';
 import { SeoService } from '../../core/services/seo.service';
@@ -7,8 +8,12 @@ import { StaggerDirective } from '../../core/motion/directives/stagger.directive
 import { PendingFlagComponent } from '../../shared/ui/pending-flag.component';
 import { EditorialRowListComponent, EditorialRowItem } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
 import { AwaitingPanelComponent } from '../../shared/ui/awaiting-panel.component';
+import { LoadStateComponent } from '../../shared/ui/load-state.component';
 
 export type EventFilter = 'all' | 'upcoming' | 'past';
+
+/** `ready` means the API answered — including with zero events (the empty states). */
+export type EventsStatus = 'loading' | 'ready' | 'error';
 
 const eventsNote =
   'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report, alongside illustrative placeholders while the rest of the calendar is finalized with the office.';
@@ -66,7 +71,13 @@ function toRow(ev: EventQueryResult, index: number, isPast: boolean): EditorialR
 @Component({
   selector: 'app-events',
   standalone: true,
-  imports: [RevealOnScrollDirective, PendingFlagComponent, EditorialRowListComponent, AwaitingPanelComponent],
+  imports: [
+    RevealOnScrollDirective,
+    PendingFlagComponent,
+    EditorialRowListComponent,
+    AwaitingPanelComponent,
+    LoadStateComponent,
+  ],
   templateUrl: './events.component.html',
 })
 export class EventsComponent implements OnInit {
@@ -75,7 +86,7 @@ export class EventsComponent implements OnInit {
 
   upcomingRows = signal<EditorialRowItem[]>([]);
   pastRows = signal<EditorialRowItem[]>([]);
-  loaded = signal(false);
+  status = signal<EventsStatus>('loading');
 
   showUpcoming = computed(() => this.filter() !== 'past');
   showPast = computed(() => this.filter() !== 'upcoming');
@@ -88,6 +99,7 @@ export class EventsComponent implements OnInit {
 
   private seo = inject(SeoService);
   private api = inject(ContentApiService);
+  private platformId = inject(PLATFORM_ID);
 
   ngOnInit(): void {
     this.seo.set({
@@ -95,16 +107,36 @@ export class EventsComponent implements OnInit {
       description: eventsNote,
       path: '/events/',
     });
+    // Browser only: the route is prerendered at build time, when no API is
+    // reachable, so the static HTML carries the loading state and the
+    // browser fetches after hydration (same pattern as HomeComponent).
+    if (isPlatformBrowser(this.platformId)) {
+      void this.load();
+    }
+  }
+
+  /** Bound to the error state's Retry button. */
+  retry(): void {
     void this.load();
   }
 
+  /**
+   * Never rejects: any failure (API unavailable, network error, timeout,
+   * malformed response) lands in the `error` state rather than leaving the
+   * sections empty and the page looking finished.
+   */
   private async load(): Promise<void> {
-    const [upcoming, past] = await Promise.all([
-      this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
-      this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
-    ]);
-    this.upcomingRows.set(upcoming.results.map((ev, i) => toRow(ev, i, false)));
-    this.pastRows.set(past.results.map((ev, i) => toRow(ev, i, true)));
-    this.loaded.set(true);
+    this.status.set('loading');
+    try {
+      const [upcoming, past] = await Promise.all([
+        this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
+        this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
+      ]);
+      this.upcomingRows.set(upcoming.results.map((ev, i) => toRow(ev, i, false)));
+      this.pastRows.set(past.results.map((ev, i) => toRow(ev, i, true)));
+      this.status.set('ready');
+    } catch {
+      this.status.set('error');
+    }
   }
 }

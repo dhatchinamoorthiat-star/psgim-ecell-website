@@ -30,6 +30,8 @@ import { ProgressBarComponent } from '../../shared/ui/progress-bar.component';
 import { PendingFlagComponent } from '../../shared/ui/pending-flag.component';
 import { AnimatedBackgroundComponent } from '../../shared/ui/animated-background/animated-background.component';
 import { EditorialRowListComponent } from '../../shared/ui/editorial-row-list/editorial-row-list.component';
+import { AwaitingPanelComponent } from '../../shared/ui/awaiting-panel.component';
+import { LoadStateComponent } from '../../shared/ui/load-state.component';
 
 export type HeroPhase = 'video' | 'video-complete' | 'headline' | 'images' | 'ready';
 
@@ -78,6 +80,8 @@ export interface HeroCollageImage {
     PendingFlagComponent,
     AnimatedBackgroundComponent,
     EditorialRowListComponent,
+    AwaitingPanelComponent,
+    LoadStateComponent,
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css',
@@ -121,6 +125,13 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
    * hydration instead of changing the whole homepage's render mode.
    */
   private eventsSignal = signal<EventQueryResult[]>([]);
+  /**
+   * Starts as `loading` so the prerendered HTML carries the skeleton, not an
+   * empty list. On failure only the event teaser shows an error; the rest of
+   * the homepage (ecosystem index, relationship chain) simply has no event
+   * entries, which is what it already rendered before any events existed.
+   */
+  readonly eventsStatus = signal<'loading' | 'ready' | 'error'>('loading');
   readonly activityRows = computed(() =>
     this.eventsSignal()
       .slice(0, 4)
@@ -436,12 +447,24 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** Bound to the event teaser's Retry button. */
+  retryEvents(): void {
+    void this.loadEvents();
+  }
+
+  /** Never rejects — failures land in `eventsStatus` = `error`. */
   private async loadEvents(): Promise<void> {
-    const [upcoming, past] = await Promise.all([
-      this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
-      this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
-    ]);
-    this.eventsSignal.set([...upcoming.results, ...past.results]);
+    this.eventsStatus.set('loading');
+    try {
+      const [upcoming, past] = await Promise.all([
+        this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
+        this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
+      ]);
+      this.eventsSignal.set([...upcoming.results, ...past.results]);
+      this.eventsStatus.set('ready');
+    } catch {
+      this.eventsStatus.set('error');
+    }
   }
 
   setFilter(key: IndexCategory | 'all'): void {

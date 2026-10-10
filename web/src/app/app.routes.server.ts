@@ -1,5 +1,6 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 import { verticalSlugs } from './core/data/team.data';
+import { BLOG_ARTICLES } from './core/data/blog-series.data';
 
 export const serverRoutes: ServerRoute[] = [
   // The member platform is session-dependent: rendered in the browser only,
@@ -25,12 +26,22 @@ export const serverRoutes: ServerRoute[] = [
   // unbounded parameter, so its URLs cannot be enumerated for prerendering.
   // Resolved per request so legacy external links still redirect.
   { path: 'meet-the-team/member/**', renderMode: RenderMode.Server },
-  { path: 'blogs/**', renderMode: RenderMode.Server },
-  { path: 'blogs', renderMode: RenderMode.Server },
-  // Events now reads from the CMS's `published_events_*` dynamic queries
-  // (apps.content.dynamic_queries) instead of a static TS array — same
-  // backend-reachability-at-build-time problem as `/blogs` above, same fix.
-  { path: 'events/**', renderMode: RenderMode.Server },
-  { path: 'events', renderMode: RenderMode.Server },
+  // Production is a static Cloudflare Pages upload with no SSR server, so a
+  // RenderMode.Server route emits no HTML and Pages answers it with the root
+  // index.html (the homepage). Both routes below are therefore prerendered.
+  //
+  // Blogs read only the static `blog-series.data.ts` catalogue, so every
+  // article URL is known at build time.
+  { path: 'blogs', renderMode: RenderMode.Prerender },
+  {
+    path: 'blogs/:slug',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: async () =>
+      [...new Set(BLOG_ARTICLES.map((a) => a.slug))].map((slug) => ({ slug })),
+  },
+  // Events come from the API at runtime. The prerendered page is the shell
+  // (hero, filters, loading skeleton); EventsComponent fetches only in the
+  // browser, so no backend is needed at build time.
+  { path: 'events', renderMode: RenderMode.Prerender },
   { path: '**', renderMode: RenderMode.Prerender },
 ];

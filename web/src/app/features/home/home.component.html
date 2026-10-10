@@ -415,7 +415,27 @@
     <h2>The kind of thing we run</h2>
   </div>
   <ui-pending-flag [label]="eventsNote" style="margin-top: var(--s-4); display:inline-block"></ui-pending-flag>
-  <app-editorial-row-list [items]="activityRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+  @if (eventsStatus() === 'ready') {
+    @if (activityRows().length) {
+      <app-editorial-row-list [items]="activityRows()" style="display: block; margin-top: var(--s-6)"></app-editorial-row-list>
+    } @else {
+      <ui-awaiting-panel
+        heading="No events published yet"
+        message="The calendar is being finalized with the office. Published events will appear here."
+        style="display: block; margin-top: var(--s-6)"
+      ></ui-awaiting-panel>
+    }
+  } @else {
+    <ui-load-state
+      [state]="eventsStatus() === 'error' ? 'error' : 'loading'"
+      [rows]="4"
+      loadingLabel="Loading events…"
+      errorHeading="Events are temporarily unavailable"
+      errorMessage="We couldn't load recent events just now. Please try again in a moment, or open the full calendar."
+      (retry)="retryEvents()"
+      style="display: block; margin-top: var(--s-6)"
+    ></ui-load-state>
+  }
   <div class="hero-actions" style="margin-top: var(--s-6)">
     <a routerLink="/events/" class="btn btn-ghost">The full calendar →</a>
   </div>

@@ -135,12 +135,21 @@ export class IndexExperimentComponent implements OnInit {
     }
   }
 
+  /**
+   * Experiment page: events only enrich the index here, so on failure it
+   * keeps rendering without event entries instead of leaving an unhandled
+   * rejection behind.
+   */
   private async loadEvents(): Promise<void> {
-    const [upcoming, past] = await Promise.all([
-      this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
-      this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
-    ]);
-    this.eventsSignal.set([...upcoming.results, ...past.results]);
+    try {
+      const [upcoming, past] = await Promise.all([
+        this.api.getDynamic<EventQueryResult>('published_events_upcoming', { sort: 'starts_at_asc' }),
+        this.api.getDynamic<EventQueryResult>('published_events_past', { sort: 'starts_at_desc' }),
+      ]);
+      this.eventsSignal.set([...upcoming.results, ...past.results]);
+    } catch {
+      this.eventsSignal.set([]);
+    }
   }
 
   setFilter(key: IndexCategory | 'all'): void {

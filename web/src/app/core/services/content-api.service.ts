@@ -6,6 +6,13 @@ import { DynamicQueryResponse, PublicContentResponse } from '../../shared/blocks
 const BASE = '/api/v1/content/public';
 
 /**
+ * Upper bound on a dynamic-query request. Without it a hung API leaves a
+ * section in its loading state indefinitely; with it the caller reaches its
+ * error state (and offers Retry) instead.
+ */
+export const DYNAMIC_QUERY_TIMEOUT_MS = 15_000;
+
+/**
  * The only place the Angular app calls the CMS public read API
  * (`PublicContentDetailView` / `PublicDynamicQueryView`,
  * backend/apps/content/views.py). Unauthenticated, GET-only, published
@@ -28,7 +35,10 @@ export class ContentApiService {
     if (opts.sort) params['sort'] = opts.sort;
     if (opts.limit) params['limit'] = String(opts.limit);
     return firstValueFrom(
-      this.http.get<DynamicQueryResponse<T>>(`${BASE}/dynamic/${queryId}`, { params }),
+      this.http.get<DynamicQueryResponse<T>>(`${BASE}/dynamic/${queryId}`, {
+        params,
+        timeout: DYNAMIC_QUERY_TIMEOUT_MS,
+      }),
     );
   }
 }

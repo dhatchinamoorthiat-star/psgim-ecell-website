@@ -1,6 +1,7 @@
 import { RenderMode } from '@angular/ssr';
 import { routes } from './app.routes';
 import { serverRoutes } from './app.routes.server';
+import { BLOG_ARTICLES } from './core/data/blog-series.data';
 
 describe('app routes', () => {
   it('keeps every public URL from before the platform existed', () => {
@@ -53,5 +54,23 @@ describe('app routes', () => {
     );
     // Every other public route is unaffected and still falls through to prerender.
     expect(serverRoutes.find((r) => r.path === '**')?.renderMode).toBe(RenderMode.Prerender);
+  });
+
+  it('prerenders /events and /blogs (static Pages has no SSR server to answer them)', async () => {
+    for (const path of ['events', 'blogs', 'blogs/:slug']) {
+      expect(serverRoutes.find((r) => r.path === path)?.renderMode).toBe(RenderMode.Prerender);
+    }
+    expect(
+      serverRoutes.some(
+        (r) => /^(events|blogs)/.test(r.path) && r.renderMode === RenderMode.Server,
+      ),
+    ).toBe(false);
+    const blogArticles = serverRoutes.find((r) => r.path === 'blogs/:slug') as {
+      getPrerenderParams?: () => Promise<Record<string, string>[]>;
+    };
+    const params = (await blogArticles.getPrerenderParams?.()) ?? [];
+    expect(params.map((p) => p['slug']).sort()).toEqual(
+      [...new Set(BLOG_ARTICLES.map((a) => a.slug))].sort(),
+    );
   });
 });

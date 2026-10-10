@@ -1,7 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ContentApiService } from './content-api.service';
+import { ContentApiService, DYNAMIC_QUERY_TIMEOUT_MS } from './content-api.service';
 
 describe('ContentApiService', () => {
   let service: ContentApiService;
@@ -44,6 +44,14 @@ describe('ContentApiService', () => {
     );
     req.flush({ query: 'published_events_upcoming', sort: 'starts_at_asc', count: 0, results: [] });
     await expect(promise).resolves.toMatchObject({ query: 'published_events_upcoming' });
+  });
+
+  it('bounds dynamic queries with a timeout so a hung API cannot load forever', async () => {
+    const promise = service.getDynamic('published_events_upcoming');
+    const req = backend.expectOne('/api/v1/content/public/dynamic/published_events_upcoming');
+    expect(req.request.timeout).toBe(DYNAMIC_QUERY_TIMEOUT_MS);
+    req.flush({ query: 'published_events_upcoming', sort: 'starts_at_asc', count: 0, results: [] });
+    await promise;
   });
 
   it('never constructs a query outside the identifier the caller passed (no client-built filter/SQL)', async () => {
