@@ -17,6 +17,23 @@ not invent Super Admins"). Run it against a user who already holds
 `content.publish` at the right scope, or the created versions won't be
 publishable later through the normal API even though this command writes
 `published_version` directly for the initial import.
+
+Selection and preview (A2, docs/28_A2_DEPLOYMENT_RUNBOOK.md "Content import"):
+
+- `--only TYPE` (repeatable or comma-separated: page, nec, event, blog,
+  initiative) limits the run to those content types.
+- `--exclude-pending` skips every item whose own `pending` flag is set — the
+  illustrative sample events and sample blog posts. It does not look inside
+  page blocks: a page's in-page "to be confirmed" marker is editorial copy
+  on real institutional content, not an illustrative item.
+- `--dry-run` validates every selected document and reports, per item,
+  create / update / unchanged / duplicate — writing nothing, auditing
+  nothing, and needing no `--actor-email`.
+
+Every excluded item is listed with its reason, so an operator can see
+exactly what was left out. Production import (runbook):
+`--only event --exclude-pending` (the six confirmed events), optionally
+followed by `--only page,nec` (the sixteen institutional pages).
 """
 
 from django.core.management.base import BaseCommand, CommandError
@@ -30,6 +47,7 @@ from apps.content.models import (
     BlogDetail,
     ContentBlockType,
     ContentItem,
+    ContentType,
     ContentVersion,
     EventDetail,
     NECDetail,
@@ -129,6 +147,61 @@ def apply_migration(migration: PageMigration, *, actor: User) -> tuple[ContentIt
         return item, True
 
 
+def is_pending(migration: PageMigration) -> bool:
+    """The item itself is illustrative (sample event/blog), per its own `pending` flag."""
+    return bool(migration.detail_fields.get("pending"))
+
+
+def select_migrations(
+    migrations: list[PageMigration], *, only: set[str] | None = None, exclude_pending: bool = False
+) -> tuple[list[PageMigration], list[tuple[PageMigration, str]]]:
+    """Returns (selected, excluded-with-reason), preserving the source order."""
+    selected, excluded = [], []
+    for migration in migrations:
+        if only and migration.content_type not in only:
+            excluded.append((migration, "type not selected"))
+        elif exclude_pending and is_pending(migration):
+            excluded.append((migration, "illustrative (pending)"))
+        else:
+            selected.append(migration)
+    return selected, excluded
+
+
+def plan_migration(migration: PageMigration, block_types: dict) -> str:
+    """
+    What `apply_migration` would do, without writing: "create", "update",
+    "unchanged" or "duplicate". Runs the same block validation, so a dry run
+    fails on exactly the documents a real run would fail on.
+    """
+    document = {"schema_version": 1, "blocks": migration.blocks}
+    validate_blocks_document(document, block_types)
+    if _find_duplicate_event(migration) is not None:
+        return "duplicate"
+    item = (
+        ContentItem.objects.filter(content_type=migration.content_type, slug=migration.slug)
+        .select_related("published_version")
+        .first()
+    )
+    if item is None:
+        return "create"
+    current = item.published_version
+    if current is not None and current.blocks == document and current.seo == migration.seo:
+        return "unchanged"
+    return "update"
+
+
+def _parse_only(values: list[str] | None) -> set[str] | None:
+    if not values:
+        return None
+    requested = {part.strip().lower() for value in values for part in value.split(",") if part.strip()}
+    unknown = requested - set(ContentType.values)
+    if unknown:
+        raise CommandError(
+            f"Unknown content type(s) for --only: {', '.join(sorted(unknown))}. Choose from {', '.join(ContentType.values)}."
+        )
+    return requested
+
+
 def _max_number():
     from django.db.models import Max
 
@@ -139,19 +212,61 @@ class Command(BaseCommand):
     help = "Migrate the representative legacy TypeScript site data into the CMS (idempotent, safe to re-run)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--actor-email", required=True, help="An existing user's email to record as the import author.")
+        parser.add_argument(
+            "--actor-email",
+            help="An existing user's email to record as the import author. Required unless --dry-run.",
+        )
+        parser.add_argument(
+            "--only",
+            action="append",
+            metavar="TYPE",
+            help=f"Limit to these content types (repeatable or comma-separated): {', '.join(ContentType.values)}.",
+        )
+        parser.add_argument(
+            "--exclude-pending",
+            action="store_true",
+            help="Skip illustrative items (sample events and sample blog posts flagged pending).",
+        )
+        parser.add_argument("--dry-run", action="store_true", help="Validate and report what would change; write nothing.")
 
     def handle(self, *args, **options):
-        try:
-            actor = User.objects.get(email=options["actor_email"])
-        except User.DoesNotExist as exc:
-            raise CommandError(f"No user with email {options['actor_email']!r}. This command never creates one.") from exc
+        dry_run = options["dry_run"]
+        only = _parse_only(options["only"])
+        actor = None
+        if options["actor_email"]:
+            try:
+                actor = User.objects.get(email=options["actor_email"])
+            except User.DoesNotExist as exc:
+                raise CommandError(f"No user with email {options['actor_email']!r}. This command never creates one.") from exc
+        elif not dry_run:
+            raise CommandError("--actor-email is required (only --dry-run may omit it).")
 
         if not ContentBlockType.objects.filter(key__in=[bt["key"] for bt in BLOCK_TYPES]).exists():
             raise CommandError("No block types found — run `manage.py seed_content_block_types` first.")
 
+        selected, excluded = select_migrations(PAGE_MIGRATIONS, only=only, exclude_pending=options["exclude_pending"])
+        prefix = "[dry run] " if dry_run else ""
+        for migration, reason in excluded:
+            self.stdout.write(f"  {prefix}skip {migration.content_type}:{migration.slug} ({reason})")
+
+        if dry_run:
+            block_types = _block_types_by_key()
+            counts = {"create": 0, "update": 0, "unchanged": 0, "duplicate": 0}
+            for migration in selected:
+                outcome = plan_migration(migration, block_types)
+                counts[outcome] += 1
+                self.stdout.write(f"  {prefix}{outcome} {migration.content_type}:{migration.slug}")
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"{prefix}{len(selected)} selected, {len(excluded)} excluded: {counts['create']} to create, "
+                    f"{counts['update']} to update, {counts['unchanged']} unchanged, {counts['duplicate']} duplicate. "
+                    "Nothing was written."
+                )
+            )
+            return
+
         created, updated, unchanged = 0, 0, 0
-        for migration in PAGE_MIGRATIONS:
+        for migration in selected:
             item, changed = apply_migration(migration, actor=actor)
             if not changed:
                 unchanged += 1
@@ -162,5 +277,8 @@ class Command(BaseCommand):
             self.stdout.write(f"  {migration.content_type}:{migration.slug} -> v{item.published_version.number}")
 
         self.stdout.write(
-            self.style.SUCCESS(f"Migration complete: {created} created, {updated} updated, {unchanged} unchanged.")
+            self.style.SUCCESS(
+                f"Migration complete: {created} created, {updated} updated, {unchanged} unchanged"
+                + (f"; {len(excluded)} excluded." if excluded else ".")
+            )
         )

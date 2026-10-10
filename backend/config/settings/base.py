@@ -9,7 +9,7 @@ Docker image runs locally, in CI and on the host chosen in ADR-008. See
 import os
 from pathlib import Path
 
-import dj_database_url
+from config.database import database_settings_from_env
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -79,13 +79,9 @@ TEMPLATES = [
     },
 ]
 
-DATABASES = {
-    "default": dj_database_url.parse(
-        env("DATABASE_URL", "postgres://ecell:ecell@localhost:5432/ecell"),
-        conn_max_age=60,
-        conn_health_checks=True,
-    )
-}
+# DATABASE_URL plus optional DB_CONN_MAX_AGE / DB_DISABLE_SERVER_SIDE_CURSORS;
+# Neon's pooled endpoint is detected and handled (config/database.py).
+DATABASES = {"default": database_settings_from_env(os.environ)}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

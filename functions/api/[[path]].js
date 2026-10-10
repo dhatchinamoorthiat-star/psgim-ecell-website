@@ -58,6 +58,9 @@ const ALLOWED_RESOURCES = new Set([
   'content',
   'public',
   'join',
+  // A2: unauthenticated liveness + database check (apps.core.views.HealthView),
+  // so the post-deploy checklist can verify the whole path through this proxy.
+  'health',
 ]);
 
 const SEGMENT = /^[A-Za-z0-9._~-]+$/;
@@ -99,6 +102,28 @@ export function checkPath(rawPathname) {
   return null;
 }
 
+// Hosts where plain http is acceptable: only this machine (`wrangler pages dev`
+// against a local backend). Everywhere else the hop to the backend carries
+// session cookies and the proxy secret, so it must be https.
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/**
+ * The origin to forward to, or null if API_ORIGIN is unusable. A
+ * misconfigured value fails closed (503) instead of sending credentials over
+ * an unencrypted connection.
+ */
+export function upstreamOriginFrom(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol === 'https:') return parsed.origin;
+  if (parsed.protocol === 'http:' && LOOPBACK.has(parsed.hostname)) return parsed.origin;
+  return null;
+}
+
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
 
@@ -110,10 +135,8 @@ export async function onRequest({ request, env }) {
     return error(503, 'api_unavailable', 'The platform API is not configured for this deployment.');
   }
 
-  let upstreamOrigin;
-  try {
-    upstreamOrigin = new URL(origin).origin;
-  } catch {
+  const upstreamOrigin = upstreamOriginFrom(origin);
+  if (!upstreamOrigin) {
     return error(503, 'api_unavailable', 'The platform API is not configured for this deployment.');
   }
   // The path is canonical (checked above), so it cannot change the host; assert it anyway.

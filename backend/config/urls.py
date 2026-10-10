@@ -1,8 +1,9 @@
 from django.urls import include, path
 
-from apps.core.views import SchemaView, SwaggerView
+from apps.core.views import HealthView, SchemaView, SwaggerView
 
 api_v1 = [
+    path("health", HealthView.as_view(), name="health"),
     path("auth/", include("apps.accounts.urls_auth")),
     path("users", include("apps.accounts.urls_users")),
     path("", include("apps.rbac.urls")),

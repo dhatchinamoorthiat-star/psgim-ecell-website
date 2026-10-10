@@ -3,7 +3,7 @@
 // Run from the repo root: node --test "tools/tests/*.test.mjs"
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { onRequest } from '../../functions/api/[[path]].js';
+import { onRequest, upstreamOriginFrom } from '../../functions/api/[[path]].js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => (globalThis.fetch = realFetch));
@@ -241,4 +241,51 @@ test('backend implementation headers are not passed to the browser', async () =>
   assert.equal(res.headers.get('server'), null);
   assert.equal(res.headers.get('x-powered-by'), null);
   assert.equal(res.headers.get('set-cookie'), 'a=b');
+});
+
+// --- A2: health resource and upstream transport ------------------------------
+
+test('forwards the health check (and HEAD for probes)', async () => {
+  for (const method of ['GET', 'HEAD']) {
+    const calls = capture();
+    const res = await onRequest({ request: new Request('https://site.example/api/v1/health', { method }), env: { API_ORIGIN: 'https://api.example' } });
+    assert.equal(res.status, 200);
+    assert.equal(calls[0].url, 'https://api.example/api/v1/health');
+    assert.equal(calls[0].init.method, method);
+  }
+});
+
+test('the health check is inert without API_ORIGIN, like every other resource', async () => {
+  const calls = capture();
+  const res = await onRequest({ request: new Request('https://site.example/api/v1/health'), env: {} });
+  assert.equal(res.status, 503);
+  assert.equal(calls.length, 0);
+});
+
+test('contact is not exposed by this proxy (excluded from the initial deployment)', async () => {
+  const calls = capture();
+  const res = await onRequest({ request: new Request('https://site.example/api/v1/contact'), env: { API_ORIGIN: 'https://api.example' } });
+  assert.equal(res.status, 404);
+  assert.equal(calls.length, 0);
+});
+
+test('refuses a plain-http API_ORIGIN for any non-loopback host: no cookies or secret in clear', async () => {
+  for (const origin of ['http://ecell-api.onrender.com', 'http://203.0.113.7', 'ftp://api.example', 'not a url', 'javascript:alert(1)']) {
+    const calls = capture();
+    const res = await onRequest({
+      request: new Request('https://site.example/api/v1/auth/me', { headers: { Cookie: 'ecell_session=abc' } }),
+      env: { API_ORIGIN: origin, PROXY_SHARED_SECRET: 's3cret' },
+    });
+    assert.equal(res.status, 503, origin);
+    assert.equal((await res.json()).error.code, 'api_unavailable', origin);
+    assert.equal(calls.length, 0, `${origin} must not be contacted`);
+  }
+});
+
+test('allows plain http only to this machine (local wrangler pages dev)', () => {
+  assert.equal(upstreamOriginFrom('http://localhost:8000'), 'http://localhost:8000');
+  assert.equal(upstreamOriginFrom('http://127.0.0.1:8000'), 'http://127.0.0.1:8000');
+  assert.equal(upstreamOriginFrom('http://[::1]:8000'), 'http://[::1]:8000');
+  assert.equal(upstreamOriginFrom('http://localhost.evil.example'), null);
+  assert.equal(upstreamOriginFrom('https://ecell-api.onrender.com/ignored/path'), 'https://ecell-api.onrender.com');
 });
