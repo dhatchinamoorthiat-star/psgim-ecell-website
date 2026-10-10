@@ -1,7 +1,7 @@
 // Tests for tools/deploy-from-commit.mjs — the decision logic only (no git, no network).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DeployError, PRODUCTION_LABEL, parseArgs, planDeploy, wranglerArgs } from '../deploy-from-commit.mjs';
+import { DeployError, PRODUCTION_LABEL, parseArgs, planDeploy, worktreeEnv, wranglerArgs } from '../deploy-from-commit.mjs';
 
 const SHA = 'a9988ddc72c50d977eaf66b6745082115c4f9b9e';
 const facts = (over = {}) => ({ sha: SHA, subject: 'fix(events): states', remoteBranchesContaining: ['origin/ECell'], ...over });
@@ -115,4 +115,12 @@ test('a hostile commit subject stays a single argument (no shell is involved)', 
   const args = wranglerArgs({ target: 'preview', label: 'p', sha: SHA, subject: 'x"; rm -rf / #' });
   assert.equal(args.filter((a) => a.includes('rm -rf')).length, 1);
   assert.ok(args[args.indexOf('--commit-message') + 1].includes('rm -rf'));
+});
+
+test('worktree steps run with CI=true so Angular never writes its shared cache into the main checkout', () => {
+  const base = { PATH: '/bin', HOME: '/h', CI: 'false' };
+  const env = worktreeEnv(base);
+  assert.equal(env.CI, 'true');
+  assert.equal(env.PATH, '/bin');
+  assert.equal(base.CI, 'false'); // caller's environment is not mutated
 });

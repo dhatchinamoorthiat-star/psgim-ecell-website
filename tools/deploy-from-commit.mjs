@@ -40,6 +40,22 @@ const REF = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;
 
 export class DeployError extends Error {}
 
+/**
+ * Environment for every step run inside the temporary worktree.
+ *
+ * Angular 22 deliberately shares its persistent build cache across git
+ * worktrees: @angular/build/src/utils/normalize-cache.js resolves a relative
+ * cache path against the *main* checkout (dirname of the common .git dir),
+ * so a build in the temp worktree wrote `.angular/cache` into the operator's
+ * real checkout. With the default `environment: 'local'`, Angular disables
+ * the persistent cache when CI is set — so CI=true keeps every artifact
+ * inside the throwaway worktree (and makes the build behave like CI: no
+ * prompts, no watch). Nothing else about the environment is changed.
+ */
+export function worktreeEnv(base = process.env) {
+  return { ...base, CI: 'true' };
+}
+
 /** Strict flag parser: unknown flags and missing values are errors, never ignored. */
 export function parseArgs(argv) {
   const flags = new Set(['--deploy', '--allow-unpushed', '--keep-worktree', '--help']);
@@ -169,10 +185,11 @@ async function main(argv) {
     run('git', ['worktree', 'add', '--detach', tree, plan.sha], repo);
     if (git(['rev-parse', 'HEAD'], tree) !== plan.sha) throw new DeployError('Worktree is not at the selected commit.');
 
-    run('npm', ['ci', '--prefix', 'web', '--no-audit', '--no-fund'], tree);
-    run('npm', ['--prefix', 'web', 'run', 'test:ci'], tree);
-    run('npm', ['run', 'test:functions'], tree);
-    run('npm', ['--prefix', 'web', 'run', 'build'], tree);
+    const env = worktreeEnv();
+    run('npm', ['ci', '--prefix', 'web', '--no-audit', '--no-fund'], tree, env);
+    run('npm', ['--prefix', 'web', 'run', 'test:ci'], tree, env);
+    run('npm', ['run', 'test:functions'], tree, env);
+    run('npm', ['--prefix', 'web', 'run', 'build'], tree, env);
 
     const dirty = git(['status', '--porcelain'], tree);
     if (dirty) throw new DeployError(`The build modified tracked files; refusing to deploy:\n${dirty}`);
