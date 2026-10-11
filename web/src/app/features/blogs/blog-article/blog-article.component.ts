@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { BLOG_ARTICLES, getArticleBySlug } from '../../../core/data/blog-series.data';
 import { BlogArticle } from '../../../core/models/models';
 import { SeoService } from '../../../core/services/seo.service';
+import { SITE_ORIGIN, absoluteUrl } from '../../../core/config/site-origin';
 import { RevealOnScrollDirective } from '../../../core/motion/directives/reveal.directive';
 import { BlogArticleHeroComponent } from '../components/blog-article-hero.component';
 import { BlogReadingProgressComponent } from '../components/blog-reading-progress.component';
@@ -391,20 +392,20 @@ export class BlogArticleComponent implements OnInit, OnChanges {
       author: {
         '@type': 'Organization',
         name: 'NEC E-Cell PSGIM',
-        url: 'https://psgim-ecell.pages.dev',
+        url: SITE_ORIGIN,
       },
       publisher: {
         '@type': 'Organization',
         name: 'PSGIM E-Cell',
         logo: {
           '@type': 'ImageObject',
-          url: 'https://psgim-ecell.pages.dev/logo@2x.png',
+          url: absoluteUrl('/logo@2x.png'),
         },
       },
       datePublished: this.article.date,
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': `https://psgim-ecell.pages.dev/blogs/${this.article.slug}/`,
+        '@id': absoluteUrl(`/blogs/${this.article.slug}/`),
       },
       keywords: [this.article.seo.primaryKeyword, ...this.article.seo.secondaryKeywords].join(', '),
     });

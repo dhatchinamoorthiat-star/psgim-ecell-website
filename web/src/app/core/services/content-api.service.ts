@@ -1,7 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { DynamicQueryResponse, PublicContentResponse } from '../../shared/blocks/block.types';
+import {
+  DynamicQueryResponse,
+  EventQueryResult,
+  PublicContentResponse,
+} from '../../shared/blocks/block.types';
 
 const BASE = '/api/v1/content/public';
 
@@ -25,6 +29,18 @@ export class ContentApiService {
 
   getPage(contentType: string, slug: string): Promise<PublicContentResponse> {
     return firstValueFrom(this.http.get<PublicContentResponse>(`${BASE}/${contentType}/${slug}`));
+  }
+
+  /**
+   * One published event (`PublicEventDetailView`). Drafts, unpublished,
+   * archived and unknown slugs all answer 404 — callers show "not found".
+   */
+  getEvent(slug: string): Promise<EventQueryResult> {
+    return firstValueFrom(
+      this.http.get<EventQueryResult>(`${BASE}/events/${encodeURIComponent(slug)}`, {
+        timeout: DYNAMIC_QUERY_TIMEOUT_MS,
+      }),
+    );
   }
 
   getDynamic<T = Record<string, unknown>>(

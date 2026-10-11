@@ -9,7 +9,7 @@
     "dev": "npm --prefix web start",
     "deploy": "node tools/deploy-from-commit.mjs --target production",
     "deploy:preview": "node tools/deploy-from-commit.mjs --target preview",
-    "test:functions": "node --test \"tools/tests/api-proxy.test.mjs\" \"tools/tests/preview-label.test.mjs\" \"tools/tests/deploy-from-commit.test.mjs\"",
+    "test:functions": "node --test \"tools/tests/api-proxy.test.mjs\" \"tools/tests/preview-label.test.mjs\" \"tools/tests/deploy-from-commit.test.mjs\" \"tools/tests/site-origin.test.mjs\"",
     "test:e2e:join": "node --test \"tools/tests/join-e2e.test.mjs\""
   },
   "engines": {

@@ -43,5 +43,9 @@ export const serverRoutes: ServerRoute[] = [
   // (hero, filters, loading skeleton); EventsComponent fetches only in the
   // browser, so no backend is needed at build time.
   { path: 'events', renderMode: RenderMode.Prerender },
+  // Event detail pages come from the API, which is unreachable at build time,
+  // so they are rendered in the browser. Cloudflare serves them the CSR shell
+  // via the `/events/:slug` rewrite in public/_redirects.
+  { path: 'events/:slug', renderMode: RenderMode.Client },
   { path: '**', renderMode: RenderMode.Prerender },
 ];

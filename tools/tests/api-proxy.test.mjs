@@ -289,3 +289,32 @@ test('allows plain http only to this machine (local wrangler pages dev)', () => 
   assert.equal(upstreamOriginFrom('http://localhost.evil.example'), null);
   assert.equal(upstreamOriginFrom('https://ecell-api.onrender.com/ignored/path'), 'https://ecell-api.onrender.com');
 });
+
+// --- Phase B: event administration and public event detail -----------------
+
+test('forwards the event admin API and the public event detail (both under the existing content resource)', async () => {
+  for (const [method, path] of [
+    ['GET', '/api/v1/content/events'],
+    ['POST', '/api/v1/content/events'],
+    ['PATCH', '/api/v1/content/events/demo-day'],
+    ['POST', '/api/v1/content/events/demo-day/publish'],
+    ['DELETE', '/api/v1/content/events/demo-day'],
+    ['GET', '/api/v1/content/public/events/demo-day'],
+  ]) {
+    const calls = capture();
+    const init = { method, headers: { 'X-CSRFToken': 'tok' } };
+    if (!['GET', 'DELETE'].includes(method)) init.body = '{"detail":{}}';
+    const res = await onRequest({ request: new Request('https://site.example' + path, init), env: { API_ORIGIN: 'https://api.example' } });
+    assert.equal(res.status, 200, `${method} ${path}`);
+    assert.equal(calls[0].url, 'https://api.example' + path);
+    assert.equal(calls[0].init.method, method);
+    assert.equal(new Headers(calls[0].init.headers).get('x-csrftoken'), 'tok');
+  }
+});
+
+test('no new top-level resource was opened for events', async () => {
+  const calls = capture();
+  const res = await onRequest({ request: new Request('https://site.example/api/v1/events'), env: { API_ORIGIN: 'https://api.example' } });
+  assert.equal(res.status, 404);
+  assert.equal(calls.length, 0);
+});

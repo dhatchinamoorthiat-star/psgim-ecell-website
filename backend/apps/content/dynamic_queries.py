@@ -51,7 +51,7 @@ def _events_base_qs():
     )
 
 
-def _serialize_event(item: ContentItem) -> dict:
+def serialize_event(item: ContentItem) -> dict:
     d = item.event_detail
     return {
         "slug": item.slug,
@@ -83,13 +83,13 @@ def _serialize_event(item: ContentItem) -> dict:
 def _resolve_published_events_upcoming(sort: str, limit: int) -> list[dict]:
     order = "_effective_end" if sort == "starts_at_asc" else "-_effective_end"
     qs = _events_base_qs().filter(_effective_end__gte=timezone.now()).order_by(order)[:limit]
-    return [_serialize_event(item) for item in qs]
+    return [serialize_event(item) for item in qs]
 
 
 def _resolve_published_events_past(sort: str, limit: int) -> list[dict]:
     order = "_effective_end" if sort == "starts_at_asc" else "-_effective_end"
     qs = _events_base_qs().filter(_effective_end__lt=timezone.now()).order_by(order)[:limit]
-    return [_serialize_event(item) for item in qs]
+    return [serialize_event(item) for item in qs]
 
 
 def _resolve_published_blogs(sort: str, limit: int) -> list[dict]:

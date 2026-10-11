@@ -146,6 +146,29 @@ export const platformRoutes: Routes = [
               import('./pages/pages-directory.component').then((m) => m.PagesDirectoryComponent),
           },
           {
+            // Phase B event administration. Route guards are UX only; every
+            // action is authorised by /api/v1/content/events on the server.
+            path: 'events',
+            canActivate: [permissionGuard('event.view')],
+            title: 'Events — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./events/events-list.component').then((m) => m.EventsListComponent),
+          },
+          {
+            path: 'events/new',
+            canActivate: [permissionGuard('event.create')],
+            title: 'New event — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./events/event-form.component').then((m) => m.EventFormComponent),
+          },
+          {
+            path: 'events/:slug',
+            canActivate: [permissionGuard('event.view')],
+            title: 'Event — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./events/event-form.component').then((m) => m.EventFormComponent),
+          },
+          {
             // Phase 2D approval inbox — any signed-in user may reach it
             // (an own_only content.submit holder still needs "Submitted by
             // me"); server-side scoping decides what each tab actually

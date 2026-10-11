@@ -18,7 +18,8 @@ from apps.rbac import catalogue as P
 from apps.rbac import policy
 from apps.rbac.approvals import check_approval
 
-from .models import Approval, ContentBlockType, ContentItem, ContentVersion, WorkflowState
+from . import event_detail
+from .models import Approval, ContentBlockType, ContentItem, ContentType, ContentVersion, WorkflowState
 from .validation import validate_blocks_document, validate_image_accessibility
 
 _DEFAULT_RULE_STAGES = [
@@ -39,11 +40,42 @@ class StaleVersion(Conflict):
     default_detail = "This draft changed elsewhere since you loaded it."
 
 
+def _is_event(item: ContentItem) -> bool:
+    return item.content_type == ContentType.EVENT
+
+
+def require_event_perm(request, perm: str, item: ContentItem) -> None:
+    """
+    Service-boundary permission check for event items (Phase B). Views check
+    too, but every path into the workflow — including the generic content
+    endpoints — goes through here, so an event can never be drafted,
+    submitted, published or unpublished without its event permission.
+    """
+    if not policy.has_perm(request.user, perm, item):
+        from rest_framework.exceptions import PermissionDenied
+
+        from apps.rbac.services import deny
+
+        deny(request, perm, f"Refused: {request.user.email} lacks {perm} for {item}.", target=item)
+        raise PermissionDenied()
+
+
+def _inherited_detail(item: ContentItem) -> dict:
+    """The structured detail a new draft starts from: the current draft's, else the live version's."""
+    for version in (item.draft_version, item.published_version):
+        if version is not None and version.detail:
+            return dict(version.detail)
+    return {}
+
+
 def _active_block_types() -> dict:
     return {bt.key: bt for bt in ContentBlockType.objects.filter(is_active=True)}
 
 
-def create_draft(request, *, content_item: ContentItem, blocks: dict, seo: dict | None = None, change_note: str = ""):
+def create_draft(
+    request, *, content_item: ContentItem, blocks: dict, seo: dict | None = None, change_note: str = "",
+    detail: dict | None = None,
+):  # fmt: skip
     """
     Create the first or a new draft version. Requires `content.view` (coarse
     gate; the real authoring gate is `content.submit`/`content.review` etc.
@@ -56,10 +88,19 @@ def create_draft(request, *, content_item: ContentItem, blocks: dict, seo: dict 
     `unique_version_number_per_item` constraint as an unhandled 500. The
     second caller simply waits for the lock, then computes its number
     against the first caller's now-committed version.
+
+    `detail` (structured fields, events only): when omitted, the new draft
+    inherits the current draft's or live version's detail, so a blocks-only
+    edit (generic editor, new-draft, revert) never drops an event's fields.
     """
     validate_blocks_document(blocks, _active_block_types())
     with transaction.atomic():
         locked_item = ContentItem.objects.select_for_update().get(pk=content_item.pk)
+        if _is_event(locked_item):
+            first = not locked_item.versions.exists()
+            require_event_perm(request, P.EVENT_CREATE if first else P.EVENT_EDIT, locked_item)
+        if detail is None:
+            detail = _inherited_detail(locked_item)
         next_number = (locked_item.versions.aggregate(n=_max_number())["n"] or 0) + 1
         version = ContentVersion.objects.create(
             content_item=locked_item,
@@ -69,6 +110,7 @@ def create_draft(request, *, content_item: ContentItem, blocks: dict, seo: dict 
             seo=seo or {},
             author=request.user,
             change_note=change_note,
+            detail=detail or {},
         )
         locked_item.draft_version = version
         locked_item.state = WorkflowState.DRAFT
@@ -92,7 +134,7 @@ def _max_number():
 
 def update_draft(
     request, *, version: ContentVersion, blocks: dict, seo: dict | None = None, change_note: str = "",
-    expected_updated_at=None,
+    expected_updated_at=None, detail: dict | None = None,
 ):  # fmt: skip
     """
     `expected_updated_at`, when given, must match `version.updated_at`
@@ -115,11 +157,15 @@ def update_draft(
             raise Conflict("Only a DRAFT version can be edited in place.")
         if expected_updated_at is not None and version.updated_at != expected_updated_at:
             raise StaleVersion()
+        if _is_event(version.content_item):
+            require_event_perm(request, P.EVENT_EDIT, version.content_item)
         version.blocks = blocks
         if seo is not None:
             version.seo = seo
+        if detail is not None:
+            version.detail = detail
         version.change_note = change_note or version.change_note
-        version.save(update_fields=["blocks", "seo", "change_note", "updated_at"])
+        version.save(update_fields=["blocks", "seo", "detail", "change_note", "updated_at"])
         audit.record(request, "content.updated", summary=f"Updated draft {version}", target=version, after={"blocks": blocks})
         return version
 
@@ -127,6 +173,9 @@ def update_draft(
 def submit(request, *, version: ContentVersion):
     if version.state != WorkflowState.DRAFT:
         raise Conflict(f"Cannot submit from state {version.state}.")
+    if _is_event(version.content_item):
+        require_event_perm(request, P.EVENT_EDIT, version.content_item)
+        event_detail.validate_for_publish(version.detail)  # fail early, not at publish time
     with transaction.atomic():
         version.state = WorkflowState.SUBMITTED
         # Resolve and freeze the required stages now (Invariant 5): a later
@@ -251,6 +300,10 @@ def _require_stage_permission(request, stage: dict, version: ContentVersion) -> 
 def schedule(request, *, version: ContentVersion, publish_at):
     if version.state != WorkflowState.APPROVED:
         raise Conflict(f"Cannot schedule from state {version.state}.")
+    if _is_event(version.content_item):
+        # No executor exists yet (Phase B decision P6): a "scheduled" event would
+        # never go live, so scheduling is refused rather than silently accepted.
+        raise Conflict("Scheduled publishing is not available for events yet. Publish it when it should go live.")
     if publish_at <= timezone.now():
         raise Conflict("publish_at must be in the future.")
     with transaction.atomic():
@@ -279,10 +332,17 @@ def publish(request, *, version: ContentVersion):
     if version.state not in (WorkflowState.APPROVED, WorkflowState.SCHEDULED):
         raise Conflict(f"Cannot publish from state {version.state}.")
     validate_image_accessibility(version.blocks, _active_block_types())
+    item = version.content_item
+    if _is_event(item):
+        # P1: the event permission AND the existing publish permission, at the event's scope.
+        require_event_perm(request, P.EVENT_EDIT, item)
+        require_event_perm(request, P.CONTENT_PUBLISH, item)
+        event_detail.validate_for_publish(version.detail)
     with transaction.atomic():
         version.state = WorkflowState.PUBLISHED
         version.save(update_fields=["state", "updated_at"])
-        item = version.content_item
+        if _is_event(item):
+            event_detail.project(item, version)  # the live view changes only here
         item.published_version = version
         if item.draft_version_id == version.id:
             item.draft_version = None
@@ -296,6 +356,9 @@ def unpublish(request, *, item: ContentItem):
     version = item.published_version
     if version is None or version.state != WorkflowState.PUBLISHED:
         raise Conflict("This item has no published version.")
+    if _is_event(item):
+        require_event_perm(request, P.EVENT_EDIT, item)
+        require_event_perm(request, P.CONTENT_PUBLISH, item)
     with transaction.atomic():
         version.state = WorkflowState.ARCHIVED
         version.save(update_fields=["state", "updated_at"])
@@ -313,6 +376,8 @@ def revert(request, *, item: ContentItem, source_version: ContentVersion):
     new_version = create_draft(
         request, content_item=item, blocks=source_version.blocks, seo=source_version.seo,
         change_note=f"Reverted to v{source_version.number}",
+        # Pre-Phase-B versions carry no detail; fall back to inheritance then.
+        detail=dict(source_version.detail) if source_version.detail else None,
     )  # fmt: skip
     audit.record(request, "content.reverted", summary=f"Reverted {item} to v{source_version.number}", target=new_version)
     return new_version

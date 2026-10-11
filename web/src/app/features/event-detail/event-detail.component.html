@@ -1,0 +1,101 @@
+<section class="section wrap">
+  <a routerLink="/events/" class="kicker">← All events</a>
+
+  @switch (status()) {
+    @case ('ready') {
+      @if (event(); as ev) {
+        <article style="margin-top: var(--s-5)">
+          <span class="kicker">{{ ev.kind || 'Event' }}</span>
+          <h1>{{ ev.title }}</h1>
+          @if (ev.pending) {
+            <ui-pending-flag label="Illustrative — not a confirmed event" style="display:inline-block; margin-top: var(--s-4)"></ui-pending-flag>
+          }
+          @if (ev.summary) {
+            <p class="lede">{{ ev.summary }}</p>
+          }
+
+          <dl class="event-facts">
+            <dt>Date</dt>
+            <dd>{{ dateRange() }}</dd>
+            @if (ev.time_label) {
+              <dt>Time</dt>
+              <dd>{{ ev.time_label }}</dd>
+            }
+            @if (ev.venue) {
+              <dt>Venue</dt>
+              <dd>{{ ev.venue }}</dd>
+            }
+            @if (ev.audience) {
+              <dt>Who</dt>
+              <dd>{{ ev.audience }}</dd>
+            }
+            @if (ev.organizer) {
+              <dt>Organizer</dt>
+              <dd>{{ ev.organizer }}</dd>
+            }
+            @for (speaker of ev.speakers ?? []; track $index) {
+              <dt>Speaker</dt>
+              <dd>{{ speaker.name }}@if (speaker.designation) {, {{ speaker.designation }}}@if (speaker.org) {, {{ speaker.org }}}</dd>
+            }
+            @if (ev.registration_status) {
+              <dt>Registration</dt>
+              <dd>{{ ev.registration_status }}</dd>
+            }
+            @if (ev.turnout) {
+              <dt>Turnout</dt>
+              <dd>{{ ev.turnout }}</dd>
+            }
+          </dl>
+
+          @for (p of paragraphs(); track $index) {
+            <p class="event-description">{{ p }}</p>
+          }
+
+          @if (ev.featured_image || ev.gallery?.length) {
+            <div class="event-media">
+              @if (ev.featured_image) {
+                <img [src]="ev.featured_image" [alt]="ev.title" loading="lazy" />
+              }
+              @for (img of ev.gallery ?? []; track img.src) {
+                <img [src]="img.src" [alt]="img.alt" loading="lazy" />
+              }
+            </div>
+          }
+
+          <div class="event-actions">
+            @if (ev.registration_link) {
+              <a class="btn btn-primary" [href]="ev.registration_link" target="_blank" rel="noopener noreferrer">
+                Register (external site)
+              </a>
+            }
+            @if (ev.linkedin_url) {
+              <a class="btn btn-ghost" [href]="ev.linkedin_url" target="_blank" rel="noopener noreferrer">View on LinkedIn</a>
+            }
+            <button type="button" class="btn btn-ghost" (click)="copyLink()">{{ copied() ? 'Link copied' : 'Copy link' }}</button>
+          </div>
+          <p class="event-share">Share: <a [href]="shareUrl()">{{ shareUrl() }}</a></p>
+        </article>
+      }
+    }
+    @case ('not-found') {
+      <ui-awaiting-panel
+        heading="Event not found"
+        message="This event doesn't exist or isn't published. Browse the full calendar for current and past events."
+        style="display: block; margin-top: var(--s-6)"
+      >
+        <a routerLink="/events/" class="btn btn-ghost" style="margin-top: var(--s-4)">All events</a>
+      </ui-awaiting-panel>
+    }
+    @default {
+      <ui-load-state
+        [state]="status() === 'error' ? 'error' : 'loading'"
+        [rows]="3"
+        loadingLabel="Loading event…"
+        errorHeading="This event is temporarily unavailable"
+        errorMessage="We couldn't load this event just now. Please try again in a moment."
+        (retry)="retry()"
+        style="display: block; margin-top: var(--s-6)"
+      ></ui-load-state>
+    }
+  }
+</section>

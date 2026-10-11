@@ -1,5 +1,6 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, Input, PLATFORM_ID, inject } from '@angular/core';
+import { absoluteUrl } from '../../../core/config/site-origin';
 
 @Component({
   selector: 'app-blog-share-bar',
@@ -93,11 +94,9 @@ export class BlogShareBarComponent {
   copied = false;
   private platformId = inject(PLATFORM_ID);
 
+  /** Always the canonical URL (site.config.json), never the host it happens to be viewed on (e.g. a preview). */
   private getUrl(): string {
-    if (isPlatformBrowser(this.platformId)) {
-      return window.location.href;
-    }
-    return `https://psgim-ecell.pages.dev/blogs/${this.slug}`;
+    return absoluteUrl(`/blogs/${this.slug}`);
   }
 
   shareLinkedIn(): void {

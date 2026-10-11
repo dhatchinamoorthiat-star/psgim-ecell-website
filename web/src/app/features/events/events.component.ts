@@ -63,6 +63,7 @@ function toRow(ev: EventQueryResult, index: number, isPast: boolean): EditorialR
       body,
       facts,
       images: ev.gallery,
+      cta: { label: 'Event details', href: `/events/${ev.slug}` },
       externalCta,
     },
   };

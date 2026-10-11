@@ -1,4 +1,5 @@
 import { SiteConfig, NavItem, Cta } from '../models/models';
+import { SITE_ORIGIN } from '../config/site-origin';
 
 export const site: SiteConfig = {
   name: 'PSGIM E-Cell',
@@ -7,7 +8,7 @@ export const site: SiteConfig = {
   city: 'Coimbatore',
   founded: 2019,
   tagline: 'Ideas today. Impact tomorrow.',
-  url: 'https://psgim-ecell.pages.dev',
+  url: SITE_ORIGIN,
   title: 'PSGIM E-Cell — Entrepreneurship Cell, PSG Institute of Management',
   description:
     'The student-run Entrepreneurship Cell of PSG Institute of Management, Coimbatore. Speaker sessions, build weekends, mentoring and the National Entrepreneurship Challenge.',

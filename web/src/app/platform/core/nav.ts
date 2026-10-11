@@ -24,6 +24,7 @@ export const PLATFORM_NAV: NavSection[] = [
     label: 'Tools',
     items: [
       { label: 'Pages', path: '/platform/pages', anyOf: ['content.view'] },
+      { label: 'Events', path: '/platform/events', anyOf: ['event.view'] },
       { label: 'QR Generator', path: '/platform/qr-generator', anyOf: [] },
       { label: 'Approvals', path: '/platform/approvals', anyOf: [] },
     ],

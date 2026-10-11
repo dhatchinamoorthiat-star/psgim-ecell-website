@@ -19,6 +19,7 @@ describe('app routes', () => {
       'podcast',
       'website-av',
       'events',
+      'events/:slug',
       'blogs',
       'team',
       'gallery',
@@ -71,6 +72,14 @@ describe('app routes', () => {
     const params = (await blogArticles.getPrerenderParams?.()) ?? [];
     expect(params.map((p) => p['slug']).sort()).toEqual(
       [...new Set(BLOG_ARTICLES.map((a) => a.slug))].sort(),
+    );
+  });
+
+  it('serves event detail pages in the browser (no API at build time) and keeps the listing prerendered', () => {
+    expect(serverRoutes.find((r) => r.path === 'events/:slug')?.renderMode).toBe(RenderMode.Client);
+    expect(serverRoutes.find((r) => r.path === 'events')?.renderMode).toBe(RenderMode.Prerender);
+    expect(serverRoutes.findIndex((r) => r.path === 'events/:slug')).toBeLessThan(
+      serverRoutes.findIndex((r) => r.path === '**'),
     );
   });
 });

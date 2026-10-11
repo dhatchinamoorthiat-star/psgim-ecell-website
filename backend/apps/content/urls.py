@@ -1,12 +1,18 @@
 from django.urls import path
 
-from . import views
+from . import event_views, views
 
 urlpatterns = [
     path("", views.ContentItemListView.as_view(), name="content-item-list"),
     path("/mine", views.MyContentVersionsListView.as_view(), name="content-version-mine"),
     path("/inbox", views.ReviewInboxView.as_view(), name="content-review-inbox"),
     path("/by-slug/<str:content_type>/<slug:slug>", views.ContentItemBySlugView.as_view(), name="content-item-by-slug"),
+    # Phase B event administration (apps.content.event_views).
+    path("/events", event_views.EventListView.as_view(), name="event-list"),
+    path("/events/<slug:slug>", event_views.EventDetailView.as_view(), name="event-detail"),
+    path("/events/<slug:slug>/submit", event_views.EventSubmitView.as_view(), name="event-submit"),
+    path("/events/<slug:slug>/publish", event_views.EventPublishView.as_view(), name="event-publish"),
+    path("/events/<slug:slug>/unpublish", event_views.EventUnpublishView.as_view(), name="event-unpublish"),
     path("/<uuid:pk>", views.ContentItemDetailView.as_view(), name="content-item-detail"),
     path("/<uuid:pk>/unpublish", views.ContentItemUnpublishView.as_view(), name="content-item-unpublish"),
     path("/<uuid:pk>/revert", views.ContentItemRevertView.as_view(), name="content-item-revert"),
@@ -28,5 +34,6 @@ urlpatterns = [
     path("/media", views.MediaAssetListView.as_view(), name="media-asset-list"),
     path("/media/upload-params", views.MediaUploadParamsView.as_view(), name="media-upload-params"),
     path("/public/dynamic/<str:query_id>", views.PublicDynamicQueryView.as_view(), name="public-dynamic-query"),
+    path("/public/events/<slug:slug>", event_views.PublicEventDetailView.as_view(), name="public-event-detail"),
     path("/public/<str:content_type>/<slug:slug>", views.PublicContentDetailView.as_view(), name="public-content-detail"),
 ]

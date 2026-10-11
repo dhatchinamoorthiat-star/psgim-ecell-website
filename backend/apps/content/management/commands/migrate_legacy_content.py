@@ -41,6 +41,7 @@ from django.db import transaction
 
 from apps.accounts.models import User
 from apps.audit import service as audit
+from apps.content import event_detail
 from apps.content.block_catalogue import BLOCK_TYPES
 from apps.content.legacy_migration import PAGE_MIGRATIONS, PageMigration
 from apps.content.models import (
@@ -124,9 +125,16 @@ def apply_migration(migration: PageMigration, *, actor: User) -> tuple[ContentIt
             return item, False  # rerun, nothing changed — do not duplicate
 
         next_number = (item.versions.aggregate(n=_max_number())["n"] or 0) + 1
+        # Events also carry their structured fields on the version (Phase B), so the
+        # published version and its EventDetail projection start out identical.
+        version_detail = (
+            event_detail.to_json({"title": migration.title, **migration.detail_fields})
+            if migration.content_type == "event"
+            else {}
+        )
         version = ContentVersion.objects.create(
             content_item=item, number=next_number, state=WorkflowState.PUBLISHED,
-            blocks=document, seo=migration.seo, author=actor,
+            blocks=document, seo=migration.seo, author=actor, detail=version_detail,
             change_note=f"Migrated from web/src/app/core/data (legacy_migration.{migration.slug})",
         )  # fmt: skip
         item.published_version = version

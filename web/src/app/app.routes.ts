@@ -30,6 +30,10 @@ const publicRoutes: Routes = [
   },
   { path: 'events', loadComponent: () => import('./features/events/events.component').then((m) => m.EventsComponent) },
   {
+    path: 'events/:slug',
+    loadComponent: () => import('./features/event-detail/event-detail.component').then((m) => m.EventDetailComponent),
+  },
+  {
     path: 'blogs',
     loadChildren: () => import('./features/blogs/blogs.routes').then((m) => m.BLOGS_ROUTES),
   },

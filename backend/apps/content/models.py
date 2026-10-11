@@ -119,6 +119,12 @@ class ContentVersion(TimeStampedModel):
     # submitted. `apps.content.workflow.approve` reads this, never a live
     # ApprovalRule query, once it is set.
     approval_stages_snapshot = models.JSONField(default=list, blank=True)
+    # Structured, type-specific fields as of this version (Phase B; ADR-012).
+    # For events this is the draft/approved copy of EventDetail's fields;
+    # `workflow.publish` projects it into EventDetail, which is therefore the
+    # *published* view only — editing a draft can never change the live page.
+    # Empty for non-event content and for pre-Phase-B historical versions.
+    detail = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-number"]

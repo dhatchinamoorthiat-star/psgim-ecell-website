@@ -3,8 +3,13 @@
 # /platform is rendered in the browser only (app.routes.server.ts), so it has
 # no prerendered HTML. Serve Angular's client-side shell for every platform
 # URL; without this, Pages would fall back to the prerendered *home page*.
-/platform    /index.csr.html  200
-/platform/*  /index.csr.html  200
+#
+# The target is extensionless on purpose. With "/index.csr.html", Pages'
+# pretty-URL handling answers the rewrite with a 308 to /index.csr, which
+# changes the visitor's URL and lands them on the homepage (verified with
+# `wrangler pages dev` and on production, 2026-10-11).
+/platform    /index.csr  200
+/platform/*  /index.csr  200
 
 # Team ecosystem — retired URLs, redirected at the edge (301, not a rewrite).
 #
@@ -21,3 +26,13 @@
 /meet-the-team/member         /meet-the-team/  301
 /meet-the-team/president      /meet-the-team/  301
 /meet-the-team/vice-president /meet-the-team/  301
+
+# Event detail pages (/events/<slug>) are rendered in the browser: their data
+# comes from the API, which is not reachable at build time. `:slug` matches
+# exactly one non-empty segment, so the prerendered /events/ listing is never
+# captured (a `/events/*` splat would also match "/events/" itself). A trailing
+# slash redirects to the canonical slash-less URL. Verified with
+# `wrangler pages dev`: /events → /events/ (prerendered), /events/<slug> → CSR
+# shell with the URL kept, /events/<slug>/ → 301 to /events/<slug>.
+/events/:slug/  /events/:slug  301
+/events/:slug   /index.csr     200
