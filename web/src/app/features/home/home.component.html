@@ -1,20 +1,6 @@
 <section class="hero-plain" [attr.data-hero-phase]="heroPhase()" [attr.data-reveal-step]="revealStep()">
   <app-animated-background variant="hero"></app-animated-background>
   
-  <div class="hero-video-cinematic-layer" aria-hidden="true">
-    <video
-      #heroVideo
-      src="/videos/herovideo.mp4"
-      muted
-      playsinline
-      [attr.preload]="heroVideoPreload()"
-      class="hero-video-cinematic-el"
-      (ended)="onVideoEnded()"
-      (error)="onVideoError()"
-    ></video>
-    <div class="hero-video-cinematic-scrim"></div>
-  </div>
-
   <!-- Left Multi-Photo Editorial Collage (Local Photography, Unique Frames & Depth) -->
   <div class="hero-collage-left" aria-hidden="true">
     <div class="collage-container">

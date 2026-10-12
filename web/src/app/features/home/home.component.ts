@@ -33,7 +33,7 @@ import { EditorialRowListComponent } from '../../shared/ui/editorial-row-list/ed
 import { AwaitingPanelComponent } from '../../shared/ui/awaiting-panel.component';
 import { LoadStateComponent } from '../../shared/ui/load-state.component';
 
-export type HeroPhase = 'video' | 'video-complete' | 'headline' | 'images' | 'ready';
+export type HeroPhase = 'headline' | 'images' | 'ready';
 
 export interface RelationshipChain {
   initiative: Initiative;
@@ -215,7 +215,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   ];
 
   @ViewChild('journeySection') journeySection?: ElementRef<HTMLElement>;
-  @ViewChild('heroVideo') heroVideo?: ElementRef<HTMLVideoElement>;
   readonly arcProgress = signal(0);
   readonly litCount = signal(0);
 
@@ -226,8 +225,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly typedLine3 = signal<string>('ELEVATE.');
   readonly currentCursorLine = signal<number>(3); // Line 3 persistent cursor
   readonly revealStep = signal<number>(6); // 0 = hidden, 6 = fully revealed
-  /** Only buffer the hero video ahead of time when we actually intend to play it. */
-  readonly heroVideoPreload = signal<'auto' | 'none'>('none');
 
   /** Complete collection of 11 local hero photographs (Meet the Team excluded) */
   readonly heroCollageImages: HeroCollageImage[] = [
@@ -416,8 +413,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   });
 
   private activeTimers: any[] = [];
-  private safetyTimer?: any;
-  private videoListenersAttached = false;
 
   ngOnInit(): void {
     this.seo.set({
@@ -439,10 +434,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     if (isPlatformBrowser(this.platformId)) {
-      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (!reduced && !this.bootService.hasBooted() && this.bootService.shouldPlayVideo()) {
-        this.heroVideoPreload.set('auto');
-      }
       void this.loadEvents();
     }
   }
@@ -512,10 +503,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (reduced || this.bootService.hasBooted()) {
         this.setToReadyState();
-      } else if (this.bootService.shouldPlayVideo()) {
-        this.bootService.markAsBooted();
-        this.bootService.markVideoPlayed();
-        this.startCinematicSequence();
       } else {
         this.bootService.markAsBooted();
         this.startTypingSequence();
@@ -523,49 +510,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.onScroll();
     }
-  }
-
-  private startCinematicSequence(): void {
-    this.heroPhase.set('video');
-    this.typedLine1.set('');
-    this.typedLine2.set('');
-    this.typedLine3.set('');
-    this.currentCursorLine.set(0);
-    this.revealStep.set(0);
-
-    if (this.heroVideo?.nativeElement && !this.videoListenersAttached) {
-      const v = this.heroVideo.nativeElement;
-      v.muted = true;
-      v.currentTime = 0;
-      this.videoListenersAttached = true;
-
-      const handleEnded = () => this.onVideoEnded();
-      v.addEventListener('ended', handleEnded, { once: true });
-
-      const handleTimeUpdate = () => {
-        if (v.ended || (v.duration > 0 && v.currentTime >= v.duration - 0.15)) {
-          v.removeEventListener('timeupdate', handleTimeUpdate);
-          this.onVideoEnded();
-        }
-      };
-      v.addEventListener('timeupdate', handleTimeUpdate);
-
-      const playPromise = v.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          this.onVideoError();
-        });
-      }
-    } else {
-      this.onVideoEnded();
-      return;
-    }
-
-    this.safetyTimer = setTimeout(() => {
-      if (this.heroPhase() === 'video') {
-        this.onVideoEnded();
-      }
-    }, 12000);
   }
 
   private startTypingSequence(): void {
@@ -608,38 +552,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
     tick();
   }
 
-  onVideoEnded(): void {
-    if (this.safetyTimer) {
-      clearTimeout(this.safetyTimer);
-      this.safetyTimer = undefined;
-    }
-
-    if (this.heroPhase() !== 'video') {
-      return;
-    }
-
-    this.heroPhase.set('video-complete');
-
-    const t1 = setTimeout(() => {
-      this.heroPhase.set('headline');
-      this.typeText('INNOVATE', this.typedLine1, 1, () => {
-        this.typeText('TO', this.typedLine2, 2, () => {
-          this.typeText('ELEVATE.', this.typedLine3, 3, () => {
-            this.heroPhase.set('images');
-            this.startStaggeredReveal();
-          });
-        });
-      });
-    }, 300);
-    this.activeTimers.push(t1);
-  }
-
-  onVideoError(): void {
-    if (this.heroPhase() === 'video') {
-      this.setToReadyState();
-    }
-  }
-
   private startStaggeredReveal(): void {
     const steps = [1, 2, 3, 4, 5, 6];
     let idx = 0;
@@ -660,10 +572,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private setToReadyState(): void {
-    if (this.safetyTimer) {
-      clearTimeout(this.safetyTimer);
-      this.safetyTimer = undefined;
-    }
     this.heroPhase.set('ready');
     this.typedLine1.set('INNOVATE');
     this.typedLine2.set('TO');
@@ -688,9 +596,6 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.safetyTimer) {
-      clearTimeout(this.safetyTimer);
-    }
     this.activeTimers.forEach((t) => clearTimeout(t));
     this.activeTimers = [];
   }
