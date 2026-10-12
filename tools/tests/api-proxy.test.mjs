@@ -318,3 +318,31 @@ test('no new top-level resource was opened for events', async () => {
   assert.equal(res.status, 404);
   assert.equal(calls.length, 0);
 });
+
+// --- Phase C: registration, passes, check-in, roster (all under `content`) --
+
+test('forwards the Phase C participant, operations and roster paths without new resources', async () => {
+  for (const [method, path] of [
+    ['GET', '/api/v1/content/me/registrations'],
+    ['POST', '/api/v1/content/me/events/demo-day/register'],
+    ['POST', '/api/v1/content/me/registrations/3f1c2b1e-9a55-4c1e-8d9e-2a8f5d1f6b10/pass'],
+    ['GET', '/api/v1/content/public/events/demo-day/availability'],
+    ['POST', '/api/v1/content/events/demo-day/check-ins'],
+    ['GET', '/api/v1/content/events/demo-day/attendance.csv'],
+    ['POST', '/api/v1/content/participants/roster'],
+  ]) {
+    const calls = capture();
+    const init = { method, headers: { 'X-CSRFToken': 'tok' } };
+    if (method === 'POST') init.body = 'x';
+    const res = await onRequest({ request: new Request('https://site.example' + path, init), env: { API_ORIGIN: 'https://api.example' } });
+    assert.equal(res.status, 200, `${method} ${path}`);
+    assert.equal(calls[0].url, 'https://api.example' + path);
+    assert.equal(new Headers(calls[0].init.headers).get('x-csrftoken'), 'tok');
+  }
+  for (const path of ['/api/v1/me/registrations', '/api/v1/participants/roster', '/api/v1/registrations']) {
+    const calls = capture();
+    const res = await onRequest({ request: new Request('https://site.example' + path), env: { API_ORIGIN: 'https://api.example' } });
+    assert.equal(res.status, 404, path);
+    assert.equal(calls.length, 0);
+  }
+});

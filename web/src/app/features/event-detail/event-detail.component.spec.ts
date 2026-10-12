@@ -68,7 +68,22 @@ describe('EventDetailComponent', () => {
   const canonical = () =>
     document.head.querySelector('link[rel="canonical"]')?.getAttribute('href');
 
-  afterEach(() => backend.verify());
+  const AVAIL = (slug: string) => `${API}${slug}/availability`;
+  const notConfigured = {
+    state: 'not_configured',
+    opens_at: null,
+    closes_at: null,
+    students: false,
+    external: false,
+    spots_left: null,
+  };
+
+  afterEach(() => {
+    // Availability is a secondary request on every successful load; tests that
+    // don't care about it get "not configured" (renders nothing).
+    backend.match((r) => r.url.endsWith('/availability')).forEach((r) => r.flush(notConfigured));
+    backend.verify();
+  });
 
   it('shows a loading state, then the published event', async () => {
     const { fixture, el } = create();
@@ -164,5 +179,51 @@ describe('EventDetailComponent', () => {
     backend.expectOne(API + 'other-event').flush(ev({ slug: 'other-event', title: 'Other Event' }));
     await settle(fixture);
     expect(el.querySelector('h1')?.textContent).toBe('Other Event');
+  });
+
+  it('shows live availability and links registration into the signed-in platform', async () => {
+    const { fixture, el } = create();
+    backend.expectOne(API + 'demo-day').flush(ev());
+    await settle(fixture);
+    backend.expectOne(AVAIL('demo-day')).flush({
+      state: 'open',
+      opens_at: '2099-01-01T00:00:00Z',
+      closes_at: '2099-04-30T00:00:00Z',
+      students: true,
+      external: false,
+      spots_left: 12,
+    });
+    await settle(fixture);
+    const section = el.querySelector('.event-registration');
+    expect(section?.textContent).toContain('Registration is open until');
+    expect(section?.textContent).toContain('12 place(s) left');
+    expect(section?.textContent).toContain('Open to PSGIM students');
+    const cta = section?.querySelector('a.btn');
+    expect(cta?.getAttribute('href')).toBe('/platform/my-events/register/demo-day');
+  });
+
+  it('keeps the event page usable when availability cannot be loaded', async () => {
+    const { fixture, el } = create();
+    backend.expectOne(API + 'demo-day').flush(ev());
+    await settle(fixture);
+    backend
+      .expectOne(AVAIL('demo-day'))
+      .flush({}, { status: 503, statusText: 'Service Unavailable' });
+    await settle(fixture);
+    expect(el.querySelector('h1')?.textContent).toBe('Demo Day');
+    expect(el.querySelector('.event-registration')).toBeNull();
+    expect(el.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('offers no registration link for a full or cancelled event', async () => {
+    const { fixture, el } = create();
+    backend.expectOne(API + 'demo-day').flush(ev());
+    await settle(fixture);
+    backend
+      .expectOne(AVAIL('demo-day'))
+      .flush({ ...notConfigured, state: 'cancelled', students: true });
+    await settle(fixture);
+    expect(el.querySelector('.event-registration')?.textContent).toContain('cancelled');
+    expect(el.querySelector('.event-registration a')).toBeNull();
   });
 });

@@ -17,6 +17,62 @@
 </section>
 
 <section class="section wrap" revealOnScroll>
+  <div class="section-heading"><span class="kicker">Send a message</span><h2>Have a query?</h2></div>
+  <div class="contact-form-wrap">
+    @if (sent()) {
+      <div class="card contact-sent">
+        <h3 style="font-size: var(--t-body)">Thanks — that's on its way to us.</h3>
+        <p style="color: var(--ink-2); margin-top: var(--s-2)">
+          We'll reply at the email address you gave.
+        </p>
+      </div>
+    } @else {
+      <form class="contact-form" #contactForm (submit)="$event.preventDefault(); onSubmit(contactForm)">
+        <!-- Honeypot — hidden from real visitors, invisible to screen readers. -->
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" class="contact-honeypot" />
+
+        <label class="contact-field">
+          <span>Your name</span>
+          <input type="text" name="name" required maxlength="120" />
+          @if (fieldErrors()['name']) {
+            <small class="contact-field-error">{{ fieldErrors()['name'][0] }}</small>
+          }
+        </label>
+
+        <label class="contact-field">
+          <span>Your email</span>
+          <input type="email" name="email" required maxlength="254" />
+          @if (fieldErrors()['email']) {
+            <small class="contact-field-error">{{ fieldErrors()['email'][0] }}</small>
+          }
+        </label>
+
+        <label class="contact-field">
+          <span>Subject (optional)</span>
+          <input type="text" name="subject" maxlength="150" />
+        </label>
+
+        <label class="contact-field">
+          <span>Message</span>
+          <textarea name="message" rows="5" required minlength="10" maxlength="4000"></textarea>
+          @if (fieldErrors()['message']) {
+            <small class="contact-field-error">{{ fieldErrors()['message'][0] }}</small>
+          }
+        </label>
+
+        @if (error()) {
+          <p class="contact-form-error">{{ error() }}</p>
+        }
+
+        <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+          {{ submitting() ? 'Sending…' : 'Send message' }}
+        </button>
+      </form>
+    }
+  </div>
+</section>
+
+<section class="section wrap" revealOnScroll>
   <div class="section-heading"><span class="kicker">Direct</span><h2>Reach us</h2></div>
   <div class="grid grid-2" style="margin-top: var(--s-6)">
     <div class="card">

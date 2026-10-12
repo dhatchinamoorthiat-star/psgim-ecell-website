@@ -62,6 +62,27 @@
             </div>
           }
 
+          @if (availability(); as a) {
+            @if (availabilityText(a)) {
+              <section class="event-registration" aria-labelledby="reg-h">
+                <h2 id="reg-h" class="kicker">Registration</h2>
+                <p>{{ availabilityText(a) }}</p>
+                @if (a.spots_left !== null && (a.state === 'open' || a.state === 'upcoming')) {
+                  <p class="event-share">{{ a.spots_left }} place(s) left.</p>
+                }
+                @if (a.students || a.external) {
+                  <p class="event-share">
+                    Open to {{ a.students && a.external ? 'PSGIM students and approved external participants' : a.students ? 'PSGIM students' : 'approved external participants' }}.
+                    Sign in with the account E-Cell created for you.
+                  </p>
+                }
+                @if (a.state === 'open' || a.state === 'waitlist') {
+                  <a class="btn btn-primary" [href]="registerUrl()">{{ a.state === 'waitlist' ? 'Join the waitlist' : 'Register' }}</a>
+                }
+              </section>
+            }
+          }
+
           <div class="event-actions">
             @if (ev.registration_link) {
               <a class="btn btn-primary" [href]="ev.registration_link" target="_blank" rel="noopener noreferrer">

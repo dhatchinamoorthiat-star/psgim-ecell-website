@@ -5,9 +5,10 @@ describe('visibleNav', () => {
   it('shows only what the user may open', () => {
     const labels = (perms: string[]) =>
       visibleNav((p) => perms.includes(p)).flatMap((s) => s.items.map((i) => i.label));
-    expect(labels([])).toEqual(['Dashboard', 'QR Generator', 'Approvals']);
+    expect(labels([])).toEqual(['Dashboard', 'My events', 'QR Generator', 'Approvals']);
     expect(labels(['vertical.view'])).toEqual([
       'Dashboard',
+      'My events',
       'QR Generator',
       'Approvals',
       'Control Center',
@@ -15,6 +16,7 @@ describe('visibleNav', () => {
     ]);
     expect(labels(['user.view', 'vertical.view', 'role.view'])).toEqual([
       'Dashboard',
+      'My events',
       'QR Generator',
       'Approvals',
       'Control Center',
@@ -44,5 +46,14 @@ describe('safeReturnUrl', () => {
     ]) {
       expect(safeReturnUrl(bad)).toBe('/platform/dashboard');
     }
+  });
+
+  it('shows Phase C operations and participant administration only to holders', () => {
+    const labels = (perms: string[]) =>
+      visibleNav((p) => perms.includes(p)).flatMap((s) => s.items.map((i) => i.label));
+    expect(labels([])).not.toContain('Operations');
+    expect(labels(['event.checkin'])).toContain('Operations');
+    expect(labels(['event.checkin'])).not.toContain('Participants');
+    expect(labels(['participant.manage'])).toContain('Participants');
   });
 });

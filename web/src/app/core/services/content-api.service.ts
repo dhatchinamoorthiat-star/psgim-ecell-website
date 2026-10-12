@@ -9,6 +9,15 @@ import {
 
 const BASE = '/api/v1/content/public';
 
+export interface EventAvailability {
+  state: 'not_configured' | 'upcoming' | 'open' | 'full' | 'waitlist' | 'closed' | 'cancelled' | 'unavailable';
+  opens_at: string | null;
+  closes_at: string | null;
+  students: boolean;
+  external: boolean;
+  spots_left: number | null;
+}
+
 /**
  * Upper bound on a dynamic-query request. Without it a hung API leaves a
  * section in its loading state indefinitely; with it the caller reaches its
@@ -38,6 +47,15 @@ export class ContentApiService {
   getEvent(slug: string): Promise<EventQueryResult> {
     return firstValueFrom(
       this.http.get<EventQueryResult>(`${BASE}/events/${encodeURIComponent(slug)}`, {
+        timeout: DYNAMIC_QUERY_TIMEOUT_MS,
+      }),
+    );
+  }
+
+  /** Aggregate registration availability for a published event (Phase C). No attendee data. */
+  getEventAvailability(slug: string): Promise<EventAvailability> {
+    return firstValueFrom(
+      this.http.get<EventAvailability>(`${BASE}/events/${encodeURIComponent(slug)}/availability`, {
         timeout: DYNAMIC_QUERY_TIMEOUT_MS,
       }),
     );

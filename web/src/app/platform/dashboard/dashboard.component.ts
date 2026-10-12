@@ -1,8 +1,10 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../core/auth.service';
+import { toApiError } from '../core/api.service';
 import { visibleNav } from '../core/nav';
+import { OperatedEvent, OperationsApiService, formatWhen } from '../operations/operations-api.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,6 +33,23 @@ import { visibleNav } from '../core/nav';
             </div>
           </div>
         </a>
+
+        <button
+          *ngIf="canScan()"
+          type="button"
+          class="pf-card"
+          style="text-align: left; cursor: pointer; font: inherit; color: inherit; transition: transform 0.15s ease;"
+          (click)="toggleScanPicker()"
+          [attr.aria-expanded]="scanPickerOpen()"
+        >
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="font-size: 1.5rem;">🎫</div>
+            <div>
+              <div style="font-weight: 600; font-size: 0.95rem;">Scan check-in</div>
+              <div class="pf-muted" style="font-size: 0.8rem; margin-top: 0.2rem;">Choose an event and start scanning passes</div>
+            </div>
+          </div>
+        </button>
 
         <a *ngIf="canEditPages()" routerLink="/platform/pages" class="pf-card" style="text-decoration: none; color: inherit; transition: transform 0.15s ease;">
           <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -71,6 +90,28 @@ import { visibleNav } from '../core/nav';
             </div>
           </div>
         </a>
+      </div>
+
+      <div *ngIf="scanPickerOpen()" class="pf-card" style="margin-top: 1rem;" role="region" aria-label="Choose an event to scan">
+        <h3 style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem;">Choose an event to check in</h3>
+        @if (scanError()) {
+          <div class="pf-alert pf-alert-error" role="alert">{{ scanError() }}</div>
+        } @else if (scanLoading()) {
+          <p class="pf-muted" role="status">Loading events…</p>
+        } @else if (scanEvents().length === 0) {
+          <p class="pf-muted">No events are open for check-in to you right now.</p>
+        } @else {
+          <ul style="list-style: none; padding: 0; display: grid; gap: 0.5rem;">
+            @for (e of scanEvents(); track e.slug) {
+              <li>
+                <button type="button" class="pf-btn pf-btn-primary" style="width: 100%; justify-content: space-between;" (click)="startScan(e.slug)">
+                  <span>{{ e.title }}</span>
+                  <span class="pf-muted" style="font-size: 0.8rem;">{{ whenLabel(e.starts_at) }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        }
       </div>
     </section>
 
@@ -116,6 +157,40 @@ import { visibleNav } from '../core/nav';
 })
 export class DashboardComponent {
   protected auth = inject(AuthService);
+  private router = inject(Router);
+  private operations = inject(OperationsApiService);
+
+  protected whenLabel = formatWhen;
+  protected scanPickerOpen = signal(false);
+  protected scanLoading = signal(false);
+  protected scanError = signal<string | null>(null);
+  protected scanEvents = signal<OperatedEvent[]>([]);
+
+  protected canScan = computed(() => this.auth.canAnywhere('event.checkin'));
+
+  /** Opens the picker and loads only the events where this user may check people in. */
+  async toggleScanPicker(): Promise<void> {
+    if (this.scanPickerOpen()) {
+      this.scanPickerOpen.set(false);
+      return;
+    }
+    this.scanPickerOpen.set(true);
+    this.scanLoading.set(true);
+    this.scanError.set(null);
+    try {
+      const { results } = await this.operations.operatedEvents();
+      this.scanEvents.set(results.filter((e) => e.permissions.includes('event.checkin')));
+    } catch (e) {
+      this.scanError.set(toApiError(e).message);
+    } finally {
+      this.scanLoading.set(false);
+    }
+  }
+
+  /** Goes straight to the chosen event's scanner; `start=1` starts the camera once access is confirmed. */
+  startScan(slug: string): void {
+    void this.router.navigate(['/platform/events', slug, 'scan'], { queryParams: { start: '1' } });
+  }
 
   protected roleSummary = computed(() => {
     const scopes = new Set(

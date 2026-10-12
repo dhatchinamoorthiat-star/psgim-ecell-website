@@ -71,6 +71,8 @@
 .section-heading h2 { font-size: var(--t-h2); color: var(--ink); }
 @supports (background-clip: text) or (-webkit-background-clip: text) {
   .section-heading h2 {
+    /* Shrink the box to the text so the gradient's gold end lands on the last letter. */
+    width: fit-content; max-width: 100%;
     color: transparent;
     background: linear-gradient(120deg, var(--ink) 30%, var(--accent));
     -webkit-background-clip: text; background-clip: text;

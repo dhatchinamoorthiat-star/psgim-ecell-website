@@ -13,6 +13,7 @@ import { anonymousOnlyGuard, authGuard, permissionGuard } from './core/guards';
 import { sessionExpiryInterceptor } from './core/session-expiry.interceptor';
 import { PlatformRootComponent } from './platform-root.component';
 import { PlatformShellComponent } from './shell/platform-shell.component';
+import { OperationsApiService } from './operations/operations-api.service';
 
 /**
  * /platform — the authenticated member platform (docs/13_FRONTEND_ARCHITECTURE.md).
@@ -34,6 +35,7 @@ export const platformRoutes: Routes = [
       { provide: HttpXsrfTokenExtractor, useClass: CsrfTokenExtractor },
       ApiService,
       AuthService,
+      OperationsApiService,
     ],
     children: [
       {
@@ -127,6 +129,13 @@ export const platformRoutes: Routes = [
                   import('./admin/roles.component').then((m) => m.RolesComponent),
               },
               {
+                path: 'participants',
+                canActivate: [permissionGuard('participant.manage')],
+                title: 'Participants — PSGIM E-Cell Platform',
+                loadComponent: () =>
+                  import('./admin/participants.component').then((m) => m.ParticipantsAdminComponent),
+              },
+              {
                 path: 'assignments',
                 canActivate: [permissionGuard('role.view')],
                 title: 'Assignments — PSGIM E-Cell Platform',
@@ -153,6 +162,61 @@ export const platformRoutes: Routes = [
             title: 'Events — PSGIM E-Cell Platform',
             loadComponent: () =>
               import('./events/events-list.component').then((m) => m.EventsListComponent),
+          },
+          // Phase C — participant area (any signed-in user; the server decides eligibility).
+          {
+            path: 'my-events',
+            title: 'My events — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./participant/my-events.component').then((m) => m.MyEventsComponent),
+          },
+          {
+            path: 'my-events/register/:slug',
+            title: 'Register — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./participant/register.component').then((m) => m.RegisterComponent),
+          },
+          {
+            path: 'my-events/:id',
+            title: 'My registration — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./participant/my-registration.component').then((m) => m.MyRegistrationComponent),
+          },
+          // Phase C — event operations. Guards are UX only; the API enforces
+          // every permission at the event's own scope.
+          {
+            path: 'operations',
+            title: 'Event operations — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./operations/operations-list.component').then((m) => m.OperationsListComponent),
+          },
+          {
+            path: 'events/:slug/operations',
+            canActivate: [permissionGuard('event.operations.manage')],
+            title: 'Registration & check-in — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./operations/event-operations.component').then((m) => m.EventOperationsComponent),
+          },
+          {
+            path: 'events/:slug/attendees',
+            canActivate: [permissionGuard('event.registration.view')],
+            title: 'Attendees — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./operations/event-attendees.component').then((m) => m.EventAttendeesComponent),
+          },
+          {
+            path: 'events/:slug/scan',
+            canActivate: [permissionGuard('event.checkin')],
+            title: 'Scan passes — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./operations/event-scanner.component').then((m) => m.EventScannerComponent),
+          },
+          {
+            path: 'events/:slug/volunteers',
+            canActivate: [permissionGuard('event_staff.assign')],
+            title: 'Event volunteers — PSGIM E-Cell Platform',
+            loadComponent: () =>
+              import('./operations/event-volunteers.component').then((m) => m.EventVolunteersComponent),
           },
           {
             path: 'events/new',

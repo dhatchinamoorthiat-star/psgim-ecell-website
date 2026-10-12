@@ -10,7 +10,7 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ContentApiService } from '../../core/services/content-api.service';
+import { ContentApiService, EventAvailability } from '../../core/services/content-api.service';
 import { SeoService } from '../../core/services/seo.service';
 import { absoluteUrl } from '../../core/config/site-origin';
 import { EventQueryResult } from '../../shared/blocks/block.types';
@@ -120,6 +120,8 @@ export class EventDetailComponent implements OnInit {
   readonly status = signal<EventDetailStatus>('loading');
   readonly event = signal<EventQueryResult | null>(null);
   readonly copied = signal(false);
+  /** Live registration availability; null = unknown/unavailable (the page works without it). */
+  readonly availability = signal<EventAvailability | null>(null);
   private slug = '';
 
   readonly dateRange = computed(() => {
@@ -179,6 +181,7 @@ export class EventDetailComponent implements OnInit {
       const ev = await this.api.getEvent(this.slug);
       this.event.set(ev);
       this.status.set('ready');
+      void this.loadAvailability();
       this.seo.set({
         title: ev.title,
         description: ev.summary || `${ev.title} — an event by PSGIM E-Cell.`,
@@ -192,6 +195,30 @@ export class EventDetailComponent implements OnInit {
         this.status.set('error');
       }
     }
+  }
+
+  private async loadAvailability(): Promise<void> {
+    this.availability.set(null);
+    try {
+      this.availability.set(await this.api.getEventAvailability(this.slug));
+    } catch {
+      /* availability is optional; the event page stays fully usable without it */
+    }
+  }
+
+  readonly registerUrl = computed(() => `/platform/my-events/register/${this.slug}`);
+
+  availabilityText(a: EventAvailability): string {
+    return {
+      not_configured: '',
+      upcoming: a.opens_at ? `Registration opens ${formatDate(a.opens_at)}.` : 'Registration opens soon.',
+      open: a.closes_at ? `Registration is open until ${formatDate(a.closes_at)}.` : 'Registration is open.',
+      full: 'This event is full.',
+      waitlist: 'This event is full — you can join the waitlist.',
+      closed: 'Registration has closed.',
+      cancelled: 'This event has been cancelled.',
+      unavailable: '',
+    }[a.state];
   }
 
   private markNotFound(): void {

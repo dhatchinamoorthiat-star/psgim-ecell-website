@@ -81,6 +81,15 @@ function fromLocalInput(value: string): string | null {
             @if (ev.is_published) {
               · <a [href]="'/events/' + ev.slug" target="_blank" rel="noopener">View live page</a>
             }
+            @if (auth.canAnywhere('event.operations.manage')) {
+              ·
+              <a [routerLink]="['/platform/events', ev.slug, 'operations']"
+                >Registration & check-in</a
+              >
+            }
+            @if (auth.canAnywhere('event.registration.view')) {
+              · <a [routerLink]="['/platform/events', ev.slug, 'attendees']">Attendees</a>
+            }
           </p>
         }
       </div>
@@ -115,7 +124,7 @@ function fromLocalInput(value: string): string | null {
                 hyphens; cannot be changed later.</small
               >
               @if (fieldError('slug')) {
-                <small class="pf-error">{{ fieldError('slug') }}</small>
+                <small class="pf-field-error">{{ fieldError('slug') }}</small>
               }
             </div>
             @if (verticals().length > 0) {
@@ -158,7 +167,7 @@ function fromLocalInput(value: string): string | null {
               <small>{{ f.hint }}</small>
             }
             @if (fieldError(f.key)) {
-              <small class="pf-error">{{ fieldError(f.key) }}</small>
+              <small class="pf-field-error">{{ fieldError(f.key) }}</small>
             }
           </div>
         }
@@ -168,7 +177,7 @@ function fromLocalInput(value: string): string | null {
           live.
         </p>
 
-        <div class="pf-actions">
+        <div class="pf-toolbar">
           <button class="pf-btn pf-btn-primary" type="submit" [disabled]="busy()">
             {{ isNew() ? 'Create draft' : 'Save draft' }}
           </button>

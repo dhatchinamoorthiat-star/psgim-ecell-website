@@ -18,6 +18,7 @@ export const PLATFORM_NAV: NavSection[] = [
     label: 'Overview',
     items: [
       { label: 'Dashboard', path: '/platform/dashboard', anyOf: [] },
+      { label: 'My events', path: '/platform/my-events', anyOf: [] },
     ],
   },
   {
@@ -25,6 +26,11 @@ export const PLATFORM_NAV: NavSection[] = [
     items: [
       { label: 'Pages', path: '/platform/pages', anyOf: ['content.view'] },
       { label: 'Events', path: '/platform/events', anyOf: ['event.view'] },
+      {
+        label: 'Operations',
+        path: '/platform/operations',
+        anyOf: ['event.checkin', 'event.registration.view', 'event.operations.manage', 'event_staff.assign'],
+      },
       { label: 'QR Generator', path: '/platform/qr-generator', anyOf: [] },
       { label: 'Approvals', path: '/platform/approvals', anyOf: [] },
     ],
@@ -42,6 +48,7 @@ export const PLATFORM_NAV: NavSection[] = [
       { label: 'Verticals', path: '/platform/admin/verticals', anyOf: ['vertical.view'] },
       { label: 'Roles', path: '/platform/admin/roles', anyOf: ['role.view'] },
       { label: 'Assignments', path: '/platform/admin/assignments', anyOf: ['role.view'] },
+      { label: 'Participants', path: '/platform/admin/participants', anyOf: ['participant.manage'] },
     ],
   },
 ];
