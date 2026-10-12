@@ -11,7 +11,6 @@ from apps.content import dynamic_queries
 from apps.content.legacy_migration import PAGE_MIGRATIONS
 from apps.content.management.commands.migrate_legacy_content import (
     _block_types_by_key,
-    is_pending,
     plan_migration,
     select_migrations,
 )
@@ -26,7 +25,6 @@ CONFIRMED_EVENTS = {
     "ipr-awareness-cii",
     "wildcard-ventures",
 }
-ILLUSTRATIVE_EVENTS = {"founders-on-campus-sep", "bootcamp-oct", "nec-kickoff", "idea-clinic-jul", "ideathon-2026-finals"}
 
 
 @pytest.fixture
@@ -46,22 +44,13 @@ def run(*args):
 def test_events_without_pending_are_exactly_the_six_confirmed_events():
     selected, excluded = select_migrations(PAGE_MIGRATIONS, only={"event"}, exclude_pending=True)
     assert {m.slug for m in selected} == CONFIRMED_EVENTS
-    excluded_events = {m.slug for m, reason in excluded if m.content_type == "event"}
-    assert excluded_events == ILLUSTRATIVE_EVENTS
-    assert all(reason == "illustrative (pending)" for m, reason in excluded if m.slug in ILLUSTRATIVE_EVENTS)
+    assert not [m for m, _ in excluded if m.content_type == "event"]
 
 
 def test_institutional_pages_are_the_sixteen_page_and_nec_items():
     selected, _ = select_migrations(PAGE_MIGRATIONS, only={"page", "nec"})
     assert len(selected) == 16
     assert {m.content_type for m in selected} == {"page", "nec"}
-
-
-def test_exclude_pending_drops_every_sample_blog_post():
-    blogs = [m for m in PAGE_MIGRATIONS if m.content_type == "blog"]
-    assert blogs and all(is_pending(m) for m in blogs)
-    selected, _ = select_migrations(PAGE_MIGRATIONS, exclude_pending=True)
-    assert not [m for m in selected if m.content_type == "blog"]
 
 
 def test_exclude_pending_never_drops_pages_with_in_page_editorial_markers():
@@ -105,8 +94,6 @@ def test_only_accepts_comma_separated_and_repeated_forms(block_types):
 def test_dry_run_writes_and_audits_nothing_and_needs_no_actor(block_types):
     out = run("--dry-run", "--only", "event", "--exclude-pending")
     assert "6 selected" in out and "6 to create" in out and "Nothing was written" in out
-    for slug in ILLUSTRATIVE_EVENTS:
-        assert f"skip event:{slug} (illustrative (pending))" in out
     for slug in CONFIRMED_EVENTS:
         assert f"create event:{slug}" in out
     assert not ContentItem.objects.exists()
@@ -159,11 +146,10 @@ def test_production_import_is_idempotent(block_types):
     assert ContentItem.objects.filter(content_type="event").count() == 6
 
 
-def test_optional_page_import_adds_the_sixteen_pages_and_nothing_illustrative(block_types):
+def test_optional_page_import_adds_the_sixteen_pages(block_types):
     actor = make_user("importer@test.example")
     run("--actor-email", actor.email, "--only", "event", "--exclude-pending")
     out = run("--actor-email", actor.email, "--only", "page,nec", "--exclude-pending")
     assert "16 created" in out
     assert ContentItem.objects.filter(content_type__in=["page", "nec"]).count() == 16
     assert not ContentItem.objects.filter(content_type="blog").exists()
-    assert not ContentItem.objects.filter(slug__in=ILLUSTRATIVE_EVENTS).exists()

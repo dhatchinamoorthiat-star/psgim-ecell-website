@@ -65,10 +65,6 @@ set -a; source .env; set +a         # load env vars into this shell
 ```bash
 .venv/bin/python manage.py create_dev_user --email you@example.com --password 'a-long-dev-password' --name "You" --role SUPER_ADMIN
 ```
-Or a whole demo organisation ("Demo Vertical A/B", `<role>@demo.local`, password `demo-password-123`):
-```bash
-.venv/bin/python manage.py seed_dev_demo
-```
 
 ### Run
 ```bash

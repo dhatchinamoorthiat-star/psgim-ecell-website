@@ -112,7 +112,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
    * with).
    */
   eventsNote =
-    'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report, alongside illustrative placeholders while the rest of the calendar is finalized with the office.';
+    'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report.';
 
   /**
    * Populated client-side only (see `loadEvents`) — the homepage stays a

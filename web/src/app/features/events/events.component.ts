@@ -16,7 +16,7 @@ export type EventFilter = 'all' | 'upcoming' | 'past';
 export type EventsStatus = 'loading' | 'ready' | 'error';
 
 const eventsNote =
-  'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report, alongside illustrative placeholders while the rest of the calendar is finalized with the office.';
+  'Confirmed past events, sourced from our LinkedIn posts and the official 2024-25 E-Cell activity report.';
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });

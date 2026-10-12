@@ -25,7 +25,7 @@ npm run dev
 Opens http://localhost:4200. Public content is still in `web/src/app/core/data/` until the CMS lands (Phase 2).
 
 Platform + API: follow `PHASE_1_IMPLEMENTATION_NOTES.md` §2 exactly (venv, `docker compose up -d db`,
-`migrate`, `seed_rbac`, `create_dev_user` or `seed_dev_demo`, `runserver`, `npm run dev`), then open
+`migrate`, `seed_rbac`, or `create_dev_user`, `runserver`, `npm run dev`), then open
 http://localhost:4200/platform/. `ng serve` forwards `/api` to Django (`web/proxy.conf.json`).
 
 ## 3. Deploying

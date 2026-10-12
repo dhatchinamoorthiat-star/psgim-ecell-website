@@ -103,7 +103,7 @@ def test_command_runs_end_to_end_and_is_idempotent(db):
 
 def test_every_content_type_is_represented_in_the_migrated_set(db):
     types = {m.content_type for m in PAGE_MIGRATIONS}
-    assert types == {"page", "nec", "event", "blog"}
+    assert types == {"page", "nec", "event"}
 
 
 def test_pending_content_survives_migration(db):
@@ -114,26 +114,7 @@ def test_pending_content_survives_migration(db):
     assert vision_block["props"]["pending"] is True
     assert vision_block["props"]["pending_label"]
 
-    # Only the illustrative sample events (`_EVENT_SOURCE`) are pending; the
-    # real, LinkedIn-sourced events (`_LINKEDIN_EVENT_SOURCE`) are confirmed
-    # history and must never carry the "Illustrative" marker.
+    # Every event comes from the LinkedIn-sourced list: confirmed history that
+    # must never carry the "Illustrative" marker.
     event_migrations = [m for m in PAGE_MIGRATIONS if m.content_type == "event"]
-    sample_events = [m for m in event_migrations if m.detail_fields.get("source") != "linkedin"]
-    linkedin_events = [m for m in event_migrations if m.detail_fields.get("source") == "linkedin"]
-    assert sample_events and all(m.detail_fields["pending"] is True for m in sample_events)
-    assert linkedin_events and all(m.detail_fields["pending"] is False for m in linkedin_events)
-
-
-def test_events_migrate_with_full_metadata_for_dynamic_listing(db):
-    event_migrations = {m.slug: m for m in PAGE_MIGRATIONS if m.content_type == "event"}
-    bootcamp = event_migrations["bootcamp-oct"]
-    assert bootcamp.detail_fields["starts_at"] is not None
-    assert bootcamp.detail_fields["ends_at"] is not None
-    assert bootcamp.detail_fields["time_label"] == "Fri – Sun"
-    assert bootcamp.detail_fields["registration_status"] == "open"
-
-
-def test_blogs_migrate_with_author_name_not_a_fabricated_user(db):
-    blog_migrations = [m for m in PAGE_MIGRATIONS if m.content_type == "blog"]
-    assert blog_migrations
-    assert blog_migrations[0].detail_fields["author_name"] == "E-Cell writing team"
+    assert event_migrations and all(m.detail_fields["pending"] is False for m in event_migrations)

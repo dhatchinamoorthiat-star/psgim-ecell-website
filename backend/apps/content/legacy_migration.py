@@ -594,84 +594,17 @@ def migrate_nec() -> PageMigration:
     )  # fmt: skip
 
 
-# --- Events (web/src/app/core/data/events.data.ts) ---
-# Each EventItem becomes its own ContentItem(EVENT) + EventDetail, so the
-# dynamic_query mechanism (apps.content.dynamic_queries) has real published
-# rows to list — not just the mechanism proven against test fixtures.
-
-_EVENT_SOURCE = [
-    {"id": "founders-on-campus-sep", "title": "Founders on Campus — bootstrapped SaaS from Coimbatore", "initiative": "founders-on-campus", "date": "2026-09-18", "time": "6:00 PM", "venue": "Auditorium", "audience": "Open to all", "summary": "A Coimbatore founder on going from a college side-project to a profitable software business without raising a rupee.", "registration": None, "pending": True},
-    {"id": "bootcamp-oct", "title": "48-Hour Bootcamp — problem statements from local industry", "initiative": "bootcamp", "date": "2026-10-04", "endDate": "2026-10-06", "time": "Fri – Sun", "venue": None, "audience": "Teams of 4", "summary": "A full build weekend. Problem statements from local manufacturers and D2C brands. Mentors on site throughout.", "registration": "open", "pending": True},
-    {"id": "nec-kickoff", "title": "NEC kick-off & orientation", "initiative": "nec-drive", "date": "2026-08-22", "time": None, "venue": "Seminar Hall", "audience": None, "summary": "The campaign team and open attendees walked through the NEC task list, timeline and how to get involved.", "turnout": "~120 attended", "registration": None, "pending": True},
-    {"id": "idea-clinic-jul", "title": "Idea Clinic — one-on-one feedback with mentors", "initiative": "idea-clinic", "date": "2026-07-30", "time": None, "venue": None, "audience": "14 teams", "summary": "Fourteen teams, twenty-minute slots, one written next step each. Three were fast-tracked to the Bootcamp.", "turnout": "~45 attended", "registration": None, "pending": True},
-    {"id": "ideathon-2026-finals", "title": "Ideathon 2026 finals", "initiative": "ideathon", "date": "2026-03-12", "time": None, "venue": None, "audience": "₹25k prize pool", "summary": "Nine teams pitched live to a panel of alumni and investors. The top three took a mentoring block into the summer.", "turnout": "~200 attended", "registration": None, "pending": True},
-]  # fmt: skip
-
-
 def _parse_iso_date_utc(value: str | None) -> datetime | None:
     if not value:
         return None
     return datetime.fromisoformat(value).replace(tzinfo=UTC)
 
 
-def migrate_events() -> list[PageMigration]:
-    migrations = []
-    for ev in _EVENT_SOURCE:
-        blocks = [{"id": "event-hero", "type": "hero", "props": {"heading": ev["title"], "description": ev["summary"]}}]
-        migrations.append(
-            PageMigration(
-                content_type="event", slug=ev["id"], title=ev["title"],
-                seo={"title": ev["title"], "description": ev["summary"], "path": f"/events/{ev['id']}/"},
-                blocks=blocks,
-                detail_fields={
-                    "starts_at": _parse_iso_date_utc(ev["date"]),
-                    "ends_at": _parse_iso_date_utc(ev.get("endDate")),
-                    "venue": ev.get("venue") or "",
-                    "summary": ev["summary"],
-                    "time_label": ev.get("time") or "",
-                    "audience": ev.get("audience") or "",
-                    "registration_status": ev.get("registration") or "",
-                    "turnout": ev.get("turnout") or "",
-                    "pending": ev.get("pending", False),
-                    "related_initiative": ev.get("initiative") or "",
-                },
-            )
-        )
-    return migrations
-
-
-# --- Blogs (web/src/app/core/data/blogs.data.ts) ---
-
-_BLOG_SOURCE = [
-    {"id": "sample-blog-1", "title": "Why bootstrapped founders beat pitch decks", "author": "E-Cell writing team", "url": None, "summary": "A look at how Coimbatore-area founders built revenue before they built slides.", "pending": True},
-]  # fmt: skip
-
-
-def migrate_blogs() -> list[PageMigration]:
-    migrations = []
-    for post in _BLOG_SOURCE:
-        blocks = [{"id": "blog-hero", "type": "hero", "props": {"heading": post["title"], "description": post["summary"]}}]
-        migrations.append(
-            PageMigration(
-                content_type="blog", slug=post["id"], title=post["title"],
-                seo={"title": post["title"], "description": post["summary"], "path": f"/blogs/{post['id']}/"},
-                blocks=blocks,
-                detail_fields={
-                    "author_name": post["author"],
-                    "excerpt": post["summary"],
-                    "external_url": post.get("url") or "",
-                    "pending": post.get("pending", False),
-                },
-            )
-        )
-    return migrations
-
-
 # --- LinkedIn-sourced events (web/src/app/core/data/events.data.ts `linkedInEvents`) ---
 # Transcribed verbatim from the 6 confirmed events a prior pass extracted
 # from the E-Cell LinkedIn page's public (logged-out) view. `source` is
 # "linkedin" and `pending` is always False — these are real past events,
-# not the illustrative placeholders in `_EVENT_SOURCE` above. `EUREKA 2026`
+# not placeholders. `EUREKA 2026`
 # and the `YI Learning Conclave` were deliberately excluded from this list
 # (and therefore never get a ContentItem at all) because neither post gave
 # an actual event date — task: "Do not guess dates ... Keep them as
@@ -822,7 +755,7 @@ def migrate_linkedin_events() -> list[PageMigration]:
 
 def migrate_events_page() -> PageMigration:
     blocks = [
-        {"id": "events-hero", "type": "hero", "props": {"heading": "Events", "description": "Sample entries while the calendar is being confirmed with the office. Dates, venues and turnout are illustrative."}},
+        {"id": "events-hero", "type": "hero", "props": {"heading": "Events", "description": "Confirmed past events, plus upcoming dates as they are announced."}},
         {"id": "events-upcoming", "type": "dynamic_query", "props": {
             "heading": "What's next", "query": "published_events_upcoming", "sort": "starts_at_asc", "empty_label": "No upcoming events right now.",
         }},  # fmt: skip
@@ -832,21 +765,21 @@ def migrate_events_page() -> PageMigration:
     ]  # fmt: skip
     return PageMigration(
         content_type="page", slug="events", title="Events",
-        seo={"title": "Events", "description": "Sample entries while the calendar is being confirmed with the office. Dates, venues and turnout are illustrative.", "path": "/events/"},
+        seo={"title": "Events", "description": "Confirmed past events, plus upcoming dates as they are announced.", "path": "/events/"},
         blocks=blocks,
     )  # fmt: skip
 
 
 def migrate_blogs_page() -> PageMigration:
     blocks = [
-        {"id": "blogs-hero", "type": "hero", "props": {"heading": "Blogs", "description": "Weekly blogs written by the team on entrepreneurship, posted to our blog portal. Sample entries while the archive is being confirmed."}},
+        {"id": "blogs-hero", "type": "hero", "props": {"heading": "Blogs", "description": "Weekly blogs written by the team on entrepreneurship, posted to our blog portal."}},
         {"id": "blogs-latest", "type": "dynamic_query", "props": {
             "heading": "Latest posts", "query": "published_blogs", "sort": "published_at_desc", "empty_label": "No blog posts yet.",
         }},  # fmt: skip
     ]  # fmt: skip
     return PageMigration(
         content_type="page", slug="blogs", title="Blogs",
-        seo={"title": "Blogs", "description": "Weekly blogs written by the team on entrepreneurship, posted to our blog portal. Sample entries while the archive is being confirmed.", "path": "/blogs/"},
+        seo={"title": "Blogs", "description": "Weekly blogs written by the team on entrepreneurship, posted to our blog portal.", "path": "/blogs/"},
         blocks=blocks,
     )  # fmt: skip
 
@@ -868,7 +801,5 @@ PAGE_MIGRATIONS: list[PageMigration] = [
     migrate_nec(),
     migrate_events_page(),
     migrate_blogs_page(),
-    *migrate_events(),
     *migrate_linkedin_events(),
-    *migrate_blogs(),
 ]
