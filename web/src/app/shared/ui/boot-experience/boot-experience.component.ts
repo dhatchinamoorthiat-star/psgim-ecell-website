@@ -31,6 +31,9 @@ import { BootExperienceService } from '../../../core/services/boot-experience.se
                    below. Painted via CSS background-image so the theme
                    picks the variant before hydration — see the component
                    stylesheet. -->
+              <div class="boot-grid"></div>
+              <div class="boot-ring boot-ring--outer"></div>
+              <div class="boot-ring boot-ring--inner"></div>
               <div class="boot-mark"></div>
 
               <div class="boot-axis">
@@ -41,6 +44,17 @@ import { BootExperienceService } from '../../../core/services/boot-experience.se
                 <!-- Sits outside the (overflow-hidden) track so its glow
                      isn't clipped: the light at the leading edge of travel. -->
                 <div class="boot-axis-head" [style.left]="headOffset()"></div>
+                <div class="boot-ticks">
+                  @for (tick of ticks; track tick) {
+                    <i [class.is-passed]="boot.percent() >= tick" [style.left.%]="tick"></i>
+                  }
+                </div>
+              </div>
+
+              <div class="boot-tagline">
+                @for (word of taglineWords; track word.text) {
+                  <span [class.is-lit]="boot.percent() >= word.at">{{ word.text }}</span>
+                }
               </div>
 
               <div class="boot-meta">
@@ -70,6 +84,16 @@ export class BootExperienceComponent implements OnInit, OnDestroy {
 
   /** Left and right halves of the same composition — the two "doors". */
   protected readonly panels = ['left', 'right'] as const;
+
+  /** Milestone ticks along the axis (percent). */
+  protected readonly ticks = [25, 50, 75] as const;
+
+  /** The brand line lights up word by word as the real progress passes each threshold. */
+  protected readonly taglineWords = [
+    { text: 'Innovate', at: 20 },
+    { text: 'Build', at: 55 },
+    { text: 'Elevate', at: 90 },
+  ] as const;
 
   protected readonly fillTransform = computed(() => `scaleX(${this.boot.visualProgress()})`);
 

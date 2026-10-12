@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, PLATFORM_ID, ViewChild, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy, OnInit, PLATFORM_ID, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { hero, intro } from '../../core/data/about.data';
@@ -21,6 +21,7 @@ import { Initiative, JourneyStage } from '../../core/models/models';
 import { ContentApiService } from '../../core/services/content-api.service';
 import { EventQueryResult } from '../../shared/blocks/block.types';
 import { SeoService } from '../../core/services/seo.service';
+import { BootExperienceService } from '../../core/services/boot-experience.service';
 import { CinematicBootService } from '../../core/services/cinematic-boot.service';
 import { RevealOnScrollDirective } from '../../core/motion/directives/reveal.directive';
 import { StaggerDirective } from '../../core/motion/directives/stagger.directive';
@@ -147,6 +148,24 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private seo = inject(SeoService);
   private bootService = inject(CinematicBootService);
+  private bootExperience = inject(BootExperienceService);
+
+  /** True once the first-visit typing is waiting for the loading screen to open. */
+  private readonly typingArmed = signal(false);
+  private typingStarted = false;
+
+  /**
+   * Sequence: loading screen → headline types → rest of the hero reveals.
+   * The typing must not begin while the loader still covers the page, or it
+   * finishes unseen — so it is gated on the loader's reveal phase.
+   */
+  private readonly typingGate = effect(() => {
+    const phase = this.bootExperience.phase();
+    if (!this.typingArmed()) return;
+    if (phase === 'revealing' || phase === 'complete') {
+      untracked(() => this.beginTypingOnce());
+    }
+  });
   private platformId = inject(PLATFORM_ID);
   private route = inject(ActivatedRoute);
   private api = inject(ContentApiService);
@@ -505,21 +524,34 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
         this.setToReadyState();
       } else {
         this.bootService.markAsBooted();
-        this.startTypingSequence();
+        // Blank the hero now (it is hidden behind the loader), type later.
+        this.prepareTypingState();
+        this.typingArmed.set(true);
+        // Safety net: never leave the headline blank if the loader stalls.
+        this.activeTimers.push(setTimeout(() => this.beginTypingOnce(), 9000));
       }
 
       this.onScroll();
     }
   }
 
-  private startTypingSequence(): void {
+  private prepareTypingState(): void {
     this.heroPhase.set('headline');
     this.typedLine1.set('');
     this.typedLine2.set('');
     this.typedLine3.set('');
     this.currentCursorLine.set(1);
     this.revealStep.set(0);
+  }
 
+  private beginTypingOnce(): void {
+    if (this.typingStarted) return;
+    this.typingStarted = true;
+    // Brief beat so the doors are visibly parting before the first letter.
+    this.activeTimers.push(setTimeout(() => this.startTypingSequence(), 250));
+  }
+
+  private startTypingSequence(): void {
     this.typeText('INNOVATE', this.typedLine1, 1, () => {
       this.typeText('TO', this.typedLine2, 2, () => {
         this.typeText('ELEVATE.', this.typedLine3, 3, () => {
@@ -542,7 +574,7 @@ export class HomeComponent implements OnInit, AfterViewInit, OnDestroy {
       if (i < text.length) {
         i++;
         target.set(text.slice(0, i));
-        const t = setTimeout(tick, 45 + Math.random() * 30);
+        const t = setTimeout(tick, 70 + Math.random() * 45);
         this.activeTimers.push(t);
       } else {
         const t = setTimeout(done, 120);

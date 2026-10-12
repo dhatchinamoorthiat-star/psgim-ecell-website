@@ -65,7 +65,7 @@ const COMPLETION_WATCHDOG_MS = 800;
  * mean ~1400ms of a motionless full line, which reads as a hang, not as
  * cinema. This way the whole window is spent moving.
  */
-const PROGRESS_PACE_MS = 1650;
+const PROGRESS_PACE_MS = 2300;
 /**
  * The minimum-visual-duration gate. The reveal begins only once BOTH the
  * line has reached 100% (i.e. everything critical is genuinely ready) AND
@@ -73,7 +73,7 @@ const PROGRESS_PACE_MS = 1650;
  * delays a slow load — by the time a slow load is ready this has long since
  * elapsed, so it imposes nothing.
  */
-const MIN_DISPLAY_MS = 1650;
+const MIN_DISPLAY_MS = 2300;
 /** Reduced motion: the same gate, much shorter — the brief is less motion. */
 const MIN_DISPLAY_MS_REDUCED = 700;
 /** How long "Ready" holds before the panels part. Also covers the seam's extension. */

@@ -125,7 +125,10 @@
   box-shadow: var(--shadow-lg);
 }
 .navbar-logo { display: flex; flex-direction: row; align-items: center; gap: var(--s-2); flex-shrink: 0; min-width: 0; padding-inline-start: var(--s-3); }
-.navbar-logo img { height: 34px; width: auto; flex-shrink: 0; }
+.navbar-logo img {
+  height: 60px; width: 68px; object-fit: contain; flex-shrink: 0;
+  background: transparent; border: 0; border-radius: 0;
+}
 .navbar-logo-text { display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
 .navbar-logo-title {
   font-size: 15px; font-weight: 800; letter-spacing: var(--track-head); line-height: 1;
@@ -456,7 +459,7 @@
 }
 @media (max-width: 20rem) {
   .navbar-logo-sub { display: none; }
-  .navbar-logo img { height: 30px; }
+  .navbar-logo img { height: 48px; width: 55px; }
 }
 
 /* Footer — --band is a fixed dark banner in both themes, so its text uses the

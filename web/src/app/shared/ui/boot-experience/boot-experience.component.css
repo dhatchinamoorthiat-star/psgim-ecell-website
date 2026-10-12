@@ -392,6 +392,149 @@
   }
 }
 
+/* ------------------------------------------------- ambient composition */
+
+/* Faint dot grid, masked to a soft spotlight around the mark. */
+.boot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--rule-strong) 1px, transparent 1.4px);
+  background-size: 28px 28px;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0, transparent 58%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0, transparent 58%);
+  opacity: 0;
+  animation: boot-grid-in 1200ms var(--ease-out) 100ms forwards;
+}
+
+/* Two thin concentric rings that slowly counter-rotate around the lockup;
+   each carries a single gold bead so the rotation is legible. */
+.boot-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  border: 1px solid var(--rule-strong);
+  transform: translate(-50%, -50%) rotate(0deg);
+  opacity: 0;
+}
+.boot-ring::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px rgba(236, 153, 0, 0.8);
+}
+.boot-ring--outer {
+  width: min(30rem, 86vw);
+  aspect-ratio: 1;
+  animation:
+    boot-ring-in 1000ms var(--ease-out) 200ms forwards,
+    boot-spin 14s linear 200ms infinite;
+}
+.boot-ring--inner {
+  width: min(21rem, 62vw);
+  aspect-ratio: 1;
+  border-style: dashed;
+  animation:
+    boot-ring-in 1000ms var(--ease-out) 320ms forwards,
+    boot-spin-rev 20s linear 320ms infinite;
+}
+.boot-ring--inner::after {
+  display: none;
+}
+.boot[data-phase='ready'] .boot-ring,
+.boot[data-phase='revealing'] .boot-ring {
+  transition: opacity 400ms var(--ease-out);
+  opacity: 0;
+  animation-play-state: paused;
+}
+
+/* Milestone ticks, passed ones fill with the accent. */
+.boot-ticks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.boot-ticks i {
+  position: absolute;
+  top: -5px;
+  width: 1px;
+  height: 12px;
+  background: var(--rule-strong);
+  transition:
+    background 300ms var(--ease-out),
+    transform 300ms var(--ease-out);
+}
+.boot-ticks i.is-passed {
+  background: var(--accent);
+  transform: scaleY(1.25);
+}
+
+/* Brand line, lit word by word as the load actually advances. */
+.boot-tagline {
+  position: absolute;
+  top: calc(50% + 4.25rem);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.1rem;
+  white-space: nowrap;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: boot-axis-in 700ms var(--ease-out) 460ms forwards;
+}
+.boot-tagline span {
+  color: var(--ink-3);
+  opacity: 0.45;
+  transform: translateY(3px);
+  transition:
+    opacity 500ms var(--ease-out),
+    transform 500ms var(--ease-out),
+    color 500ms var(--ease-out);
+}
+.boot-tagline span.is-lit {
+  color: var(--ink);
+  opacity: 1;
+  transform: translateY(0);
+}
+.boot-tagline span:last-child.is-lit {
+  color: var(--accent-ink);
+  text-shadow: 0 0 18px rgba(236, 153, 0, 0.55);
+}
+.boot[data-phase='revealing'] .boot-tagline {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+@keyframes boot-grid-in {
+  to {
+    opacity: 0.55;
+  }
+}
+@keyframes boot-ring-in {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes boot-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@keyframes boot-spin-rev {
+  to {
+    transform: translate(-50%, -50%) rotate(-360deg);
+  }
+}
+
 /* ---------------------------------------------------------------- mobile */
 
 @media (max-width: 640px) {
@@ -408,6 +551,11 @@
   }
   .boot-meta {
     top: calc(50% + 1.25rem);
+  }
+  .boot-tagline {
+    top: calc(50% + 3.5rem);
+    letter-spacing: 0.22em;
+    gap: 0.8rem;
   }
 }
 
@@ -458,8 +606,17 @@
     transition: none;
   }
   .boot-axis-sheen,
-  .boot-axis-head {
+  .boot-axis-head,
+  .boot-ring {
     display: none;
+  }
+  .boot-grid,
+  .boot-tagline {
+    animation: none;
+    opacity: 1;
+  }
+  .boot-tagline {
+    transform: translateX(-50%);
   }
   .boot-status-word {
     animation: none;
